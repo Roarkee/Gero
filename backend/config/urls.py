@@ -15,11 +15,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
+from django.http import JsonResponse
+
+def api_root(request):
+    return JsonResponse({
+        'message': 'Gero API is running!',
+        'version': '1.0.0',
+        'endpoints': {
+            'admin': '/admin/',
+            'users': '/api/users/',
+            'clients': '/api/client/',
+            'projects': '/api/projects/',
+            'invoices': '/api/invoices/',
+            'expenses': '/api/expenses/',
+            'notifications': '/api/notifications/',
+        }
+    })
 
 
 
 urlpatterns = [
+    path('', api_root, name='api_root'),  # Root endpoint
     path('admin/', admin.site.urls),
 
     # Include the user app URLs
@@ -29,9 +46,4 @@ urlpatterns = [
     path('api/', include('invoices.urls')),  # Invoice management URLs
     path('api/', include('expenses.urls')),  # Expense management URLs
     path('api/', include('notifications.urls')),  # Notification URLs
-
-
-
-
-
 ]

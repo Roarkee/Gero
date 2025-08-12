@@ -38,7 +38,7 @@ SECRET_KEY = 'django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.57.215.63']
 
 
 # Application definition
@@ -190,6 +190,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",  # Vite default port
     "http://127.0.0.1:5173",
+    "http://10.57.215.63:5173",  # Your network IP
 ]
 
 CORS_ALLOW_CREDENTIALS = True
