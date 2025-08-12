@@ -12,7 +12,7 @@ class ExpenseCategoryAdmin(admin.ModelAdmin):
 @admin.register(Budget)
 class BudgetAdmin(admin.ModelAdmin):
     list_display = ['category', 'amount', 'period', 'start_date', 'end_date', 'spent_amount', 'is_over_budget']
-    list_filter = ['period', 'start_date', 'is_over_budget']
+    list_filter = ['period', 'start_date', 'end_date']
     readonly_fields = ['spent_amount', 'remaining_amount', 'is_over_budget']
 
 
