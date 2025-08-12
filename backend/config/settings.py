@@ -53,16 +53,18 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',   
     'rest_framework_simplejwt.token_blacklist',
-
-
-
+    'corsheaders',
 
     'users',
     'client',
     'projects',
+    'invoices',
+    'expenses',
+    'notifications',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -181,3 +183,17 @@ if 'test' in sys.argv:
             'NAME': ':memory:',
         }
     }
+
+# CORS settings for React frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",  # Vite default port
+    "http://127.0.0.1:5173",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# REST Framework pagination
+REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'rest_framework.pagination.PageNumberPagination'
+REST_FRAMEWORK['PAGE_SIZE'] = 20

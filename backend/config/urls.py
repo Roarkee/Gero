@@ -26,6 +26,9 @@ urlpatterns = [
     path('api/users/', include('users.urls')),  # User management URLs
     path('api/client/', include('client.urls')),  # Client management URLs
     path('api/', include('projects.urls')),  # Project management URLs
+    path('api/', include('invoices.urls')),  # Invoice management URLs
+    path('api/', include('expenses.urls')),  # Expense management URLs
+    path('api/', include('notifications.urls')),  # Notification URLs
 
 
 
