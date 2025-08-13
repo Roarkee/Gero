@@ -53,11 +53,6 @@ class SubTask(models.Model):
 
 
 
-
-
-
-
-
 class TimeEntry(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='time_entries')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='time_entries')
