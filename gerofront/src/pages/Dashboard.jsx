@@ -254,7 +254,7 @@ const Dashboard = () => {
         </motion.div>
       </div>
 
-      {/* Recent Activity Placeholder */}
+      {/* Recent Activity */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -263,12 +263,93 @@ const Dashboard = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Recent Activity
         </h3>
-        <div className="text-center py-8">
-          <FiClock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Recent activity will appear here</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Start creating projects and invoices to see updates
-          </p>
+        <div className="space-y-4">
+          {/* Generate activity from existing data */}
+          {stats.projects.total > 0 && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <FiFolder className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">
+                  You have{" "}
+                  <span className="font-medium">
+                    {stats.projects.active} active projects
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500">Project management</p>
+              </div>
+              <span className="text-xs text-gray-400">Today</span>
+            </div>
+          )}
+
+          {stats.clients.total > 0 && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <FiUsers className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">
+                  You have{" "}
+                  <span className="font-medium">
+                    {stats.clients.total} clients
+                  </span>{" "}
+                  in your system
+                </p>
+                <p className="text-xs text-gray-500">Client management</p>
+              </div>
+              <span className="text-xs text-gray-400">Today</span>
+            </div>
+          )}
+
+          {stats.revenue.total_revenue > 0 && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <FiDollarSign className="w-4 h-4 text-yellow-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">
+                  Total revenue:{" "}
+                  <span className="font-medium">
+                    ${stats.revenue.total_revenue.toLocaleString()}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500">Financial overview</p>
+              </div>
+              <span className="text-xs text-gray-400">Updated</span>
+            </div>
+          )}
+
+          {stats.expenses.monthly_expenses > 0 && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <FiTrendingUp className="w-4 h-4 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">
+                  Monthly expenses:{" "}
+                  <span className="font-medium">
+                    ${stats.expenses.monthly_expenses.toLocaleString()}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500">Expense tracking</p>
+              </div>
+              <span className="text-xs text-gray-400">This month</span>
+            </div>
+          )}
+
+          {/* Show placeholder if no activity */}
+          {stats.projects.total === 0 &&
+            stats.clients.total === 0 &&
+            stats.revenue.total_revenue === 0 && (
+              <div className="text-center py-8">
+                <FiClock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No activity yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Start by creating clients and projects to see activity here
+                </p>
+              </div>
+            )}
         </div>
       </motion.div>
     </div>
