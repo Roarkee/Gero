@@ -6,8 +6,8 @@ from projects.serializers import ProjectSerializer
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model= Client
-        fields = ['id', 'name', 'email', 'phone_number','company_name']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'email', 'phone_number','company_name', 'status', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):
         # i'm assigning the user to the client to make sure that the client is created by the authenticated user
