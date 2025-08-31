@@ -4,7 +4,7 @@ class OwnerValidationMixin:
     def validate_ownership(self, related_instance, user, message="You do not have permission to use this resource."):
         """
         Checks if the related instance is owned by the current user.
-        Traces ownership through .client.owner or .project.client.owner, etc.
+        Traces ownership through .client.user or .project.client.user, etc.
         """
         owner = self._get_owner_from_instance(related_instance)
         if owner != user:
@@ -20,7 +20,7 @@ class OwnerValidationMixin:
         # Project → Client → Owner
        
         if hasattr(instance, 'client') and hasattr(instance.client, 'user'):
-            return instance.client.owner
+            return instance.client.user
         # Task → TaskList → Project → Client → Owner
         if hasattr(instance, 'task_list'):
             return self._get_owner_from_instance(instance.task_list)

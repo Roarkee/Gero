@@ -7,7 +7,7 @@ from projects.views import (
     SubTaskViewSet,
     LabelViewSet,
 )
-from projects.time_tracking import TimeEntryViewSet
+from projects.views import TimeEntryViewSet
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='project')

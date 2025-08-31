@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from projects.models import Project, Task, TaskList, Label, SubTask
+from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry
 from datetime import datetime
 from projects.mixins import OwnerValidationMixin
 
@@ -16,6 +16,8 @@ class ProjectSerializer(serializers.ModelSerializer,OwnerValidationMixin):
         #and if the client belongs to the authenticated user
         self.validate_ownership(client, self.context['request'].user, "You do not have permission to create a project for this client.")
         return client
+    ''' the validate_ownership method is sort of a roundabout way of checking if the model instances belong to the authenticated user. i run checks
+    maybe there'll be better inspiration next time.'''
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -54,7 +56,7 @@ class TaskListSerializer(serializers.ModelSerializer,OwnerValidationMixin):
         fields = '__all__'
         read_only_fields = ('id',)#there's a comma because it's a tuple, not a list or str
 
-    def validate_project(self,project):
+    def validate_project(self,project):#in serializers, validate_<field_name> is a field level validator
         self.validate_ownership(project, self.context['request'].user, "You do not have permission to create a task list for this project. You don't own it")
         return project
 
@@ -80,7 +82,7 @@ class SubTaskSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('id', 'created_at', 'updated_at')
 
-    def validate(self, data):
+    def validate(self, data):#this is an object level validator. checks if the label and task belong to the same project
         task = data.get('task', getattr(self.instance, 'task', None))
         label = data.get('label', getattr(self.instance, 'label', None))
 
@@ -112,4 +114,19 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
+
+
+class TimeEntrySerializer(serializers.ModelSerializer):
+    task_title = serializers.CharField(source='task.title', read_only=True)
+    project_name = serializers.CharField(source='task.task_list.project.name', read_only=True)
+    
+    class Meta:
+        model = TimeEntry
+        fields = '__all__'
+        read_only_fields = ('user', 'duration_minutes')
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
 

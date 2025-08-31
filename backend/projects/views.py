@@ -1,9 +1,10 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from django.utils import timezone
 
-from projects.models import Project, Task, TaskList, Label, SubTask
+from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry
 from client.models import Client
 from projects.serializers import (
     ProjectSerializer,
@@ -13,7 +14,8 @@ from projects.serializers import (
     TaskListWithTasksSerializer,
     LabelSerializer,
     SubTaskSerializer,
-    TaskWithSubTasksSerializer
+    TaskWithSubTasksSerializer,
+    TimeEntrySerializer
 )
 
 
@@ -84,3 +86,56 @@ class LabelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Label.objects.filter(project__client__user=self.request.user)
+    
+
+
+
+class TimeEntryViewSet(viewsets.ModelViewSet):
+    serializer_class = TimeEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return TimeEntry.objects.filter(user=self.request.user)
+    
+    @action(detail=False, methods=['post'])
+    def start_timer(self, request):
+        task_id = request.data.get('task_id')
+        description = request.data.get('description', '')
+        
+        # Stop any running timers
+        TimeEntry.objects.filter(user=request.user, is_running=True).update(
+            end_time=timezone.now(), is_running=False
+        )
+        
+        # Start new timer
+        time_entry = TimeEntry.objects.create(
+            user=request.user,
+            task_id=task_id,
+            description=description,
+            start_time=timezone.now(),
+            is_running=True
+        )
+        
+        serializer = self.get_serializer(time_entry)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def stop_timer(self, request, pk=None):
+        time_entry = self.get_object()
+        time_entry.end_time = timezone.now()
+        time_entry.is_running = False
+        time_entry.save()
+        
+        serializer = self.get_serializer(time_entry)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def active_timer(self, request):
+        active_timer = TimeEntry.objects.filter(
+            user=request.user, is_running=True
+        ).first()
+        
+        if active_timer:
+            serializer = self.get_serializer(active_timer)
+            return Response(serializer.data)
+        return Response(None)
