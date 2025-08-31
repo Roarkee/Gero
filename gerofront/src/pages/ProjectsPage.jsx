@@ -29,6 +29,7 @@ const ProjectsPage = () => {
     phone_number: "",
     company_name: "",
   });
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -165,9 +166,33 @@ const ProjectsPage = () => {
                   {project.name}
                 </h3>
               </div>
-              <button className="text-gray-400 hover:text-gray-600">
-                <FiMoreVertical className="w-4 h-4" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setActiveDropdown(
+                      activeDropdown === project.id ? null : project.id
+                    )
+                  }
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FiMoreVertical className="w-4 h-4" />
+                </button>
+                {activeDropdown === project.id && (
+                  <div className="absolute right-0 top-6 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                    <div className="py-1">
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Edit Project
+                      </button>
+                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Duplicate
+                      </button>
+                      <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <p className="text-gray-600 text-sm mb-4 line-clamp-2">

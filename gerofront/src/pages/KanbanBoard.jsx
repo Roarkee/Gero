@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -17,7 +17,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import { FiPlus, FiMoreVertical, FiClock } from "react-icons/fi";
+import { FiPlus, FiMoreVertical, FiClock, FiArrowLeft } from "react-icons/fi";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
@@ -107,6 +107,16 @@ const KanbanBoard = () => {
   const [project, setProject] = useState(null);
   const [taskLists, setTaskLists] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showAddListModal, setShowAddListModal] = useState(false);
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+  });
+  const [newList, setNewList] = useState({
+    name: "",
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -160,6 +170,43 @@ const KanbanBoard = () => {
     }
   };
 
+  const handleAddTask = (listId) => {
+    setSelectedListId(listId);
+    setShowAddTaskModal(true);
+  };
+
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/tasks/", {
+        ...newTask,
+        task_list: selectedListId,
+      });
+      toast.success("Task created successfully!");
+      setShowAddTaskModal(false);
+      setNewTask({ title: "", description: "" });
+      fetchProjectData();
+    } catch (error) {
+      toast.error("Failed to create task");
+    }
+  };
+
+  const handleCreateList = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/tasklists/", {
+        ...newList,
+        project: id,
+      });
+      toast.success("Task list created successfully!");
+      setShowAddListModal(false);
+      setNewList({ name: "" });
+      fetchProjectData();
+    } catch (error) {
+      toast.error("Failed to create task list");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -171,9 +218,22 @@ const KanbanBoard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{project?.name}</h1>
-        <p className="text-gray-600">{project?.description}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/projects"
+            className="flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-200"
+          >
+            <FiArrowLeft className="w-5 h-5 mr-2" />
+            Back to Projects
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {project?.name}
+            </h1>
+            <p className="text-gray-600">{project?.description}</p>
+          </div>
+        </div>
       </div>
 
       {/* Kanban Board */}
@@ -209,7 +269,10 @@ const KanbanBoard = () => {
                   </div>
                 </SortableContext>
 
-                <button className="w-full mt-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                <button
+                  onClick={() => handleAddTask(list.id)}
+                  className="w-full mt-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                >
                   <FiPlus className="w-4 h-4 mr-2" />
                   Add a task
                 </button>
@@ -219,13 +282,119 @@ const KanbanBoard = () => {
 
           {/* Add new list */}
           <div className="flex-shrink-0 w-80">
-            <button className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors duration-200">
+            <button
+              onClick={() => setShowAddListModal(true)}
+              className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors duration-200"
+            >
               <FiPlus className="w-6 h-6 mr-2" />
               Add a list
             </button>
           </div>
         </div>
       </DndContext>
+
+      {/* Add Task Modal */}
+      {showAddTaskModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Add New Task
+            </h2>
+            <form onSubmit={handleCreateTask} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Task Title *
+                </label>
+                <input
+                  type="text"
+                  value={newTask.title}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, title: e.target.value })
+                  }
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newTask.description}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, description: e.target.value })
+                  }
+                  className="input-field"
+                  rows="3"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTaskModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Add Task
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Add Task List Modal */}
+      {showAddListModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Add New Task List
+            </h2>
+            <form onSubmit={handleCreateList} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  List Name *
+                </label>
+                <input
+                  type="text"
+                  value={newList.name}
+                  onChange={(e) =>
+                    setNewList({ ...newList, name: e.target.value })
+                  }
+                  className="input-field"
+                  placeholder="e.g., To Do, In Progress, Done"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddListModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Add List
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
