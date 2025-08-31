@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, Payment
-from client.models import Client
-from projects.models import Project
 
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
