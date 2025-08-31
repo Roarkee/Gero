@@ -19,6 +19,7 @@ class Notification(models.Model):
     
     is_read = models.BooleanField(default=False)
     action_url = models.URLField(blank=True)  # URL to navigate to when clicked
+
     
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)

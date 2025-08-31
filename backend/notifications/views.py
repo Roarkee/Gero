@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -12,6 +12,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user)
+    
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"response": "Why do you want to create your own notifications ei"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+    
+    def perform_create(self, serializer):
+        return serializer.save(user=self.request.user)
     
     @action(detail=True, methods=['post'])
     def mark_read(self, request, pk=None):
@@ -28,3 +37,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
             read_at=timezone.now()
         )
         return Response({'status': 'all notifications marked as read'})
+
+    @action(detail=False, methods=['get'])
+    def unread_notifications_number(self, request):
+        unread_notifications_count = self.get_queryset().filter(is_read=False).count()
+        return Response({'unread_notifications': unread_notifications_count})
+
+    
