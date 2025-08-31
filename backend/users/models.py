@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser,BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser,BaseUserManager, PermissionsMixin
+
 
 # Create your models here.
 
@@ -7,11 +8,12 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set.')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user      
+        email = self.normalize_email(email)# it removes extra space and makes the email lowercase
+        user = self.model(email=email, **extra_fields)#self.model creates a new instance of the db model in which case it's the user model
+        user.set_password(password)#this function hashes the password
+        user.save(using=self._db)#this makes sure the user is saved to the db using the current database connection
+        return user  
+        
         
 
 
@@ -27,7 +29,7 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, **extra_fields)
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)

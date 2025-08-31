@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer,MyTokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 # Create your views here.
 
 class RegisterView(generics.CreateAPIView):
@@ -25,6 +26,13 @@ class UserProfile(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         return self.request.user
+    
+
+#atm this view is not being used
+#in case i want to add more claims(email, first name) to my jwt then i'd use this view
+#for now i'd just stick with the default 
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
     
 
     
