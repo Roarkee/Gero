@@ -54,6 +54,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',   
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'channels',
+    'celery',
+    'django_celery_beat', 
+    'django_celery_results',
+
 
     'users',
     'client',
@@ -105,6 +110,46 @@ SIMPLE_JWT = {
 }
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+ASGI_APPLICATION = 'config.asgi.application'
+
+CHANNEL_LAYERS ={
+    'default': {
+        'BACKEND': 'channels_layers.core.RedisChannelLayer',
+        'CONFIG':{
+            'hosts':[('127.0.0.1', 6379)]
+        }
+    }
+}
+
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'notify_invoice_overdue':{
+        'task': 'notifications.tasks.notify_invoice_overdue',
+        'schedule': crontab(hour=0, minute=0), 
+    },
+    'notify_budget_exceeded':{
+        'task': 'notifications.tasks.notify_budget_exceeded',
+        'schedule': crontab(hour=0, minute=0),
+    },
+    'notify_budget_warning':{
+        'task': 'notifications.tasks.notify_budget_warning',
+        'schedule': crontab(hour=0, minute=0),
+    },
+    'notify_project_deadline':{
+        'task': 'notifications.tasks.notify_project_deadline',
+        'schedule': crontab(hour=0, minute=0),
+    }
+}
+
 
 
 # Database
