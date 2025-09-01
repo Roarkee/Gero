@@ -25,7 +25,7 @@ def send_notifications_task(notification_id):
     channel_layer= get_channel_layer()
     
     async_to_sync(channel_layer.group_send)(
-        f"user{notification.user.id}_group",
+        f"user_{notification.user.id}_group",
         {
             "type": "notify",
             "title": notification.title,
