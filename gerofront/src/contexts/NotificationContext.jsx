@@ -23,6 +23,8 @@ export const NotificationProvider = ({ children }) => {
 
   // Fetch notifications
   const fetchNotifications = async () => {
+    if (!user) return; // Don't fetch if no user
+
     try {
       setLoading(true);
       const response = await api.get("/notifications/");
@@ -35,6 +37,7 @@ export const NotificationProvider = ({ children }) => {
       setUnreadCount(unreadResponse.data.unread_notifications || 0);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
+      // Don't show error toast on initial load to avoid spamming
     } finally {
       setLoading(false);
     }
@@ -77,6 +80,8 @@ export const NotificationProvider = ({ children }) => {
 
   // Check for overdue items - your Celery tasks handle this automatically
   const checkOverdueItems = async () => {
+    if (!user) return; // Don't check if no user
+
     // Your Celery tasks (notify_invoice_overdue, notify_task_deadline)
     // handle checking for overdue items automatically
     // We just need to refresh notifications periodically
