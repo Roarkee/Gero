@@ -14,12 +14,60 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, useDroppable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { FiPlus, FiMoreVertical, FiClock, FiArrowLeft } from "react-icons/fi";
 import api from "../services/api";
 import toast from "react-hot-toast";
+
+// Droppable List Component
+const DroppableList = ({ list, onAddTask }) => {
+  const { setNodeRef } = useDroppable({
+    id: list.id,
+  });
+
+  return (
+    <div className="flex-shrink-0 w-80">
+      <div className="bg-gray-100 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold text-gray-900">{list.name}</h3>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">
+              {list.tasks?.length || 0}
+            </span>
+            <button className="text-gray-400 hover:text-gray-600">
+              <FiMoreVertical className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <SortableContext
+          items={list.tasks?.map((task) => task.id) || []}
+          strategy={verticalListSortingStrategy}
+        >
+          <div
+            ref={setNodeRef}
+            className="space-y-3 min-h-[200px] rounded-lg p-2 border-2 border-dashed border-transparent hover:border-gray-300 transition-colors"
+            data-list-id={list.id}
+          >
+            {list.tasks?.map((task) => (
+              <SortableTask key={task.id} task={task} />
+            ))}
+          </div>
+        </SortableContext>
+
+        <button
+          onClick={() => onAddTask(list.id)}
+          className="w-full mt-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors duration-200 flex items-center justify-center"
+        >
+          <FiPlus className="w-4 h-4 mr-2" />
+          Add a task
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Sortable Task Component
 const SortableTask = ({ task }) => {
@@ -149,24 +197,73 @@ const KanbanBoard = () => {
     const activeId = active.id;
     const overId = over.id;
 
-    if (activeId !== overId) {
-      try {
-        // Find which list the task is being moved to
-        const targetList = taskLists.find(
-          (list) =>
-            list.tasks?.some((task) => task.id === overId) || list.id === overId
-        );
+    if (activeId === overId) return;
 
-        if (targetList) {
-          await api.patch(`/tasks/${activeId}/`, {
-            task_list: targetList.id,
-          });
-          fetchProjectData(); // Refresh data
-          toast.success("Task moved successfully");
+    try {
+      // Find the active task
+      let activeTask = null;
+      let sourceList = null;
+
+      for (const list of taskLists) {
+        const task = list.tasks?.find((t) => t.id === activeId);
+        if (task) {
+          activeTask = task;
+          sourceList = list;
+          break;
         }
-      } catch (error) {
-        toast.error("Failed to move task");
       }
+
+      if (!activeTask) return;
+
+      // Determine target list
+      let targetList = null;
+
+      // Check if dropped on a task (move to that task's list)
+      for (const list of taskLists) {
+        if (list.tasks?.some((task) => task.id === overId)) {
+          targetList = list;
+          break;
+        }
+      }
+
+      // Check if dropped on a list directly
+      if (!targetList) {
+        targetList = taskLists.find((list) => list.id === overId);
+      }
+
+      if (targetList && targetList.id !== sourceList.id) {
+        // Update task's list
+        await api.patch(`/tasks/${activeId}/`, {
+          task_list: targetList.id,
+        });
+
+        // Optimistically update UI
+        setTaskLists((prevLists) => {
+          return prevLists.map((list) => {
+            if (list.id === sourceList.id) {
+              // Remove task from source list
+              return {
+                ...list,
+                tasks: list.tasks?.filter((task) => task.id !== activeId) || [],
+              };
+            } else if (list.id === targetList.id) {
+              // Add task to target list
+              return {
+                ...list,
+                tasks: [...(list.tasks || []), activeTask],
+              };
+            }
+            return list;
+          });
+        });
+
+        toast.success("Task moved successfully");
+      }
+    } catch (error) {
+      console.error("Failed to move task:", error);
+      toast.error("Failed to move task");
+      // Refresh data on error to revert optimistic update
+      fetchProjectData();
     }
   };
 
@@ -244,40 +341,11 @@ const KanbanBoard = () => {
       >
         <div className="flex space-x-6 overflow-x-auto pb-6">
           {taskLists.map((list) => (
-            <div key={list.id} className="flex-shrink-0 w-80">
-              <div className="bg-gray-100 rounded-lg p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-gray-900">{list.name}</h3>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
-                      {list.tasks?.length || 0}
-                    </span>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <FiMoreVertical className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <SortableContext
-                  items={list.tasks?.map((task) => task.id) || []}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-3 min-h-[200px] rounded-lg p-2">
-                    {list.tasks?.map((task) => (
-                      <SortableTask key={task.id} task={task} />
-                    ))}
-                  </div>
-                </SortableContext>
-
-                <button
-                  onClick={() => handleAddTask(list.id)}
-                  className="w-full mt-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                >
-                  <FiPlus className="w-4 h-4 mr-2" />
-                  Add a task
-                </button>
-              </div>
-            </div>
+            <DroppableList
+              key={list.id}
+              list={list}
+              onAddTask={handleAddTask}
+            />
           ))}
 
           {/* Add new list */}

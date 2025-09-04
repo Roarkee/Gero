@@ -38,7 +38,7 @@ SECRET_KEY = 'django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.57.215.63']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.57.215.63', '0.0.0.0', 'web']
 
 
 # Application definition
@@ -115,16 +115,16 @@ ASGI_APPLICATION = 'config.asgi.application'
 
 CHANNEL_LAYERS ={
     'default': {
-        'BACKEND': 'channels_layers.core.RedisChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG':{
-            'hosts':[('127.0.0.1', 6379)]
+            'hosts':[env('REDIS_URL', default='redis://127.0.0.1:6379/0')]
         }
     }
 }
 
 
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_BROKER_URL = env('REDIS_URL', default="redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = env('REDIS_URL', default="redis://127.0.0.1:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -159,18 +159,14 @@ CELERY_BEAT_SCHEDULE = {
 
 
 DATABASES = {
-
-    # 'default': env.db()
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('dbname'),
-        'USER':env('user'),
-        'PASSWORD': env('password'),
-        'HOST': env('host'),
-        'PORT': env('port'), 
-   
+        'NAME': env('dbname', default='gero_db'),
+        'USER': env('user', default='gero_user'),
+        'PASSWORD': env('password', default='gero_password'),
+        'HOST': env('host', default='localhost'),
+        'PORT': env('port', default='5432'), 
     }
-
 }
 
 
