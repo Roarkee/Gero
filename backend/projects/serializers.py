@@ -21,19 +21,24 @@ class ProjectSerializer(serializers.ModelSerializer,OwnerValidationMixin):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    duedate = serializers.DateTimeField(input_formats=datetime_formats)
-    startdate = serializers.DateTimeField(input_formats=datetime_formats)
+    duedate = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
+    startdate = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
     human_due = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
         fields = '__all__'
         read_only_fields = ('id', 'created_at', 'updated_at')
+        extra_kwargs = {
+            'labels': {'required': False, 'allow_empty': True},
+            'description': {'required': False},
+        }
 
     def validate(self, data):#this checks if the dates are in the data passed before going to the conditionals
-        start = data.get('startdate', getattr(self.instance, 'startdate', None))# getattr is used to get the
+        start = data.get('startdate', self.instance.startdate if self.instance else None)
+        #getattr is used to get the
         #value of startdate from the Task if it exists, otherwise it returns None
-        due = data.get('duedate', getattr(self.instance, 'duedate', None))
+        due = data.get('duedate', self.instance.duedate if self.instance else None)
 
         if start and due:
             if start > due:
@@ -93,10 +98,14 @@ class SubTaskSerializer(serializers.ModelSerializer):
 
 class TaskWithSubTasksSerializer(serializers.ModelSerializer):
     subtasks = SubTaskSerializer(many=True, read_only=True)
+    total_minutes = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
-        fields = ['subtasks','title', 'description', 'task_list', 'labels', 'startdate', 'duedate']
+        fields = ['id', 'subtasks','title', 'description', 'task_list', 'labels', 'startdate', 'duedate', 'priority', 'position', 'total_minutes']
+        
+    def get_total_minutes(self, obj):
+        return sum(entry.duration_minutes for entry in obj.time_entries.all())
 
 
 class TaskListWithTasksSerializer(serializers.ModelSerializer):

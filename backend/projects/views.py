@@ -22,9 +22,10 @@ from projects.serializers import (
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None # Disable pagination for dashboard/list logic
 
     def get_queryset(self):
-        return Project.objects.filter(client__user=self.request.user)
+        return Project.objects.filter(client__user=self.request.user).order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
@@ -63,6 +64,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Task.objects.filter(task_list__project__client__user=self.request.user)
 
+    def get_queryset(self):
+        return Task.objects.filter(task_list__project__client__user=self.request.user)
+
     @action(detail=True, methods=['get'])
     def with_subtasks(self, request, pk=None):
         task = self.get_object()
@@ -83,6 +87,7 @@ class LabelViewSet(viewsets.ModelViewSet):
     queryset = Label.objects.all()
     serializer_class = LabelSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return Label.objects.filter(project__client__user=self.request.user)

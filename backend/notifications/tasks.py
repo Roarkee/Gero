@@ -2,7 +2,7 @@ from celery import shared_task
 from django.utils import timezone
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from invoices.models import Invoice,Payment
+from invoices.models import Invoice
 from projects.models import Task
 from expenses.models import Expense,Budget
 from .models import Notification

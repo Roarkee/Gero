@@ -19,7 +19,18 @@ class Project(models.Model):   #this models the trello workspace
 class TaskList(models.Model): 
     name = models.CharField(max_length=100)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='task_lists')
-    position = models.PositiveIntegerField(default=0)     
+    position = models.PositiveIntegerField(default=0)
+    list_type = models.CharField(max_length=20, choices=[
+        ('backlog', 'Backlog'),
+        ('todo', 'To Do'),
+        ('in_progress', 'In Progress'),
+        ('review', 'Review'),
+        ('done', 'Done'),
+        ('custom', 'Custom'),
+    ], default='custom')
+    
+    class Meta:
+        ordering = ['position']
 
 
 class Label(models.Model):
@@ -39,6 +50,16 @@ class Task(models.Model):
     startdate=models.DateTimeField(null=True, blank=True)
     duedate=models.DateTimeField(null=True, blank=True)
     position = models.PositiveIntegerField(default=0)  # For drag-and-drop ordering
+    priority = models.CharField(max_length=10, choices=[
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ], default='medium')
+    estimated_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['position']
     
 
 

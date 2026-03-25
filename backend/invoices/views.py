@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.db.models import Sum, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Invoice, InvoiceItem, Payment
+from .models import Invoice, InvoiceItem
 from .serializers import InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 
 
@@ -65,5 +65,5 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
     
-    def get_queryset(self):
-        return Payment.objects.filter(invoice__user=self.request.user)
+    # def get_queryset(self):
+    #     return Payment.objects.filter(invoice__user=self.request.user)

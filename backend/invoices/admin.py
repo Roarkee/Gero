@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Invoice, InvoiceItem, Payment
+from .models import Invoice, InvoiceItem
+
 
 
 @admin.register(Invoice)
@@ -14,8 +15,3 @@ class InvoiceAdmin(admin.ModelAdmin):
 class InvoiceItemAdmin(admin.ModelAdmin):
     list_display = ['invoice', 'description', 'quantity', 'rate', 'amount']
 
-
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['invoice', 'amount', 'payment_method', 'payment_date', 'created_at']
-    list_filter = ['payment_method', 'payment_date']

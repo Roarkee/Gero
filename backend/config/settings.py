@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-import os
 import environ
 import sys
 
@@ -33,12 +32,12 @@ environ.Env.read_env(BASE_DIR/ '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.57.215.63', '0.0.0.0', 'web']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.81.156.63', '0.0.0.0', 'web','192.168.137.37','192.168.137.1']
 
 
 # Application definition
@@ -58,15 +57,18 @@ INSTALLED_APPS = [
     'celery',
     'django_celery_beat', 
     'django_celery_results',
-
-
+    'encrypted_model_fields',
     'users',
     'client',
     'projects',
     'invoices',
     'expenses',
     'notifications',
+    'payments',
 ]
+
+
+FIELD_ENCRYPTION_KEY=env('FIELD_ENCRYPTION_KEY', default='gero_050billion-key-azBomien#Kenmac*$91Roarke187nYAAMzy')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -77,6 +79,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'payments.middleware.PaymentAuditMiddleware', 
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -226,6 +230,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite default port
     "http://127.0.0.1:5173",
     "http://10.57.215.63:5173",  # Your network IP
+    "http://192.168.137.37:5173",
+    "http://192.168.137.1:5173"
 ]
 
 CORS_ALLOW_CREDENTIALS = True

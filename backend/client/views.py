@@ -11,7 +11,7 @@ class ClientView(generics.ListCreateAPIView):#this allows a user to create a cli
 
     def get_queryset(self):
         user = self.request.user
-        return user.clients.all()
+        return user.clients.all().order_by('-created_at')
     
 class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):#this allows a user to update or delete a client
     permission_classes = [permissions.IsAuthenticated]
@@ -19,7 +19,7 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):#this allows a use
 
     def get_queryset(self):#thus makes sure a user can only access their own clients
         user = self.request.user
-        return user.clients.all()
+        return user.clients.all().order_by('-created_at')
 
     def get_object(self):#this method is used to get the object based on the primary key
         queryset = self.get_queryset()
@@ -31,4 +31,4 @@ class ClientOverviewView(generics.RetrieveAPIView):#this view return the clients
     serializer_class = ClientOverviewSerializier
 
     def get_queryset(self):
-        return self.request.user.clients.all()
+        return self.request.user.clients.all().order_by('-created_at')

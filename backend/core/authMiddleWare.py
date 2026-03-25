@@ -22,12 +22,14 @@ def get_token_from_scope(scope):
             header = headers.get(b"authorization", None) or headers.get(b"Authorization", None)
             if header:
                 token = header.decode().split(" ")[1]
+    except TokenError as zetsu:#writing some bs here i'll refactor later
+        logger.error(f"invalid token ninja:{zetsu}")
     except Exception as e:
         logger.error(f"Error extracting token: {e}", exc_info=True)
     return token
 
 
-#left this for if i'll ever need to get the user object
+#left this for if i'll ever need to get the user object as part of the response
 @database_sync_to_async
 def get_user(token):
     try:
@@ -35,7 +37,7 @@ def get_user(token):
         user = get_user_model().objects.get(id=access["user_id"])
         return user
     except Exception as e:
-        print(f"Error in get_user function: {e}")
+        logger.error(f"Error in get_user function: {e}")
         return AnonymousUser()
 
 
