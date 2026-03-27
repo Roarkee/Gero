@@ -1,12 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import Sum, Q
-from django.utils import timezone
-from datetime import datetime, timedelta
 from .models import Invoice, InvoiceItem
-from .serializers import InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
-
+from .serializers import InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer
+from invoices.services import invoice
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -22,35 +19,40 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
         user = request.user
-        today = timezone.now().date()
-        
-        # Revenue stats
-        total_revenue = Invoice.objects.filter(
-            user=user, status='paid'
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
-        
-        # This month's revenue
-        month_start = today.replace(day=1)
-        monthly_revenue = Invoice.objects.filter(
-            user=user, status='paid', paid_date__gte=month_start
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
-        
-        # Unpaid invoices
-        unpaid_invoices = Invoice.objects.filter(
-            user=user, status__in=['sent', 'overdue']
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
-        
-        # Overdue invoices count
-        overdue_count = Invoice.objects.filter(
-            user=user, status='overdue'
-        ).count()
-        
-        return Response({
-            'total_revenue': total_revenue,
-            'monthly_revenue': monthly_revenue,
-            'unpaid_invoices': unpaid_invoices,
-            'overdue_count': overdue_count,
-        })
+        res = invoice(user)
+       
+        return Response(res)
+    
+    @action(detail=True, methods=['post'])
+    def generate_from_time(self, request, pk=None):
+        invoice = self.get_object()
+
+        time_entries = TimeEntry.objects.filter(
+            user=request.user,
+            project=invoice.project,
+            invoice__isnull=True,
+            is_billable=True
+        )
+
+        items = []
+        for te in time_entries:
+            hours = te.duration_minutes / 60
+            amount = hours * te.hourly_rate
+
+            item = InvoiceItem.objects.create(
+                invoice=invoice,
+                description=f"{te.task.title} ({hours:.2f} hrs)",
+                quantity=hours,
+                rate=te.hourly_rate,
+            )
+            item.time_entries.add(te)
+
+            te.invoice = invoice
+            te.save(update_fields=['invoice'])
+
+            items.append(item)
+
+        return Response({"message": f"{len(items)} items added"})
 
 
 class InvoiceItemViewSet(viewsets.ModelViewSet):
@@ -61,9 +63,9 @@ class InvoiceItemViewSet(viewsets.ModelViewSet):
         return InvoiceItem.objects.filter(invoice__user=self.request.user)
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
-    serializer_class = PaymentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+# class PaymentViewSet(viewsets.ModelViewSet):
+#     serializer_class = PaymentSerializer
+#     permission_classes = [permissions.IsAuthenticated]
     
     # def get_queryset(self):
     #     return Payment.objects.filter(invoice__user=self.request.user)

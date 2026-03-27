@@ -1,13 +1,22 @@
 from rest_framework import serializers
 from client.models import Client
-from projects.serializers import ProjectSerializer
+from projects.serializers import ProjectSerializer, Task
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    projects = ProjectSerializer(many=True, read_only=True)#i'm specifying that the projects field
+    total_projects = serializers.SerializerMethodField()
+    total_tasks = serializers.SerializerMethodField()
     class Meta:
         model= Client
         fields = ['id', 'name', 'email', 'phone_number','company_name', 'status', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+    def get_total_projects(self, obj):
+        return obj.projects.count()
+    
+    def get_total_tasks(self, obj):
+        return Task.objects.filter(task_list__project__client=obj).count()
 
     def create(self, validated_data):
         # i'm assigning the user to the client to make sure that the client is created by the authenticated user
@@ -15,13 +24,18 @@ class ClientSerializer(serializers.ModelSerializer):
         client = Client.objects.create(user=user, **validated_data)
         return client
     
+    def validate_email(self, value):
+        user = self.context['request'].user
+        if Client.objects.filter(user=user, email=value).exists():
+            raise serializers.ValidationError("You already have a client with this email.")
+        return value
+    
+    def update(self, instance, validated_data):
+        validated_data.pop('user', None)  # prevent changing user
+        return super().update(instance, validated_data)
+        
 
-class ClientOverviewSerializier(serializers.ModelSerializer):
-    projects = ProjectSerializer(many=True, read_only=True)#i'm specifying that the projects field
-    #is a list by using many=True and also that it is read only
-    class Meta:
-        model=Client
-        fields = ['name', 'projects']
+
 
 
     

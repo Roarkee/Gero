@@ -119,10 +119,14 @@ class TaskListWithTasksSerializer(serializers.ModelSerializer):
 class ProjectDetailSerializer(serializers.ModelSerializer):
     task_lists = TaskListWithTasksSerializer(many=True, read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
+    total_billable_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = '__all__'  # includes your custom field
+
+    def get_total_billable_amount(self, obj):
+        return obj.total_billable_amount
 
 
 class TimeEntrySerializer(serializers.ModelSerializer):

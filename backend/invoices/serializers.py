@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Invoice, InvoiceItem, Payment
+from .models import Invoice, InvoiceItem
 
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
@@ -9,15 +9,15 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('amount',)
 
 
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = '__all__'
+# class PaymentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Payment
+#         fields = '__all__'
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True, read_only=True)
-    payments = PaymentSerializer(many=True, read_only=True)
+    # payments = PaymentSerializer(many=True, read_only=True)
     client_name = serializers.CharField(source='client.name', read_only=True)
     project_name = serializers.CharField(source='project.name', read_only=True)
     

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from django.utils import timezone
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry
 from client.models import Client
@@ -23,9 +24,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None # Disable pagination for dashboard/list logic
+    filter_backends = [SearchFilter, OrderingFilter]
 
     def get_queryset(self):
-        return Project.objects.filter(client__user=self.request.user).order_by('-created_at')
+        return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
@@ -60,9 +62,6 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Task.objects.filter(task_list__project__client__user=self.request.user)
 
     def get_queryset(self):
         return Task.objects.filter(task_list__project__client__user=self.request.user)
