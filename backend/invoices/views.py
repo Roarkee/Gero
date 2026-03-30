@@ -4,12 +4,17 @@ from rest_framework.response import Response
 from .models import Invoice, InvoiceItem
 from .serializers import InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer
 from invoices.services import invoice
+from projects.models import TimeEntry
+from django.db import transaction
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return Invoice.objects.filter(user=self.request.user)
+        qs = Invoice.objects.filter(user=self.request.user).select_related('client', 'project')
+        if self.action in ['retrieve', 'list']:
+            qs = qs.prefetch_related('items')
+        return qs
     
     def get_serializer_class(self):
         if self.action == 'list':
@@ -35,22 +40,23 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         )
 
         items = []
-        for te in time_entries:
-            hours = te.duration_minutes / 60
-            amount = hours * te.hourly_rate
+        with transaction.atomic():
+            for te in time_entries:
+                hours = te.duration_minutes / 60.0
+                amount = hours * float(te.hourly_rate) if te.hourly_rate else 0
 
-            item = InvoiceItem.objects.create(
-                invoice=invoice,
-                description=f"{te.task.title} ({hours:.2f} hrs)",
-                quantity=hours,
-                rate=te.hourly_rate,
-            )
-            item.time_entries.add(te)
+                item = InvoiceItem.objects.create(
+                    invoice=invoice,
+                    description=f"{te.task.title} ({hours:.2f} hrs)",
+                    quantity=hours,
+                    rate=te.hourly_rate or 0,
+                )
+                item.time_entries.add(te)
 
-            te.invoice = invoice
-            te.save(update_fields=['invoice'])
+                te.invoice = invoice
+                te.save(update_fields=['invoice'])
 
-            items.append(item)
+                items.append(item)
 
         return Response({"message": f"{len(items)} items added"})
 

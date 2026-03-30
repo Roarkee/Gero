@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from "../store/authStore";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
+import GlobalTimer from "../components/shared/GlobalTimer";
 
 const navigation = [
   { name: "Home", href: "/", icon: LayoutDashboard },
@@ -267,6 +268,11 @@ export default function DashboardLayout() {
             <span className="sr-only">Open sidebar</span>
             <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
+
+          <div className="flex-1 flex justify-center">
+            <GlobalTimer />
+          </div>
+
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
               G
@@ -275,6 +281,12 @@ export default function DashboardLayout() {
         </div>
 
         <main className="flex-1 overflow-y-auto bg-[#F8F9FC] dark:bg-[#0B0F19]">
+
+          {/* Desktop Top Bar (Optional if you want it specifically on desktop) */}
+          <div className="hidden lg:flex h-16 items-center justify-end px-8 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-30">
+            <GlobalTimer />
+          </div>
+
           <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
             <Outlet />
           </div>

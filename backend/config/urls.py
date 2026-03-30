@@ -41,7 +41,7 @@ urlpatterns = [
 
     # Include the user app URLs
     path('api/users/', include('users.urls')),  # User management URLs
-    path('api/client/', include('client.urls')),  # Client management URLs
+    path('api/', include('client.urls')),  # Client management URLs
     path('api/', include('projects.urls')),  # Project management URLs
     path('api/', include('invoices.urls')),  # Invoice management URLs  
     path('api/', include('expenses.urls')),  # Expense management URLs

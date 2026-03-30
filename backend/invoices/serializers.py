@@ -24,7 +24,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = '__all__'
-        read_only_fields = ('user', 'subtotal', 'tax_amount', 'total_amount')
+        read_only_fields = ('user', 'subtotal', 'tax_amount', 'total_amount', 'invoice_number')
     
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

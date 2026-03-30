@@ -18,12 +18,15 @@ class Project(models.Model):   #this models the trello workspace
 
     @property
     def total_billable_amount(self):
-        return sum(
-            te.billable_amount
-            for tasklist in self.task_lists.all()
-            for task in tasklist.tasks.all()
-            for te in task.time_entries.all()
-        )
+        from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+        result = self.timeentry_set.filter(is_billable=True).annotate(
+            amount=ExpressionWrapper(
+                F('duration_minutes') / 60.0 * F('hourly_rate'),
+                output_field=DecimalField()
+            )
+        ).aggregate(total=Sum('amount'))['total']
+        return result or 0
+
 class TaskList(models.Model): 
     name = models.CharField(max_length=100)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='task_lists',db_index=True)
@@ -108,24 +111,34 @@ class TimeEntry(models.Model):
         return f"{self.task.title} - {self.duration_minutes}min"
     
     def save(self, *args, **kwargs):
-        self.full_clean()
         if self.end_time and self.start_time:
             duration = self.end_time - self.start_time
-            self.duration_minutes = int(duration.total_seconds() / 60)
+            self.duration_minutes = int(duration.total_seconds() / 60.0)
             self.is_running = False
-        self.project = self.task.task_list.project
+        
+        # Enforce rate hierarchy
         if not self.hourly_rate:
             if self.task.task_list.project.hourly_rate:
                 self.hourly_rate = self.task.task_list.project.hourly_rate
+            elif self.task.task_list.project.client.default_hourly_rate:
+                self.hourly_rate = self.task.task_list.project.client.default_hourly_rate
+                
+        # Enforce project linkage
+        self.project = self.task.task_list.project
+
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def clean(self):
         if self.task.task_list.project.client.user != self.user:
             raise ValidationError("You cannot log time on another user's project")
+            
+        if self.invoice_id and self.invoice.status != 'draft':
+            raise ValidationError("You cannot edit a time entry linked to an invoice that is not a draft.")
     
     @property
     def billable_amount(self):
         if self.hourly_rate:
-            hours = self.duration_minutes / 60
-            return hours * self.hourly_rate
+            hours = self.duration_minutes / 60.0
+            return hours * float(self.hourly_rate)
         return 0

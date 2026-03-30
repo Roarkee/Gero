@@ -13,6 +13,8 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('user',)
     
     def get_total_spent(self, obj):
+        if hasattr(obj, 'total_spent_annotated'):
+            return obj.total_spent_annotated or 0
         return obj.expenses.aggregate(total=Sum('amount'))['total'] or 0
     
     def create(self, validated_data):

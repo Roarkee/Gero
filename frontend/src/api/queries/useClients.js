@@ -5,11 +5,13 @@ import { API_ENDPOINTS } from "../endpoints";
 // Fetch all clients
 export const useClients = () => {
   return useQuery({
-    queryKey: ["clients"],
+    queryKey: ["client"],
     queryFn: async () => {
       const response = await apiClient.get(API_ENDPOINTS.CLIENTS);
-      // Handle pagination if present, similar to projects
-      return response.data.results || response.data;
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data && Array.isArray(data.results)) return data.results;
+      return [];
     },
   });
 };
@@ -24,7 +26,7 @@ export const useCreateClient = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["client"] });
     },
   });
 };

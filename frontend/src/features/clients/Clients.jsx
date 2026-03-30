@@ -9,9 +9,13 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui";
 import { format } from "date-fns";
+import { DollarSign, AlertCircle, Briefcase, RefreshCw } from "lucide-react";
+import CreateClientModal from "./CreateClientModal";
+import { useState } from "react";
 
 export default function Clients() {
-  const { data: clients, isLoading } = useClients();
+  const { data: clients, isLoading, refetch, isRefetching } = useClients();
+  const [isModalOpen, setModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -20,6 +24,10 @@ export default function Clients() {
       </div>
     );
   }
+
+  const globalRevenue = clients?.reduce((acc, c) => acc + parseFloat(c.total_revenue || 0), 0) || 0;
+  const globalUnpaid = clients?.reduce((acc, c) => acc + parseFloat(c.unpaid_invoices_total || 0), 0) || 0;
+  const globalActiveProjects = clients?.reduce((acc, c) => acc + parseInt(c.active_projects_count || 0, 10), 0) || 0;
 
   return (
     <div className="font-sans">
@@ -43,16 +51,61 @@ export default function Clients() {
             />
           </div>
           <Button
+            variant="outline"
+            size="md"
+            className="rounded-xl bg-white"
+            onClick={() => refetch()}
+            isLoading={isRefetching}
+            title="Refresh clients"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button
             variant="primary"
             size="md"
             className="shadow-lg shadow-indigo-200 dark:shadow-none hover:shadow-xl transition-all rounded-xl"
-            onClick={() => {}} // TODO: Add CreateClientModal
+            onClick={() => setModalOpen(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
             New Client
           </Button>
         </div>
       </div>
+
+      {/* Dashboard Overview */}
+      {clients && clients.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 rounded-xl">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Total Revenue</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">${globalRevenue.toFixed(2)}</h3>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 rounded-xl">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Active Projects</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{globalActiveProjects}</h3>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-500 rounded-xl">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Unpaid Invoices</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">${globalUnpaid.toFixed(2)}</h3>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {clients && clients.length === 0 ? (
@@ -103,16 +156,30 @@ export default function Clients() {
                 )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500">
+              <div className="grid grid-cols-2 gap-4 mt-6 mb-2">
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Revenue</p>
+                  <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    ${parseFloat(client.total_revenue || 0).toFixed(0)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Unpaid</p>
+                  <p className="text-sm font-bold text-rose-500 dark:text-rose-400">
+                    ${parseFloat(client.unpaid_invoices_total || 0).toFixed(0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500">
                 <span>
                   Added {format(new Date(client.created_at), "MMM d, yyyy")}
                 </span>
                 <span
-                  className={`px-2 py-1 rounded-md capitalize ${
-                    client.status === "active"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-gray-50 text-gray-600"
-                  }`}
+                  className={`px-2 py-1 rounded-md capitalize ${client.status === "active"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-gray-50 text-gray-600"
+                    }`}
                 >
                   {client.status}
                 </span>
@@ -121,6 +188,8 @@ export default function Clients() {
           ))}
         </div>
       )}
+
+      <CreateClientModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }

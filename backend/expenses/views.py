@@ -14,7 +14,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return Expense.objects.filter(user=self.request.user)
+        return Expense.objects.filter(user=self.request.user).select_related('category', 'project')
     
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
@@ -28,7 +28,7 @@ class ExpenseCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return ExpenseCategory.objects.filter(user=self.request.user)
+        return ExpenseCategory.objects.filter(user=self.request.user).annotate(total_spent_annotated=Sum('expenses__amount'))
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -36,4 +36,4 @@ class BudgetViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user)
+        return Budget.objects.filter(user=self.request.user).select_related('category')

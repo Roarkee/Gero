@@ -27,7 +27,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
 
     def get_queryset(self):
-        return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
+        qs = self.queryset.filter(client__user=self.request.user).order_by('-created_at').select_related('client')
+        if self.action == 'retrieve':
+            qs = qs.prefetch_related(
+                'task_lists__tasks__subtasks',
+                'task_lists__tasks__labels',
+                'task_lists__tasks__time_entries',
+                'labels'
+            )
+        return qs
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
@@ -47,7 +55,10 @@ class TaskListViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return TaskList.objects.filter(project__client__user=self.request.user)
+        qs = TaskList.objects.filter(project__client__user=self.request.user).select_related('project')
+        if self.action in ['retrieve', 'with_tasks']:
+            qs = qs.prefetch_related('tasks__subtasks', 'tasks__labels', 'tasks__time_entries')
+        return qs
         
     
 
@@ -64,7 +75,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Task.objects.filter(task_list__project__client__user=self.request.user)
+        qs = Task.objects.filter(task_list__project__client__user=self.request.user).select_related('task_list__project')
+        if self.action in ['retrieve', 'with_subtasks'] or self.request.method in ['GET']:
+            qs = qs.prefetch_related('subtasks', 'labels', 'time_entries')
+        return qs
 
     @action(detail=True, methods=['get'])
     def with_subtasks(self, request, pk=None):
@@ -79,7 +93,7 @@ class SubTaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return SubTask.objects.filter(task__project__client__user=self.request.user)
+        return SubTask.objects.filter(task__project__client__user=self.request.user).select_related('task', 'label')
 
 
 class LabelViewSet(viewsets.ModelViewSet):
@@ -89,7 +103,7 @@ class LabelViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        return Label.objects.filter(project__client__user=self.request.user)
+        return Label.objects.filter(project__client__user=self.request.user).select_related('project')
     
 
 
@@ -99,7 +113,7 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return TimeEntry.objects.filter(user=self.request.user)
+        return TimeEntry.objects.filter(user=self.request.user).select_related('task__task_list__project')
     
     @action(detail=False, methods=['post'])
     def start_timer(self, request):

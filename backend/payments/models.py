@@ -133,6 +133,26 @@ class PaymentTransaction(models.Model):
         verbose_name= 'Payment Transaction'
         verbose_name_plural = 'Payment Transactions'
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.status == 'completed':
+            invoice = self.payment_intent.invoice_id
+            if invoice:
+                from django.db.models import Sum
+                # Sum all completed transactions for all intents related to this invoice
+                total_paid = getattr(invoice, 'total_paid', 0) # fallback
+                # Wait, the intent links directly to invoice_id
+                # Let's aggregate via transactions
+                total_paid = PaymentTransaction.objects.filter(
+                    payment_intent__invoice_id=invoice,
+                    status='completed',
+                    transaction_type__in=['credit', 'income']
+                ).aggregate(total=Sum('amount'))['total'] or 0
+
+                if total_paid >= invoice.total_amount:
+                    invoice.status = 'paid'
+                    invoice.save(update_fields=['status'])
+
 #responses/notifications gotten from the providers basically
 class PaymentWebhook(models.Model):
    

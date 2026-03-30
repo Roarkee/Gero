@@ -35,4 +35,15 @@ export const API_ENDPOINTS = {
   START_TIMER: "/api/time-entries/start_timer/",
   STOP_TIMER: (id) => `/api/time-entries/${id}/stop_timer/`,
   ACTIVE_TIMER: "/api/time-entries/active_timer/",
+
+  // Invoices
+  INVOICES: "/api/invoices/",
+  INVOICE_DETAIL: (id) => `/api/invoices/${id}/`,
+  GENERATE_INVOICE: (id) => `/api/invoices/${id}/generate_from_time/`,
+
+  // Expenses
+  EXPENSES: "/api/expenses/",
+  EXPENSE_DETAIL: (id) => `/api/expenses/${id}/`,
+  BUDGETS: "/api/budgets/",
+  EXPENSE_CATEGORIES: "/api/expense-categories/",
 };
