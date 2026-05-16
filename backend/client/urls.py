@@ -1,11 +1,28 @@
-from django.urls import path,include
-from rest_framework.routers import DefaultRouter
-from client.views import ClientViewSet
+from django.urls import path
+from .views import (
+    ClientIntelligenceView,
+    ClientDetailIntelligenceView,
+    ClientDetailView,
+    ClientView
 
-router = DefaultRouter()
-router.register(r'client', ClientViewSet, basename='client')
+
+)
 
 urlpatterns = [
-    path('', include(router.urls))
+
+      path(
+        "intelligence/",
+        ClientIntelligenceView.as_view(),
+        name="client-intelligence"
+    ),
+
+    path(
+        "<int:pk>/intelligence/",
+        ClientDetailIntelligenceView.as_view(),
+        name="client-detail-intelligence"
+    ),
+
+    path("client/", ClientView.as_view(), name="client"),
+    path("client/<int:pk>/", ClientDetailView.as_view(), name="client-detail")
     
 ]
