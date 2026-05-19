@@ -79,7 +79,7 @@ class Task(models.Model):
         ('urgent', 'Urgent'),
     ], default='medium')
     estimated_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    
+    completed = models.BooleanField(default = False)
     class Meta:
         ordering = ['position']
     
@@ -137,15 +137,15 @@ class TimeEntry(models.Model):
     def clean(self):
         if self.task.task_list.project.client.user != self.user:
             raise ValidationError("You cannot log time on another user's project")
+        if self.is_running:
+            overlapping = TimeEntry.objects.filter(
+                user=self.user,
+                is_running=True
+            ).exclude(id=self.id)
 
-        overlapping = TimeEntry.objects.filter(
-            user=self.user,
-            is_running=True
-        ).exclude(id=self.id)
-
-        if overlapping.exists():
-            raise ValidationError(
-                "Another timer is already running."
+            if overlapping.exists():
+                raise ValidationError(
+                    "Another timer is already running."
             )
 
     
@@ -224,39 +224,13 @@ class ProjectActivity(models.Model):
 
 
 class Attachment(models.Model):
-
-    project = models.ForeignKey(
-        'Project',
-        on_delete=models.CASCADE,
-        related_name='attachments',
-    )
-
-    task = models.ForeignKey(
-        'Task',
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name='attachments'
-    )
-
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
-    file = models.FileField(
-        upload_to='project_attachments/'
-    )
-
+    project = models.ForeignKey('Project',on_delete=models.CASCADE,related_name='attachments')
+    task = models.ForeignKey('Task',null=True,blank=True,on_delete=models.CASCADE,related_name='attachments')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    file = models.FileField(upload_to='project_attachments/')
     file_name = models.CharField(max_length=255)
-
     file_size = models.PositiveIntegerField()
-    
-    mime_type = models.CharField(
-        max_length=100,
-        blank=True
-    )
-
+    mime_type = models.CharField(max_length=100,blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -274,51 +248,23 @@ class RecurringTask(models.Model):
         ('monthly', 'Monthly'),
         ('custom', 'Custom'),
     ]
-
-    project = models.ForeignKey(
-        'Project',
-        on_delete=models.CASCADE,
-        related_name='recurring_tasks'
-    )
-
-    task_list = models.ForeignKey(
-        'TaskList',
-        on_delete=models.CASCADE
-    )
-
-    title = models.CharField(max_length=255)
-
-    description = models.TextField(blank=True)
-
-    frequency = models.CharField(
-        max_length=20,
-        choices=FREQUENCY_CHOICES
-    )
-
-    interval = models.PositiveIntegerField(default=1)
-
-    next_run = models.DateTimeField()
-
-    is_active = models.BooleanField(default=True)
-
-    priority = models.CharField(
-        max_length=10,
-        choices=[
+    RECURCHOICES = [
             ('low', 'Low'),
             ('medium', 'Medium'),
             ('high', 'High'),
             ('urgent', 'Urgent'),
-        ],
-        default='medium'
-    )
-
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
+        ]
+    project = models.ForeignKey('Project',on_delete=models.CASCADE,related_name='recurring_tasks')
+    task_list = models.ForeignKey('TaskList',on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    frequency = models.CharField(max_length=20,choices=FREQUENCY_CHOICES)
+    interval = models.PositiveIntegerField(default=1)
+    next_run = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    priority = models.CharField(max_length=10,choices=RECURCHOICES,default='medium')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return self.title
 
@@ -327,27 +273,31 @@ class RecurringTask(models.Model):
 # would use this when i want to add collaboration
 # as at this time i won't be using this
 class TaskComment(models.Model):
-
-    task = models.ForeignKey(
-        'Task',
-        on_delete=models.CASCADE,
-        related_name='comments'
-    )
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
+    task = models.ForeignKey('Task',on_delete=models.CASCADE,related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     content = models.TextField()
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.email} comment"
 
+
+class ProjectInsight(models.Model):
+    project = models.OneToOneField('Project',on_delete=models.CASCADE,related_name='insight')
+    completion_percentage = models.PositiveIntegerField(default=0)
+    tasks_completed = models.PositiveIntegerField(default=0)
+    total_tasks = models.PositiveIntegerField(default=0)
+    overdue_tasks = models.PositiveIntegerField(default=0)
+    active_tasks = models.PositiveIntegerField(default=0)
+    blocked_tasks = models.PositiveIntegerField(default=0)
+    completion_velocity = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    estimated_completion_date = models.DateTimeField(null=True,blank=True)
+    last_activity_at = models.DateTimeField(null=True,blank=True)
+    stalled = models.BooleanField(default=False)
+    risk_level = models.CharField(max_length=20,default='low')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 
