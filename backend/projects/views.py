@@ -22,12 +22,12 @@ from projects.serializers import (
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     pagination_class = None # Disable pagination for dashboard/list logic
     filter_backends = [SearchFilter, OrderingFilter]
 
-    def get_queryset(self):
-        return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
+    # def get_queryset(self):
+    #     return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
@@ -44,10 +44,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 class TaskListViewSet(viewsets.ModelViewSet):
     queryset = TaskList.objects.all()
     serializer_class = TaskListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return TaskList.objects.filter(project__client__user=self.request.user)
+    # def get_queryset(self):
+    #     return TaskList.objects.filter(project__client__user=self.request.user)
         
     
 
@@ -61,10 +61,10 @@ class TaskListViewSet(viewsets.ModelViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return Task.objects.filter(task_list__project__client__user=self.request.user)
+    # def get_queryset(self):
+    #     return Task.objects.filter(task_list__project__client__user=self.request.user)
 
     @action(detail=True, methods=['get'])
     def with_subtasks(self, request, pk=None):
@@ -76,10 +76,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 class SubTaskViewSet(viewsets.ModelViewSet):
     queryset = SubTask.objects.all()
     serializer_class = SubTaskSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return SubTask.objects.filter(task__project__client__user=self.request.user)
+    # def get_queryset(self):
+    #     return SubTask.objects.filter(task__task_list__project__client__user=self.request.user)
 
 
 class LabelViewSet(viewsets.ModelViewSet):
@@ -143,3 +143,5 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(active_timer)
             return Response(serializer.data)
         return Response(None)
+    
+    

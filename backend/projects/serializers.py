@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry
-from datetime import datetime
+from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry, ProjectActivity, Attachment,RecurringTask
+from django.utils import timezone
 from projects.mixins import OwnerValidationMixin
 
 datetime_formats = ['%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d']
@@ -35,7 +35,7 @@ class TaskSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):#this checks if the dates are in the data passed before going to the conditionals
-        start = data.get('startdate', self.instance.startdate if self.instance else None)
+        start = data.get('startdat  e', self.instance.startdate if self.instance else None)
         #getattr is used to get the
         #value of startdate from the Task if it exists, otherwise it returns None
         due = data.get('duedate', self.instance.duedate if self.instance else None)
@@ -43,9 +43,9 @@ class TaskSerializer(serializers.ModelSerializer):
         if start and due:
             if start > due:
                 raise serializers.ValidationError("Start date cannot be after due date.")
-            if start < datetime.now():
+            if start < timezone.now():
                 raise serializers.ValidationError("Start date cannot be in the past.")
-            if due < datetime.now():
+            if due < timezone.now():
                 raise serializers.ValidationError("Due date cannot be in the past.")
             
         return data
@@ -91,7 +91,7 @@ class SubTaskSerializer(serializers.ModelSerializer):
         task = data.get('task', getattr(self.instance, 'task', None))
         label = data.get('label', getattr(self.instance, 'label', None))
 
-        if label and task and label.project != task.project:
+        if label and task and label.project != task.task_list.project:
             raise serializers.ValidationError("Label and Task must belong to the same project.")
         return data
 
@@ -118,6 +118,13 @@ class TaskListWithTasksSerializer(serializers.ModelSerializer):
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
     task_lists = TaskListWithTasksSerializer(many=True, read_only=True)
+    subtasks = TaskWithSubTasksSerializer(many=True, read_only=True)
+    # task_lists = TaskListSerializer(many = True, read_only=True)
+    # tasks = serializers.SerializerMethodField()
+
+    # def get_tasks(self, obj):
+    #     task = Task.objects.filter(task_list__project=obj).order_by('-position')
+    #     return TaskSerializer(task, many=True).data
     labels = LabelSerializer(many=True, read_only=True)
     total_billable_amount = serializers.SerializerMethodField()
 

@@ -14,8 +14,17 @@ class Project(models.Model):   #this models the trello workspace
     completed=models.BooleanField(default=False)
     status=models.CharField(max_length=20, choices=[('active', 'Active'), ('inactive', 'Inactive'), ('completed', 'Completed'), ('pending', 'Pending')], default='active')
     hourly_rate = models.DecimalField(decimal_places=2,max_digits=7,null=True, blank=True)
+    total_logged_hours = models.DecimalField(decimal_places=2, max_digits=3, blank=True, null=True, default=0)
+    completion_percentage = models.PositiveIntegerField(default = 0)
+    overdue_tasks = models.PositiveIntegerField(default = 0)
+    tasks_completed= models.PositiveIntegerField(default = 0)
+    tasks_in_progress= models.PositiveIntegerField(default = 0)
+    budget_used = models.DecimalField(max_digits=7,decimal_places=2,default=0)
+    budget_remaining = models.DecimalField(max_digits=7,decimal_places=2,default=0)
 
 
+    # not optimzed, will eventually run into n+1 problem
+    # will need to use the django db functions for this
     @property
     def total_billable_amount(self):
         return sum(
@@ -24,6 +33,11 @@ class Project(models.Model):   #this models the trello workspace
             for task in tasklist.tasks.all()
             for te in task.time_entries.all()
         )
+    def save(self, *args, **kwargs):
+        self.budget_remaining = self.budget_used - self.total_billable_amount
+        super().save(*args, **kwargs)
+
+        
 class TaskList(models.Model): 
     name = models.CharField(max_length=100)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='task_lists',db_index=True)
@@ -83,6 +97,7 @@ class SubTask(models.Model):
 
 
 class TimeEntry(models.Model):
+
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='time_entries',db_index=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='time_entries',db_index=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, db_index=True, null=True)
@@ -122,6 +137,17 @@ class TimeEntry(models.Model):
     def clean(self):
         if self.task.task_list.project.client.user != self.user:
             raise ValidationError("You cannot log time on another user's project")
+
+        overlapping = TimeEntry.objects.filter(
+            user=self.user,
+            is_running=True
+        ).exclude(id=self.id)
+
+        if overlapping.exists():
+            raise ValidationError(
+                "Another timer is already running."
+            )
+
     
     @property
     def billable_amount(self):
@@ -129,3 +155,207 @@ class TimeEntry(models.Model):
             hours = self.duration_minutes / 60
             return hours * self.hourly_rate
         return 0
+
+
+class ProjectActivity(models.Model):
+
+    ACTIVITY_TYPES = [
+        ('project_created', 'Project Created'),
+        ('project_updated', 'Project Updated'),
+
+        ('task_created', 'Task Created'),
+        ('task_updated', 'Task Updated'),
+        ('task_deleted', 'Task Deleted'),
+
+        ('task_moved', 'Task Moved'),
+        ('task_completed', 'Task Completed'),
+
+        ('comment_added', 'Comment Added'),
+
+        ('timer_started', 'Timer Started'),
+        ('timer_stopped', 'Timer Stopped'),
+
+        ('file_uploaded', 'File Uploaded'),
+
+        ('label_added', 'Label Added'),
+
+        ('member_added', 'Member Added'),
+    ]
+
+    project = models.ForeignKey(
+        'Project',
+        on_delete=models.CASCADE,
+        related_name='activities'
+    )
+
+    task = models.ForeignKey(
+        'Task',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='activities'
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    activity_type = models.CharField(
+        max_length=50,
+        choices=ACTIVITY_TYPES
+    )
+
+    description = models.TextField()
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.project.name} - {self.activity_type}"
+
+
+
+class Attachment(models.Model):
+
+    project = models.ForeignKey(
+        'Project',
+        on_delete=models.CASCADE,
+        related_name='attachments',
+    )
+
+    task = models.ForeignKey(
+        'Task',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    file = models.FileField(
+        upload_to='project_attachments/'
+    )
+
+    file_name = models.CharField(max_length=255)
+
+    file_size = models.PositiveIntegerField()
+    
+    mime_type = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return self.file_name
+
+
+class RecurringTask(models.Model):
+
+    FREQUENCY_CHOICES = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('custom', 'Custom'),
+    ]
+
+    project = models.ForeignKey(
+        'Project',
+        on_delete=models.CASCADE,
+        related_name='recurring_tasks'
+    )
+
+    task_list = models.ForeignKey(
+        'TaskList',
+        on_delete=models.CASCADE
+    )
+
+    title = models.CharField(max_length=255)
+
+    description = models.TextField(blank=True)
+
+    frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES
+    )
+
+    interval = models.PositiveIntegerField(default=1)
+
+    next_run = models.DateTimeField()
+
+    is_active = models.BooleanField(default=True)
+
+    priority = models.CharField(
+        max_length=10,
+        choices=[
+            ('low', 'Low'),
+            ('medium', 'Medium'),
+            ('high', 'High'),
+            ('urgent', 'Urgent'),
+        ],
+        default='medium'
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+
+# would use this when i want to add collaboration
+# as at this time i won't be using this
+class TaskComment(models.Model):
+
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+    content = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} comment"
+
+
+
+
+
+
+
+
+
+
+
+
