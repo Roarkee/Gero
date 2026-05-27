@@ -2,6 +2,7 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from users.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.utils import timezone
 
 
 class UserSerializer(ModelSerializer):
@@ -30,3 +31,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['first_name'] = user.first_name
 
         return token
+    
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        self.user.last_login = timezone.now()
+        self.user.save(update_fields = ['last_login'])
+        return data
