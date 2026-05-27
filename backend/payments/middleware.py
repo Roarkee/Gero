@@ -1,6 +1,9 @@
 from .models import PaymentAuditLog
 from django.utils.deprecation import MiddlewareMixin
 
+
+# i need some improvement here but i'll do that later
+# i'll change use the __call__ style and smoke the mixin
 class PaymentAuditMiddleware(MiddlewareMixin):
     # this attaches ip address nad user agent to the req obj
     def process_request(self, request):

@@ -5,37 +5,57 @@ from rest_framework.serializers import ValidationError
 
 
 # Create your models here.
-class Project(models.Model):   #this models the trello workspace
-    name=models.CharField(max_length=100)
-    client=models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
-    created_at=models.DateTimeField(auto_now_add=True)
-    updated_at=models.DateTimeField(auto_now=True)
-    description=models.CharField(max_length=255)
-    completed=models.BooleanField(default=False)
-    status=models.CharField(max_length=20, choices=[('active', 'Active'), ('inactive', 'Inactive'), ('completed', 'Completed'), ('pending', 'Pending')], default='active')
-    hourly_rate = models.DecimalField(decimal_places=2,max_digits=7,null=True, blank=True)
-    total_logged_hours = models.DecimalField(decimal_places=2, max_digits=3, blank=True, null=True, default=0)
-    completion_percentage = models.PositiveIntegerField(default = 0)
-    overdue_tasks = models.PositiveIntegerField(default = 0)
-    tasks_completed= models.PositiveIntegerField(default = 0)
-    tasks_in_progress= models.PositiveIntegerField(default = 0)
-    budget_used = models.DecimalField(max_digits=7,decimal_places=2,default=0)
-    budget_remaining = models.DecimalField(max_digits=7,decimal_places=2,default=0)
+class Project(models.Model):
 
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
 
-    # not optimzed, will eventually run into n+1 problem
-    # will need to use the django db functions for this
-    @property
-    def total_billable_amount(self):
-        return sum(
-            te.billable_amount
-            for tasklist in self.task_lists.all()
-            for task in tasklist.tasks.all()
-            for te in task.time_entries.all()
-        )
-    def save(self, *args, **kwargs):
-        self.budget_remaining = self.budget_used - self.total_billable_amount
-        super().save(*args, **kwargs)
+    BILLING_TYPE_CHOICES = [
+        ('hourly', 'Hourly'),
+        ('fixed', 'Fixed Price'),
+        ('retainer', 'Retainer'),
+    ]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='projects')
+    client = models.ForeignKey(Client,on_delete=models.CASCADE,related_name='projects')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='active')
+    completed = models.BooleanField(default=False)
+    billing_type = models.CharField(max_length=20,choices=BILLING_TYPE_CHOICES,default='hourly')
+    hourly_rate = models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
+    fixed_price = models.DecimalField(max_digits=12,decimal_places=2,null=True,blank=True)
+    budget = models.DecimalField(max_digits=12,decimal_places=2,null=True,blank=True)
+    start_date = models.DateTimeField(null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    priority = models.CharField(max_length=10,
+        choices=[
+            ('low', 'Low'),
+            ('medium', 'Medium'),
+            ('high', 'High'),
+            ('urgent', 'Urgent'),
+        ],
+        default='medium'
+    )
+    archived = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-created_at']
+
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['client']),
+            models.Index(fields=['completed']),
+            models.Index(fields=['due_date']),
+        ]
+
+    def __str__(self):
+        return self.name
 
         
 class TaskList(models.Model): 
@@ -69,8 +89,8 @@ class Task(models.Model):
     labels=models.ManyToManyField(Label, related_name='tasks')
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
-    startdate=models.DateTimeField(null=True, blank=True)
-    duedate=models.DateTimeField(null=True, blank=True)
+    start_date=models.DateTimeField(null=True, blank=True)
+    due_date=models.DateTimeField(null=True, blank=True)
     position = models.PositiveIntegerField(default=0)  # For drag-and-drop ordering
     priority = models.CharField(max_length=10, choices=[
         ('low', 'Low'),
@@ -182,39 +202,13 @@ class ProjectActivity(models.Model):
         ('member_added', 'Member Added'),
     ]
 
-    project = models.ForeignKey(
-        'Project',
-        on_delete=models.CASCADE,
-        related_name='activities'
-    )
-
-    task = models.ForeignKey(
-        'Task',
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name='activities'
-    )
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
-    activity_type = models.CharField(
-        max_length=50,
-        choices=ACTIVITY_TYPES
-    )
-
+    project = models.ForeignKey('Project',on_delete=models.CASCADE,related_name='activities')
+    task = models.ForeignKey('Task',null=True,blank=True,on_delete=models.CASCADE,related_name='activities')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    activity_type = models.CharField(max_length=50,choices=ACTIVITY_TYPES)
     description = models.TextField()
-
-    metadata = models.JSONField(
-        default=dict,
-        blank=True
-    )
-
+    metadata = models.JSONField(default=dict,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         ordering = ['-created_at']
 
@@ -284,20 +278,56 @@ class TaskComment(models.Model):
 
 
 class ProjectInsight(models.Model):
-    project = models.OneToOneField('Project',on_delete=models.CASCADE,related_name='insight')
-    completion_percentage = models.PositiveIntegerField(default=0)
-    tasks_completed = models.PositiveIntegerField(default=0)
+
+    RISK_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+
+    project = models.OneToOneField(Project,on_delete=models.CASCADE,related_name='insight')
     total_tasks = models.PositiveIntegerField(default=0)
-    overdue_tasks = models.PositiveIntegerField(default=0)
+    completed_tasks = models.PositiveIntegerField(default=0)
     active_tasks = models.PositiveIntegerField(default=0)
+    overdue_tasks = models.PositiveIntegerField(default=0)
     blocked_tasks = models.PositiveIntegerField(default=0)
+    completion_percentage = models.PositiveIntegerField(default=0)
     completion_velocity = models.DecimalField(max_digits=10,decimal_places=2,default=0)
     estimated_completion_date = models.DateTimeField(null=True,blank=True)
-    last_activity_at = models.DateTimeField(null=True,blank=True)
     stalled = models.BooleanField(default=False)
-    risk_level = models.CharField(max_length=20,default='low')
+    last_activity_at = models.DateTimeField(null=True,blank=True)
+    total_logged_hours = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    estimated_hours = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    utilization_rate = models.DecimalField(max_digits=5,decimal_places=2,default=0)
+    revenue = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    expenses = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    profit = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    profit_margin = models.DecimalField(max_digits=5,decimal_places=2,default=0)
+    budget_used_percentage = models.DecimalField(max_digits=5,decimal_places=2,default=0)
+    outstanding_invoice_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    paid_invoice_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    overdue_invoice_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    payment_risk_score = models.PositiveIntegerField(default=0)
+    risk_level = models.CharField(max_length=20,choices=RISK_LEVELS,default='low')
+    risk_score = models.PositiveIntegerField(default=0)
+    at_risk = models.BooleanField(default=False)
+    avg_task_completion_time = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    team_efficiency_score = models.PositiveIntegerField(default=100)
+    projected_final_profit = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    projected_completion_days = models.PositiveIntegerField(default=0)
+    projected_over_budget = models.BooleanField(default=False)
+    last_calculated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        indexes = [
+            models.Index(fields=['risk_level']),
+            models.Index(fields=['stalled']),
+            models.Index(fields=['at_risk']),
+        ]
+
+    def __str__(self):
+        return f"Insights for {self.project.name}"
 
 
 

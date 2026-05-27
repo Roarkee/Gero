@@ -26,6 +26,7 @@ class Client(models.Model):
     ('twitter', 'Twitter'),
     ('website', 'Website'),
     ('cold_outreach', 'Cold Outreach'),
+    ('tiktok', 'Tiktok'), 
 ]
     
     user= models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clients')
@@ -42,19 +43,8 @@ class Client(models.Model):
     last_contacted_at = models.DateTimeField(null=True, blank=True)
     next_followup_at = models.DateTimeField(null=True, blank=True)
     lifetime_value = models.DecimalField(max_digits=12,decimal_places=2,default=0)
-    min_budget = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    null=True,
-    blank=True
-)
-
-    max_budget = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    null=True,
-    blank=True
-)
+    min_budget = models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
+    max_budget = models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
     source = models.CharField(max_length=200, blank=True, null=True, choices=SOURCE_CHOICES)
     
     # Intelligence Fields
@@ -99,29 +89,11 @@ class ClientActivity(models.Model):
         ('invoice_overdue', 'Invoice Overdue'),
     ]
 
-    client = models.ForeignKey(
-        Client,
-        on_delete=models.CASCADE,
-        related_name='activities'
-    )
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-
-    activity_type = models.CharField(
-        max_length=50,
-        choices=ACTIVITY_TYPES
-    )
-
+    client = models.ForeignKey(Client,on_delete=models.CASCADE,related_name='activities')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    activity_type = models.CharField(max_length=50,choices=ACTIVITY_TYPES)
     description = models.TextField()
-
-    metadata = models.JSONField(
-        default=dict,
-        blank=True
-    )
-
+    metadata = models.JSONField(default=dict,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

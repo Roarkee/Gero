@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from encrypted_model_fields.fields import EncryptedCharField
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 # Create your models here.
 
 #this is a manager to help me query test and live payment providers
@@ -27,6 +28,7 @@ class PaymentProvider(models.Model):
         ('vodafone_cash', 'Vodafone Cash'),
         ('stripe', 'Stripe'),
         ('paypal', 'PayPal'),
+        ('paystack', 'Paystack')
     ]
 
     user = models.ForeignKey(
@@ -73,10 +75,20 @@ class PaymentIntent(models.Model):
         ('expired', 'Expired'),
         ('refunded', 'Refunded')
     ]
+    2
+    ALLOWED_TRANSITIONS = {
+    'pending': ['processing', 'failed', 'canceled', 'expired'],
+    'processing': ['completed', 'failed', 'canceled'],
+    'completed': ['refunded'],
+    'failed': [],
+    'canceled': [],
+    'expired': [],
+    'refunded': [],
+}
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_intents')
-    invoice_id = models.ForeignKey('invoices.Invoice', on_delete=models.CASCADE, related_name='payment_intent')
+    invoice = models.ForeignKey('invoices.Invoice', on_delete=models.CASCADE, related_name='payment_intent')
     provider = models.ForeignKey(PaymentProvider, on_delete=models.CASCADE, related_name='payment_intents')
     currency = models.CharField(max_length=3, default='GHS')
     amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
@@ -96,13 +108,35 @@ class PaymentIntent(models.Model):
             models.Index(fields=['external_reference']),
             models.Index(fields=['status', 'created_at']),
         ]
+# i would later build a mixin to handle the transitions and centralize this logic
+# so i'll not repeat it in transaction model
+    def clean(self):
+        if not self.pk:
+            return
 
+        original = PaymentIntent.objects.get(pk=self.pk)
+        if original.status != self.status:
+            allowed = self.ALLOWED_TRANSITIONS.get(
+                original.status,
+                []
+            )
+
+            if self.status not in allowed:
+                raise ValidationError(
+                    f"Invalid status transition "
+                    f"from '{original.status}' "
+                    f"to '{self.status}'."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 #this stores the actual transactions that happen. the intent might go through many transacs
 class PaymentTransaction(models.Model):
     TRANSACTION_TYPES = [('credit', 'Credit'),
                          ('debit', 'Debit'),
-                         ('income', 'Income'),
+                         ('refund', 'Refund'),
                    
                          ]
     STATUS_CHOICES = [
@@ -113,6 +147,14 @@ class PaymentTransaction(models.Model):
         ('refunded', 'Refunded')
     ]
 
+    ALLOWED_TRANSITIONS = {
+    'pending': ['completed', 'failed', 'canceled'],
+    'completed': ['refunded'],
+    'failed': [],
+    'canceled': [],
+    'refunded': [],
+}
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     payment_intent = models.ForeignKey(PaymentIntent, on_delete=models.CASCADE, related_name='transactions')
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
@@ -120,10 +162,11 @@ class PaymentTransaction(models.Model):
     status = models.CharField(choices=STATUS_CHOICES, default='pending', max_length=12)
     fee = models.DecimalField(max_digits=12, decimal_places=2, default=1.5)
     net_amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
-    external_transaction_id = models.CharField(max_length=150, blank=True, null=True)
-    processed_at =models.DateTimeField()
+    external_transaction_id = models.CharField(max_length=150, blank=True, null=True, unique=True)
+    processed_at =models.DateTimeField(null=True, blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
-    gateway_response = models.JSONField()
+    gateway_response = models.JSONField(blank=True, null=True)
+    currency = models.CharField(max_length=3, default='GHS')
 
     class Meta: 
         indexes = [
@@ -132,6 +175,47 @@ class PaymentTransaction(models.Model):
         ]
         verbose_name= 'Payment Transaction'
         verbose_name_plural = 'Payment Transactions'
+
+
+    def clean(self):
+        if not self.pk:
+            return
+
+        original = PaymentIntent.objects.get(pk=self.pk)
+
+        if original.status != self.status:
+
+            allowed = self.ALLOWED_TRANSITIONS.get(
+                original.status,
+                []
+            )
+
+            if self.status not in allowed:
+                raise ValidationError(
+                    f"Invalid status transition "
+                    f"from '{original.status}' "
+                    f"to '{self.status}'."
+                )
+        if self.fee > self.amount:
+            raise ValidationError(
+                "Fee cannot exceed amount."
+            )
+    
+    def save(self, *args, **kwargs):
+        self.net_amount = self.calculate_net_amount()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+ 
+
+    def calculate_net_amount(self):
+        return (
+            self.amount - self.fee
+        ).quantize(
+            Decimal('0.01'),
+            rounding=ROUND_HALF_UP
+        )
+
 
 #responses/notifications gotten from the providers basically
 class PaymentWebhook(models.Model):
@@ -143,6 +227,9 @@ class PaymentWebhook(models.Model):
     headers = models.JSONField()
     processed = models.BooleanField(default=False)
     processing_error = models.TextField(blank=True)
+    event_id = models.CharField(blank=True, null=True)
+    retry_count = models.PositiveIntegerField(null=True, blank=True)
+    signature_verified = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
     

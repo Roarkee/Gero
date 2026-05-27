@@ -3,12 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Invoice, InvoiceItem
 from .serializers import InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer
-from invoices.services import invoice
+from invoices.services import InvoiceService
 
 class InvoiceViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
+        return Invoice.objects.all()
         return Invoice.objects.filter(user=self.request.user)
     
     def get_serializer_class(self):
@@ -19,7 +20,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
         user = request.user
-        res = invoice(user)
+        res = InvoiceService.invoice(user)
        
         return Response(res)
     
@@ -57,9 +58,10 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
 class InvoiceItemViewSet(viewsets.ModelViewSet):
     serializer_class = InvoiceItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
+        return InvoiceItem.objects.all()
         return InvoiceItem.objects.filter(invoice__user=self.request.user)
 
 
