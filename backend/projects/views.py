@@ -26,8 +26,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     pagination_class = None # Disable pagination for dashboard/list logic
     filter_backends = [SearchFilter, OrderingFilter]
 
-    # def get_queryset(self):
-    #     return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
+    def get_queryset(self):
+        return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
@@ -46,8 +46,8 @@ class TaskListViewSet(viewsets.ModelViewSet):
     serializer_class = TaskListSerializer
     # permission_classes = [permissions.IsAuthenticated]
 
-    # def get_queryset(self):
-    #     return TaskList.objects.filter(project__client__user=self.request.user)
+    def get_queryset(self):
+        return TaskList.objects.filter(project__client__user=self.request.user)
         
     
 
@@ -63,8 +63,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     # permission_classes = [permissions.IsAuthenticated]
 
-    # def get_queryset(self):
-    #     return Task.objects.filter(task_list__project__client__user=self.request.user)
+    def get_queryset(self):
+        return Task.objects.filter(task_list__project__client__user=self.request.user)
 
     @action(detail=True, methods=['get'])
     def with_subtasks(self, request, pk=None):

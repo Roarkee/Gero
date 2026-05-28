@@ -21,8 +21,8 @@ class ProjectSerializer(serializers.ModelSerializer,OwnerValidationMixin):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    duedate = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
-    startdate = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
+    due_date = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
+    start_date = serializers.DateTimeField(input_formats=datetime_formats, required=False, allow_null=True)
     human_due = serializers.SerializerMethodField()
 
     class Meta:
@@ -35,10 +35,10 @@ class TaskSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):#this checks if the dates are in the data passed before going to the conditionals
-        start = data.get('startdat  e', self.instance.startdate if self.instance else None)
+        start = data.get('start_date', self.instance.start_date if self.instance else None)
         #getattr is used to get the
         #value of startdate from the Task if it exists, otherwise it returns None
-        due = data.get('duedate', self.instance.duedate if self.instance else None)
+        due = data.get('due_date', self.instance.due_date if self.instance else None)
 
         if start and due:
             if start > due:
@@ -52,7 +52,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_human_due(self, obj):#this makes the date human readable
         #like Wednesday, 01 Jan 2020 12:00 PM
-        return obj.duedate.strftime("%b %d, %Y %I:%M %p") if obj.duedate else None
+        return obj.due_date.strftime("%b %d, %Y %I:%M %p") if obj.due_date else None
 
 
 class TaskListSerializer(serializers.ModelSerializer,OwnerValidationMixin):
@@ -102,7 +102,7 @@ class TaskWithSubTasksSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ['id', 'subtasks','title', 'description', 'task_list', 'labels', 'startdate', 'duedate', 'priority', 'position', 'total_minutes']
+        fields = ['id', 'subtasks','title', 'description', 'task_list', 'labels', 'start_date', 'due_date', 'priority', 'position', 'total_minutes']
         
     def get_total_minutes(self, obj):
         return sum(entry.duration_minutes for entry in obj.time_entries.all())
@@ -126,14 +126,11 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     #     task = Task.objects.filter(task_list__project=obj).order_by('-position')
     #     return TaskSerializer(task, many=True).data
     labels = LabelSerializer(many=True, read_only=True)
-    total_billable_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = '__all__'  # includes your custom field
+        fields = '__all__'  #fattens data
 
-    def get_total_billable_amount(self, obj):
-        return obj.total_billable_amount
 
 
 class TimeEntrySerializer(serializers.ModelSerializer):
