@@ -37,18 +37,27 @@ class ProjectSelectors:
     @staticmethod
     def get_total_labor_cost(project_id):
 
-        entries = TimeEntry.objects.filter(
-            project_id=project_id,
-            hourly_rate__isnull=False
+        return (
+            TimeEntry.objects.filter(
+                project_id=project_id,
+                hourly_rate__isnull=False
+            )
+            .annotate(
+                labor_cost=ExpressionWrapper(
+                    (
+                        F('duration_minutes') / 60.0
+                    ) * F('hourly_rate'),
+                    output_field=DecimalField(
+                        max_digits=12,
+                        decimal_places=2
+                    )
+                )
+            )
+            .aggregate(
+                total=Sum('labor_cost')
+            )['total']
+            or Decimal('0.00')
         )
-
-        total = Decimal('0.00')
-
-        for entry in entries:
-            hours = Decimal(entry.duration_minutes) / Decimal('60')
-            total += hours * entry.hourly_rate
-
-        return total
 
     @staticmethod
     def get_total_logged_minutes(project_id):
@@ -108,24 +117,6 @@ class ProjectSelectors:
 
         return round(percentage, 2)
 
-    @staticmethod
-    def get_average_task_completion_time(project_id):
-
-        completed_tasks = Task.objects.filter(
-            task_list__project=project_id,
-            completed_at__isnull=False,
-            created_at__isnull=False
-        ).annotate(
-            completion_time=ExpressionWrapper(
-                F('completed_at') - F('created_at'),
-                output_field=DecimalField()
-            )
-        )
-
-        return completed_tasks.aggregate(
-            avg=Avg('completion_time')
-        )['avg']
-
 
     # for if i make collaboration possible
     @staticmethod
@@ -146,14 +137,14 @@ class ProjectSelectors:
             project_id=project_id
         ).count()
 
-    @staticmethod
-    def get_stalled_tasks(project_id):
+    # @staticmethod
+    # def get_stalled_tasks(project_id):
 
-        return Task.objects.filter(
-            task_list__project=project_id,
-            task_list__list_type='in_progress',
-            updated_at__lt=F('created_at')
-        ).count()
+    #     return Task.objects.filter(
+    #         task_list__project=project_id,
+    #         task_list__list_type='in_progress',
+    #         updated_at__lt=F('created_at')
+    #     ).count()
 
     @staticmethod
     def get_project_overview(project_id):
@@ -175,32 +166,42 @@ class ProjectSelectors:
 
         return Project.objects.annotate(
 
-            total_tasks=Count('tasks'),
+            total_tasks=Count(
+                'task_lists__tasks',
+                distinct=True
+            ),
 
             completed_tasks=Count(
-                'tasks',
-                filter=Q(tasks__status='completed')
+                'task_lists__tasks',
+                filter=Q(
+                    task_lists__tasks__completed=True
+                ),
+                distinct=True
             ),
 
             overdue_tasks=Count(
-                'tasks',
-                filter=Q(tasks__status='overdue')
+                'task_lists__tasks',
+                filter=Q(
+                    task_lists__tasks__completed=False,
+                    task_lists__tasks__due_date__lt=timezone.now()
+                ),
+                distinct=True
             ),
 
             total_time_logged=Sum(
-                'time_entries__duration_minutes'
+                'task_lists__tasks__time_entries__duration_minutes'
             ),
         )
-        
+            
 
     @staticmethod
-    def get_recent_completed_tasks(project_id,days=14):
+    def get_recent_completed_tasks(project_id, days=14):
 
         since = timezone.now() - timedelta(days=days)
 
         return Task.objects.filter(
             task_list__project_id=project_id,
-            task_list__list_type='done',
+            completed=True,
             updated_at__gte=since
         ).count()
 
@@ -227,7 +228,7 @@ class ProjectSelectors:
 
         return Task.objects.filter(
             task_list__project_id=project_id,
-            status='in_progress',
+            completed=False,
             updated_at__lt=threshold
         ).count()
         

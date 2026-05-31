@@ -9,6 +9,7 @@ export const useClients = () => {
     queryFn: async () => {
       const response = await apiClient.get(API_ENDPOINTS.CLIENTS);
       // Handle pagination if present, similar to projects
+      console.log(response.data);
       return response.data.results || response.data;
     },
   });

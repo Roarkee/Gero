@@ -1,5 +1,5 @@
-import { useState, Fragment, useEffect } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogPanel } from "@headlessui/react";
 import { useUpdateTask, useDeleteTask } from "../../api/queries/useTasks";
 import {
   useCreateSubtask,
@@ -30,7 +30,7 @@ import {
   useActiveTimer,
 } from "../../api/queries/useTimeTracking";
 
-function TimeTrackerButton({ taskId }) {
+function TimeTrackerButton({ taskId, projectId }) {
   const { data: activeTimer } = useActiveTimer();
   const startTimer = useStartTimer();
   const stopTimer = useStopTimer();
@@ -41,7 +41,7 @@ function TimeTrackerButton({ taskId }) {
     if (isRunning) {
       stopTimer.mutate(activeTimer.id);
     } else {
-      startTimer.mutate({ taskId });
+      startTimer.mutate({ taskId,projectId });
     }
   };
 
@@ -203,32 +203,12 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
       : Math.round((completedSubtasks / totalSubtasks) * 100);
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-        </Transition.Child>
+    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl transition-all border border-gray-100 dark:border-gray-700 flex flex-col max-h-[90vh]">
+      <div className="fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col max-h-[90vh]">
                 {/* Header covering image (optional) or just color bar */}
                 <div className="h-4 w-full bg-gradient-to-r from-indigo-500 to-purple-500" />
 
@@ -543,11 +523,9 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                     </div>
                   </div>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+          </DialogPanel>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </Dialog>
   );
 }

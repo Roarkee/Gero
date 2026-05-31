@@ -12,12 +12,34 @@ import ProtectedRoute from "./components/shared/ProtectedRoute";
 import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
 import Dashboard from "./features/dashboard/Dashboard";
-import Projects from "./features/projects/Projects";
-import Board from "./features/board/Board";
+import ProjectsDashboard from "./features/projects/pages/ProjectsDashboard";
+import ProjectWorkspace from "./features/projects/pages/ProjectWorkspace";
 import DashboardLayout from "./layouts/DashboardLayout";
-import Clients from "./features/clients/Clients";
-import Invoices from "./features/invoices/Invoices";
-import Expenses from "./features/expenses/Expenses";
+import ClientsLayout from "./features/clients/ClientsLayout";
+import ClientsDashboard from "./features/clients/pages/ClientsDashboard";
+import ClientsList from "./features/clients/pages/ClientsList";
+import PipelineBoard from "./features/clients/pages/PipelineBoard";
+import ClientDetail from "./features/clients/pages/ClientDetail";
+import AttentionCenter from "./features/clients/pages/AttentionCenter";
+import FollowUpQueue from "./features/clients/pages/FollowUpQueue";
+import InvoicesLayout from "./features/invoices/InvoicesLayout";
+import InvoicesDashboard from "./features/invoices/pages/InvoicesDashboard";
+import InvoicesList from "./features/invoices/pages/InvoicesList";
+import RevenueAnalytics from "./features/invoices/pages/RevenueAnalytics";
+import CollectionAnalytics from "./features/invoices/pages/CollectionAnalytics";
+import ClientRiskDashboard from "./features/invoices/pages/ClientRiskDashboard";
+import CashFlowDashboard from "./features/invoices/pages/CashFlowDashboard";
+import InvoiceDetails from "./features/invoices/pages/InvoiceDetails";
+import ExpensesLayout from "./features/expenses/ExpensesLayout";
+import ExpensesDashboard from "./features/expenses/pages/ExpensesDashboard";
+import ExpensesList from "./features/expenses/pages/ExpensesList";
+import ExpenseDetail from "./features/expenses/pages/ExpenseDetail";
+import ExpenseForm from "./features/expenses/pages/ExpenseForm";
+import CategoriesPage from "./features/expenses/pages/CategoriesPage";
+import CategoryDetail from "./features/expenses/pages/CategoryDetail";
+import BudgetsDashboard from "./features/expenses/pages/BudgetsDashboard";
+import BudgetDetail from "./features/expenses/pages/BudgetDetail";
+import BudgetForm from "./features/expenses/pages/BudgetForm";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -61,11 +83,37 @@ function App() {
             }
           >
             <Route path="/" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/board/:projectId" element={<Board />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/projects" element={<ProjectsDashboard />} />
+            <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
+            <Route path="/clients" element={<ClientsLayout />}>
+              <Route index element={<ClientsDashboard />} />
+              <Route path="list" element={<ClientsList />} />
+              <Route path="board" element={<PipelineBoard />} />
+              <Route path="attention" element={<AttentionCenter />} />
+              <Route path="follow-ups" element={<FollowUpQueue />} />
+              <Route path=":id" element={<ClientDetail />} />
+            </Route>
+            <Route path="/invoices" element={<InvoicesLayout />}>
+              <Route index element={<InvoicesDashboard />} />
+              <Route path="list" element={<InvoicesList />} />
+              <Route path="revenue" element={<RevenueAnalytics />} />
+              <Route path="collections" element={<CollectionAnalytics />} />
+              <Route path="client-risk" element={<ClientRiskDashboard />} />
+              <Route path="cash-flow" element={<CashFlowDashboard />} />
+              <Route path=":id" element={<InvoiceDetails />} />
+            </Route>
+            <Route path="/expenses" element={<ExpensesLayout />}>
+              <Route index element={<ExpensesDashboard />} />
+              <Route path="list" element={<ExpensesList />} />
+              <Route path="new" element={<ExpenseForm />} />
+              <Route path="categories" element={<CategoriesPage />} />
+              <Route path="categories/:id" element={<CategoryDetail />} />
+              <Route path="budgets" element={<BudgetsDashboard />} />
+              <Route path="budgets/new" element={<BudgetForm />} />
+              <Route path="budgets/:id" element={<BudgetDetail />} />
+              <Route path=":expenseId" element={<ExpenseDetail />} />
+              <Route path=":expenseId/edit" element={<ExpenseForm />} />
+            </Route>
             <Route
               path="/settings"
               element={

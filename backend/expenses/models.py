@@ -34,6 +34,7 @@ class Budget(models.Model):
         ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'),
         ('yearly', 'Yearly'),
+        ('custom', 'Custom'),
     ], default='monthly')
     
     start_date = models.DateField()
@@ -80,6 +81,52 @@ class Budget(models.Model):
                 raise ValidationError(
                     "Monthly budgets must cover exactly one calendar month."
                 )
+            
+        elif self.period == 'quarterly':
+
+            if self.start_date.day != 1:
+                raise ValidationError(
+                    "Quarterly budgets must start on first day of quarter."
+                )
+
+            quarter_months = [1, 4, 7, 10]
+
+            if self.start_date.month not in quarter_months:
+                raise ValidationError(
+                    "Quarterly budgets must begin at start of quarter."
+                )
+
+            expected_end_month = self.start_date.month + 2
+
+            last_day = monthrange(
+                self.start_date.year,
+                expected_end_month
+            )[1]
+
+            if (
+                self.end_date.month != expected_end_month or
+                self.end_date.day != last_day
+            ):
+                raise ValidationError(
+                    "Quarterly budgets must span exactly one quarter."
+                )
+            
+        elif self.period == 'yearly':
+
+            if (
+                self.start_date.month != 1 or
+                self.start_date.day != 1 or
+                self.end_date.month != 12 or
+                self.end_date.day != 31 or
+                self.start_date.year != self.end_date.year
+            ):
+                raise ValidationError(
+                    "Yearly budgets must cover an entire calendar year."
+                )
+    
+
+        elif self.period == 'custom':
+            pass
     
     def __str__(self):
         return f"{self.category.name} Budget - {self.amount}"

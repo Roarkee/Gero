@@ -26,7 +26,7 @@ class ClientViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'name', 'health_score', 'last_activity_at']
 
     def get_queryset(self):
-        return Client.objects.filter(user=self.request.user)
+        return Client.objects.filter(user=self.request.user).order_by('name')
         return Client.objects.all()
 
     def get_serializer_class(self):

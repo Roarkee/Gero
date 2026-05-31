@@ -9,7 +9,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return Invoice.objects.all()
+        # return Invoice.objects.all()
         return Invoice.objects.filter(user=self.request.user)
     
     def get_serializer_class(self):
@@ -61,7 +61,7 @@ class InvoiceItemViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return InvoiceItem.objects.all()
+        # return InvoiceItem.objects.all()
         return InvoiceItem.objects.filter(invoice__user=self.request.user)
 
 

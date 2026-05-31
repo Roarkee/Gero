@@ -147,3 +147,47 @@ class TimeEntrySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class ProjectActivitySerializer(serializers.ModelSerializer):
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    task_title = serializers.CharField(source='task.title', read_only=True, allow_null=True)
+
+    class Meta:
+        model = ProjectActivity
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'project', 'user', 'task', 'activity_type', 'description', 'metadata')
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by_email = serializers.CharField(source='uploaded_by.email', read_only=True)
+    task_title = serializers.CharField(source='task.title', read_only=True, allow_null=True)
+
+    class Meta:
+        model = Attachment
+        fields = '__all__'
+        read_only_fields = ('id', 'uploaded_at', 'uploaded_by', 'file_size', 'mime_type')
+        
+    def create(self, validated_data):
+        validated_data['uploaded_by'] = self.context['request'].user
+        file_obj = validated_data.get('file')
+        if file_obj:
+            validated_data['file_size'] = file_obj.size
+            validated_data['mime_type'] = file_obj.content_type
+            if not validated_data.get('file_name'):
+                validated_data['file_name'] = file_obj.name
+        return super().create(validated_data)
+
+
+class RecurringTaskSerializer(serializers.ModelSerializer, OwnerValidationMixin):
+    class Meta:
+        model = RecurringTask
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'created_by')
+
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        return super().create(validated_data)
+
+    def validate_project(self, project):
+        self.validate_ownership(project, self.context['request'].user, "You do not have permission to create a recurring task for this project.")
+        return project
+

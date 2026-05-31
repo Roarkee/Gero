@@ -8,8 +8,9 @@ export const useStartTimer = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, description }) => {
+    mutationFn: async ({ taskId, description,projectId }) => {
       const response = await apiClient.post(API_ENDPOINTS.START_TIMER, {
+        project_id: projectId,
         task_id: taskId,
         description,
       });

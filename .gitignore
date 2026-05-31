@@ -8,12 +8,13 @@ venv/
 backend/Dockerfile
 backend/docker-compose.yml
 *.pyc
-
+frontend/.vite/
 
 
 
 #---frontend ---
 # Logs
+frontend/.vite/
 logs
 *.log
 npm-debug.log*

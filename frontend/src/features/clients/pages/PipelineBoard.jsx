@@ -1,0 +1,170 @@
+import React, { useState, useEffect } from "react";
+import { useClients, useUpdateClient } from "../hooks/useClients";
+import { ClientCard } from "../components/ClientCard";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+const PIPELINE_COLUMNS = [
+  { id: "lead", title: "Lead" },
+  { id: "inquiry", title: "Inquiry" },
+  { id: "proposal_sent", title: "Proposal Sent" },
+  { id: "negotiating", title: "Negotiating" },
+  { id: "onboarding", title: "Onboarding" },
+  { id: "active", title: "Active" },
+  { id: "waiting_on_client", title: "Waiting" },
+  { id: "completed", title: "Completed" },
+];
+
+function SortableClientCard({ client }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: client.id,
+    data: { type: "Client", client },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 outline-none">
+      <ClientCard client={client} />
+    </div>
+  );
+}
+
+function Column({ column, clients }) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const columnBg = isOver ? "bg-emerald-50" : "bg-gray-50/50";
+  return (
+    <div ref={setNodeRef} className={columnBg + " flex flex-col rounded-xl border border-gray-200 w-80 shrink-0"}>
+      <div className="p-4 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
+        <h3 className="font-medium text-sm text-gray-700">{column.title}</h3>
+        <span className="bg-white text-gray-500 text-xs py-0.5 px-2 rounded-full border border-gray-200 font-medium">
+          {clients.length}
+        </span>
+      </div>
+      <div className="p-3 flex-1 overflow-y-auto min-h-[500px]">
+        <SortableContext items={clients.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          {clients.map((client) => (
+            <SortableClientCard key={client.id} client={client} />
+          ))}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+
+export default function PipelineBoard() {
+  const { data: serverClients, isLoading } = useClients();
+  const updateClient = useUpdateClient();
+  const [clients, setClients] = useState([]);
+  const [activeClient, setActiveClient] = useState(null);
+
+  useEffect(() => {
+    if (serverClients) {
+      setClients(serverClients);
+    }
+  }, [serverClients]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragStart = (event) => {
+    const { active } = event;
+    const client = clients.find((c) => c.id === active.id);
+    setActiveClient(client);
+  };
+
+  const handleDragEnd = (event) => {
+    setActiveClient(null);
+    const { active, over } = event;
+    
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    const activeClient = clients.find(c => c.id === activeId);
+    if (!activeClient) return;
+
+    // Is it dropped over a column or another card?
+    const isOverColumn = PIPELINE_COLUMNS.some(col => col.id === overId);
+    let newStatus = activeClient.status;
+
+    if (isOverColumn) {
+      newStatus = overId;
+    } else {
+      const overClient = clients.find(c => c.id === overId);
+      if (overClient) {
+        newStatus = overClient.status;
+      }
+    }
+
+    if (activeClient.status !== newStatus) {
+      // Optimistic update
+      setClients(prev => prev.map(c => c.id === activeId ? { ...c, status: newStatus } : c));
+      
+      // Server update
+      updateClient.mutate({ id: activeId, status: newStatus }, {
+        onError: () => {
+          // Rollback on error
+          setClients(prev => prev.map(c => c.id === activeId ? { ...c, status: activeClient.status } : c));
+        }
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-gray-500">Loading pipeline...</div>;
+  }
+
+  return (
+    <div className="h-full flex flex-col pt-8 pl-8 pb-8 pr-0">
+      <div className="mb-6 pr-8">
+        <h1 className="text-2xl font-bold text-gray-900">Pipeline Board</h1>
+        <p className="text-sm text-gray-500 mt-1">Drag and drop clients to update their status.</p>
+      </div>
+
+      <div className="flex-1 overflow-x-auto pb-4 pr-8">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex gap-4 h-full items-start">
+            {PIPELINE_COLUMNS.map((col) => (
+              <Column 
+                key={col.id} 
+                column={col} 
+                clients={clients.filter(c => c.status === col.id)} 
+              />
+            ))}
+          </div>
+
+          <DragOverlay>
+            {activeClient ? (
+              <div className="rotate-2 scale-105 opacity-90 cursor-grabbing">
+                <ClientCard client={activeClient} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+    </div>
+  );
+}

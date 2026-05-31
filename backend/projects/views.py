@@ -5,7 +5,7 @@ from rest_framework.generics import get_object_or_404
 from django.utils import timezone
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry
+from projects.models import Project, Task, TaskList, Label, SubTask, TimeEntry, ProjectActivity, Attachment, RecurringTask
 from client.models import Client
 from projects.serializers import (
     ProjectSerializer,
@@ -16,7 +16,10 @@ from projects.serializers import (
     LabelSerializer,
     SubTaskSerializer,
     TaskWithSubTasksSerializer,
-    TimeEntrySerializer
+    TimeEntrySerializer,
+    ProjectActivitySerializer,
+    AttachmentSerializer,
+    RecurringTaskSerializer
 )
 
 
@@ -49,7 +52,6 @@ class TaskListViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return TaskList.objects.filter(project__client__user=self.request.user)
         
-    
 
     @action(detail=True, methods=['get'])
     def with_tasks(self, request, pk=None):
@@ -104,16 +106,19 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def start_timer(self, request):
         task_id = request.data.get('task_id')
+        print(request.data)
         description = request.data.get('description', '')
         
         # Stop any running timers
         TimeEntry.objects.filter(user=request.user, is_running=True).update(
             end_time=timezone.now(), is_running=False
         )
-        
+        t = Task.objects.get(id = task_id)
+        project = t.task_list.project
         # Start new timer
         time_entry = TimeEntry.objects.create(
             user=request.user,
+            project =project,
             task_id=task_id,
             description=description,
             start_time=timezone.now(),
@@ -143,5 +148,29 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(active_timer)
             return Response(serializer.data)
         return Response(None)
-    
-    
+
+class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProjectActivity.objects.all()
+    serializer_class = ProjectActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(project__client__user=self.request.user)
+
+
+class AttachmentViewSet(viewsets.ModelViewSet):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(project__client__user=self.request.user)
+
+
+class RecurringTaskViewSet(viewsets.ModelViewSet):
+    queryset = RecurringTask.objects.all()
+    serializer_class = RecurringTaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(project__client__user=self.request.user)
