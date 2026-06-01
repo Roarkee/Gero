@@ -155,7 +155,50 @@ class InvoiceSelector:
 
 
     def get_aging_receivables(self):
-        pass      
+        pass
+
+    def get_overdue_percentage(self):
+        """
+        Returns the percentage of non-draft/cancelled invoices that are overdue.
+        """
+        total = self.queryset.filter(
+            status__in=['sent', 'overdue', 'paid']
+        ).count()
+
+        overdue = self.queryset.filter(
+            status='overdue'
+        ).count()
+
+        if total == 0:
+            return 0.0
+
+        return round((overdue / total) * 100, 2)
+
+    def get_overdue_invoice_aging(self):
+        """
+        Returns overdue invoices annotated with days_overdue and amount
+        for use by AgingReceivablesCalculator.
+        """
+        from django.utils import timezone
+
+        today = timezone.now().date()
+
+        invoices = (
+            self.queryset
+            .filter(status='overdue')
+            .values('id', 'due_date', 'total_amount')
+        )
+
+        result = []
+        for inv in invoices:
+            days_overdue = (today - inv['due_date']).days
+            result.append({
+                'days_overdue': max(days_overdue, 0),
+                'amount': float(inv['total_amount']),
+            })
+
+        return result
+
     
 
 
