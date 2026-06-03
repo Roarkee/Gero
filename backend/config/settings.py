@@ -35,9 +35,9 @@ environ.Env.read_env(BASE_DIR/ '.env')
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.81.156.63', '0.0.0.0', 'web','192.168.137.37','192.168.137.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -119,13 +119,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 ASGI_APPLICATION = 'config.asgi.application'
 
-CHANNEL_LAYERS ={
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG':{
-            'hosts':[env('REDIS_URL', default='redis://127.0.0.1:6379/0')]
-        }
-    }
+# CHANNEL_LAYERS ={
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG':{
+#             'hosts':[env('REDIS_URL', default='redis://127.0.0.1:6379/0')]
+#         }
+#     }
+# }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    },
 }
 
 
@@ -214,7 +220,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR/"staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -233,6 +240,11 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
 
 
+# security
+SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 
 
