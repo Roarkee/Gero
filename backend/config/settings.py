@@ -32,7 +32,7 @@ environ.Env.read_env(BASE_DIR/ '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-5ub@w0dao7joqvy1&i4ioi6xotz9w-5+%z3ycuvh%j5e-22wyo')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -70,7 +70,7 @@ INSTALLED_APPS = [
 ]
 
 
-FIELD_ENCRYPTION_KEY=env('FIELD_ENCRYPTION_KEY', default='gero_050billion-key-azBomien#Kenmac*$91Roarke187nYAAMzy')
+FIELD_ENCRYPTION_KEY=env('FIELD_ENCRYPTION_KEY')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -106,7 +106,9 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS':'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
 }
 
 
@@ -177,11 +179,11 @@ CELERY_BEAT_SCHEDULE = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('dbname', default='gero_db'),
-        'USER': env('user', default='gero_user'),
-        'PASSWORD': env('password', default='gero_password'),
-        'HOST': env('host', default='localhost'),
-        'PORT': env('port', default='5432'), 
+        'NAME': env('dbname'),
+        'USER': env('user'),
+        'PASSWORD': env('password'),
+        'HOST': env('host'),
+        'PORT': env('port'), 
     }
 }
 
@@ -255,16 +257,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",  # Vite default port
     "http://127.0.0.1:5173",
-    "http://10.57.215.63:5173",  # Your network IP
-    "http://192.168.137.37:5173",
-    "http://192.168.137.1:5173"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-
-# REST Framework pagination
-REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'rest_framework.pagination.PageNumberPagination'
-REST_FRAMEWORK['PAGE_SIZE'] = 20
 
 
 if 'pytest' in sys.modules or 'test' in sys.argv:
