@@ -60,11 +60,11 @@ export default function RevenueOverviewCards({ data, isLoading }) {
         return (
           <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center">
             <div className={`${card.bg} ${card.color} p-4 rounded-2xl mr-4`}>
-              <Icon className="w-6 h-6" />
+              <Icon className="w-5 h-5" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{card.title}</p>
-              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate" title={card.value}>{card.value}</h3>
+              <h3 className="text-base lg:text-base font-bold text-gray-900 dark:text-white truncate" title={card.value}>{card.value}</h3>
             </div>
           </div>
         );
