@@ -135,6 +135,7 @@ class ProjectOverviewAPIView(
             ProjectOverviewService
             .get_project_overview(project_id)
         )
+        # print(data)
 
         return Response(data)
 

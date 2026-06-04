@@ -99,6 +99,7 @@ class LabelViewSet(viewsets.ModelViewSet):
 class TimeEntryViewSet(viewsets.ModelViewSet):
     serializer_class = TimeEntrySerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
     
     def get_queryset(self):
         return TimeEntry.objects.filter(user=self.request.user)
@@ -106,27 +107,30 @@ class TimeEntryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def start_timer(self, request):
         task_id = request.data.get('task_id')
-        print(request.data)
         description = request.data.get('description', '')
-        
-        # Stop any running timers
-        TimeEntry.objects.filter(user=request.user, is_running=True).update(
-            end_time=timezone.now(), is_running=False
-        )
-        t = Task.objects.get(id = task_id)
+
+        # Stop any running timers using .save() so duration_minutes is calculated
+        running_entries = TimeEntry.objects.filter(user=request.user, is_running=True)
+        for entry in running_entries:
+            entry.end_time = timezone.now()
+            entry.is_running = False
+            entry.save()
+
+        t = Task.objects.get(id=task_id)
         project = t.task_list.project
         # Start new timer
         time_entry = TimeEntry.objects.create(
             user=request.user,
-            project =project,
+            project=project,
             task_id=task_id,
             description=description,
             start_time=timezone.now(),
             is_running=True
         )
-        
+
         serializer = self.get_serializer(time_entry)
         return Response(serializer.data)
+
     
     @action(detail=True, methods=['post'])
     def stop_timer(self, request, pk=None):

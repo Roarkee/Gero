@@ -91,6 +91,12 @@ def get_full_client_intelligence(client):
     activities = ClientActivity.objects.filter(client=client).order_by("-created_at")[:10]
     memory = [{"type": a.activity_type, "description": a.description, "created_at": a.created_at} for a in activities]
     
+    days_in_status = 0
+    if client.status_changed_at:
+        days_in_status = (timezone.now() - client.status_changed_at).days
+    else:
+        days_in_status = (timezone.now() - client.updated_at).days
+
     return {
         "relationship_health": {
             "score": score,
@@ -104,5 +110,5 @@ def get_full_client_intelligence(client):
         "relationship_memory": memory,
         "segments": get_client_segmentation(client),
         "days_since_contact": HealthScoringEngine.get_days_since_contact(client),
-        "days_in_status": (timezone.now() - client.updated_at).days,
+        "days_in_status": days_in_status,
     }

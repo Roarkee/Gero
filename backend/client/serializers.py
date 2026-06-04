@@ -13,10 +13,11 @@ class ClientListSerializer(serializers.ModelSerializer):
         model = Client
         fields = [
             'id', 'name', 'email', 'phone_number', 'company_name', 
-            'website', 'status', 'created_at', 'health_label', 
-            'attention_required', 'client_priority'
+            'website', 'status', 'created_at', 'health_score', 'health_label', 
+            'attention_required', 'client_priority', 'next_followup_at',
+            'last_contacted_at', 'lifetime_value'
         ]
-        read_only_fields = ['id', 'created_at', 'health_label', 'attention_required']
+        read_only_fields = ['id', 'created_at', 'health_score', 'health_label', 'attention_required']
 
 class ClientDetailSerializer(serializers.ModelSerializer):
     projects = ProjectSerializer(many=True, read_only=True)

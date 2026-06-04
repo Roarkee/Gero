@@ -55,6 +55,61 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
         return Response({"message": f"{len(items)} items added"})
 
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        from django.http import HttpResponse
+        import io
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+
+        invoice = self.get_object()
+        
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        
+        p.setFont("Helvetica-Bold", 20)
+        p.drawString(50, 750, f"INVOICE {invoice.invoice_number}")
+        
+        p.setFont("Helvetica", 12)
+        p.drawString(50, 720, f"Client: {invoice.client.name if invoice.client else 'N/A'}")
+        p.drawString(50, 700, f"Issue Date: {invoice.issue_date}")
+        p.drawString(50, 680, f"Due Date: {invoice.due_date}")
+        
+        y = 630
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Description")
+        p.drawString(300, y, "Qty")
+        p.drawString(400, y, "Rate")
+        p.drawString(500, y, "Amount")
+        
+        y -= 20
+        p.setFont("Helvetica", 10)
+        for item in invoice.items.all():
+            p.drawString(50, y, str(item.description)[:40])
+            p.drawString(300, y, str(item.quantity))
+            p.drawString(400, y, f"${item.rate}")
+            p.drawString(500, y, f"${item.amount}")
+            y -= 20
+            
+        y -= 20
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(400, y, "Subtotal:")
+        p.drawString(500, y, f"${invoice.subtotal}")
+        y -= 20
+        p.drawString(400, y, f"Tax ({invoice.tax_rate}%):")
+        p.drawString(500, y, f"${invoice.tax_amount}")
+        y -= 20
+        p.drawString(400, y, "Total:")
+        p.drawString(500, y, f"${invoice.total_amount}")
+        
+        p.showPage()
+        p.save()
+        
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+        return response
+
 
 class InvoiceItemViewSet(viewsets.ModelViewSet):
     serializer_class = InvoiceItemSerializer

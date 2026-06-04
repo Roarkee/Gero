@@ -102,7 +102,7 @@ class TaskWithSubTasksSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ['id', 'subtasks','title', 'description', 'task_list', 'labels', 'start_date', 'due_date', 'priority', 'position', 'total_minutes']
+        fields = ['id', 'subtasks','title', 'description', 'task_list', 'labels', 'start_date', 'due_date', 'priority', 'position', 'total_minutes', 'completed', 'estimated_hours']
         
     def get_total_minutes(self, obj):
         return sum(entry.duration_minutes for entry in obj.time_entries.all())
@@ -144,6 +144,10 @@ class TimeEntrySerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
+        print(validated_data)
+        if not validated_data.get('project') and validated_data.get('task'):
+            task = validated_data.get('task')
+            validated_data['project'] = task.task_list.project
         return super().create(validated_data)
 
 

@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import Client, ClientActivity
-from .services import ActivityLoggingService
+from .services import ActivityLoggingService, HealthScoringEngine, AttentionEngine
 
 @receiver(pre_save, sender=Client)
 def update_status_changed_at(sender, instance, **kwargs):
@@ -13,6 +13,15 @@ def update_status_changed_at(sender, instance, **kwargs):
                 instance.status_changed_at = timezone.now()
         except Client.DoesNotExist:
             pass
+            
+    # Always recalculate health and attention dynamically on save
+    # This pairs with the Celery task that handles time-based degradation
+    score, health_label, _ = HealthScoringEngine.calculate_health(instance)
+    instance.health_score = score
+    instance.health_label = health_label
+    
+    requires_attention, _ = AttentionEngine.calculate_attention_required(instance)
+    instance.attention_required = requires_attention
 
 @receiver(post_save, sender=Client)
 def log_client_creation_and_status(sender, instance, created, **kwargs):
@@ -50,5 +59,21 @@ def detect_status_change(sender, instance, **kwargs):
 @receiver(post_save, sender=ClientActivity)
 def update_client_last_activity(sender, instance, created, **kwargs):
     if created:
-        # Update client.last_activity_at without triggering signals
-        Client.objects.filter(pk=instance.client_id).update(last_activity_at=timezone.now())
+        now = timezone.now()
+        update_fields = {'last_activity_at': now}
+        
+        # Explicit communications should bump last_contacted_at
+        if instance.activity_type in ['email', 'call', 'meeting']:
+            update_fields['last_contacted_at'] = now
+            
+        # Update client without triggering signals to avoid infinite loops,
+        # but since we want health to reflect this immediately, we might need to 
+        # recalculate health here as well, or we can just update the fields and 
+        # let the next client save or celery task handle it. Since we want it immediate:
+        Client.objects.filter(pk=instance.client_id).update(**update_fields)
+        
+        if 'last_contacted_at' in update_fields:
+            # If contact happened, health might change. Let's force a client save
+            # but we need to be careful of loops. The pre_save will catch it.
+            client = Client.objects.get(pk=instance.client_id)
+            client.save(update_fields=['health_score', 'health_label', 'attention_required'])

@@ -102,6 +102,13 @@ class Task(models.Model):
     completed = models.BooleanField(default = False)
     class Meta:
         ordering = ['position']
+        
+    def save(self, *args, **kwargs):
+        if self.pk:
+            orig = Task.objects.get(pk=self.pk)
+            if self.completed and not orig.completed:
+                self.subtasks.all().update(completed=True)
+        super().save(*args, **kwargs)
     
 
 

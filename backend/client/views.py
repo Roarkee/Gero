@@ -40,6 +40,7 @@ class ClientViewSet(viewsets.ModelViewSet):
     def intelligence_dashboard(self, request):
         """Returns overall intelligence data for the user's clients."""
         data = get_dashboard_intelligence(request.user)
+        print(data)
         return Response(data)
 
     @action(detail=True, methods=['get'])
@@ -49,10 +50,30 @@ class ClientViewSet(viewsets.ModelViewSet):
         data = get_full_client_intelligence(client)
         return Response(data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get', 'post'])
     def activities(self, request, pk=None):
-        """Returns the activity stream for a specific client."""
+        """Returns or creates the activity stream for a specific client."""
         client = self.get_object()
+
+        if request.method == 'POST':
+            from .services import ActivityLoggingService
+            activity_type = request.data.get('activity_type')
+            description = request.data.get('description')
+            metadata = request.data.get('metadata', {})
+            
+            if not activity_type or not description:
+                return Response({'error': 'activity_type and description are required'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            activity = ActivityLoggingService.log_activity(
+                client=client,
+                user=request.user,
+                activity_type=activity_type,
+                description=description,
+                metadata=metadata
+            )
+            serializer = ClientActivitySerializer(activity)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         activities = ClientActivity.objects.filter(client=client).order_by('-created_at')
         page = self.paginate_queryset(activities)
         if page is not None:

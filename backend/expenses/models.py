@@ -170,7 +170,7 @@ class Expense(models.Model):
     def clean(self):
         if self.category.user != self.user:
             raise ValidationError("category of user doesn't match budget user")
-        if self.project.user != self.user:
+        if self.project and self.project.user != self.user:
             raise ValidationError("user must belong to same project")
     
     def __str__(self):
