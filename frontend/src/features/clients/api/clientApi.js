@@ -43,6 +43,11 @@ export const fetchClientActivities = async ({ id, page = 1 }) => {
   return response.data.results || response.data || [];
 };
 
+export const createClientActivity = async ({ id, ...data }) => {
+  const response = await apiClient.post(API_ENDPOINTS.CLIENT_ACTIVITIES(id), data);
+  return response.data;
+};
+
 export const scheduleFollowUp = async ({ id, ...data }) => {
   const response = await apiClient.post(`${API_ENDPOINTS.CLIENT_DETAIL(id)}schedule_followup/`, data);
   return response.data;

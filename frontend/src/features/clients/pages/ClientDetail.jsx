@@ -1,13 +1,19 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useClientDetail, useClientIntelligence, useClientActivities } from "../hooks/useClients";
+import { 
+  useClientDetail, 
+  useClientIntelligence, 
+  useClientActivities,
+  useUpdateClient,
+  useCreateClientActivity
+} from "../hooks/useClients";
 import { StatusBadge } from "../components/StatusBadge";
 import { HealthIndicator } from "../components/HealthIndicator";
 import { TimelineItem } from "../components/TimelineItem";
 import { ClientModal } from "../components/ClientModal";
 import { 
   Building2, Mail, Phone, Globe, Calendar, ArrowLeft, 
-  MessageSquare, Edit3, AlertCircle, TrendingUp
+  MessageSquare, Edit3, AlertCircle, TrendingUp, Check, X, FileText, FolderOpen
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, format } from "date-fns";
 
@@ -15,10 +21,44 @@ export default function ClientDetail() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [activityForm, setActivityForm] = useState({ type: "call", description: "" });
 
   const { data: client, isLoading: loadingClient } = useClientDetail(id);
   const { data: intel, isLoading: loadingIntel } = useClientIntelligence(id);
   const { data: activities, isLoading: loadingActivities } = useClientActivities(id);
+  
+  const updateClientMutation = useUpdateClient();
+  const createActivityMutation = useCreateClientActivity();
+
+  const handleSaveNote = () => {
+    updateClientMutation.mutate({ id, note: noteContent }, {
+      onSuccess: () => setIsEditingNote(false)
+    });
+  };
+
+  const handleSaveActivity = (e) => {
+    e.preventDefault();
+    if (!activityForm.description.trim()) return;
+    createActivityMutation.mutate({ 
+      id, 
+      activity_type: activityForm.type, 
+      description: activityForm.description 
+    }, {
+      onSuccess: () => {
+        setShowActivityForm(false);
+        setActivityForm({ type: "call", description: "" });
+      }
+    });
+  };
+
+  React.useEffect(() => {
+    if (client && !isEditingNote) {
+      setNoteContent(client.note || "");
+    }
+  }, [client, isEditingNote]);
 
   if (loadingClient) {
     return <div className="p-8 text-gray-500">Loading workspace...</div>;
@@ -164,9 +204,48 @@ export default function ClientDetail() {
                 <div>
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-medium text-gray-900">Activity Timeline</h3>
-                    <button className="text-sm text-emerald-600 font-medium hover:text-emerald-700">Add Log</button>
+                    <button 
+                      onClick={() => setShowActivityForm(!showActivityForm)}
+                      className="text-sm text-emerald-600 font-medium hover:text-emerald-700"
+                    >
+                      {showActivityForm ? "Cancel Log" : "Add Log"}
+                    </button>
                   </div>
                   
+                  {showActivityForm && (
+                    <form onSubmit={handleSaveActivity} className="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div className="flex items-center gap-4 mb-4">
+                        <select 
+                          className="text-sm border border-gray-300 rounded-md p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          value={activityForm.type}
+                          onChange={(e) => setActivityForm({...activityForm, type: e.target.value})}
+                        >
+                          <option value="call">Call</option>
+                          <option value="email">Email</option>
+                          <option value="meeting">Meeting</option>
+                          <option value="note">Note (Audit only)</option>
+                        </select>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Briefly describe the interaction..." 
+                          className="flex-1 text-sm border border-gray-300 rounded-md p-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          value={activityForm.description}
+                          onChange={(e) => setActivityForm({...activityForm, description: e.target.value})}
+                        />
+                      </div>
+                      <div className="flex justify-end">
+                        <button 
+                          type="submit" 
+                          disabled={createActivityMutation.isPending}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {createActivityMutation.isPending ? "Saving..." : "Save Log"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
                   {loadingActivities ? (
                     <div className="animate-pulse space-y-4">
                       {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded"></div>)}
@@ -188,16 +267,91 @@ export default function ClientDetail() {
               )}
 
               {activeTab === "notes" && (
-                <div className="text-center py-12 text-gray-500">
-                  <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                  <p>Notes module coming soon.</p>
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-medium text-gray-900">Client Profile Note</h3>
+                    {!isEditingNote && (
+                      <button 
+                        onClick={() => setIsEditingNote(true)}
+                        className="text-sm text-emerald-600 font-medium hover:text-emerald-700"
+                      >
+                        Edit Note
+                      </button>
+                    )}
+                  </div>
+                  
+                  {isEditingNote ? (
+                    <div className="space-y-4">
+                      <textarea 
+                        className="w-full min-h-[200px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-800 text-sm"
+                        value={noteContent}
+                        onChange={(e) => setNoteContent(e.target.value)}
+                        placeholder="Write comprehensive notes about this client, their preferences, and important context here..."
+                      />
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={handleSaveNote}
+                          disabled={updateClientMutation.isPending}
+                          className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          {updateClientMutation.isPending ? "Saving..." : "Save Note"}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setIsEditingNote(false);
+                            setNoteContent(client.note || "");
+                          }}
+                          className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 min-h-[200px] whitespace-pre-wrap text-sm text-gray-800">
+                      {client.note ? client.note : <span className="text-gray-400 italic">No notes have been added for this client yet. Click Edit Note to add context.</span>}
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === "projects" && (
-                <div className="text-center py-12 text-gray-500">
-                  <Building2 className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                  <p>Projects integration coming soon.</p>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Associated Projects</h3>
+                  {client.projects && client.projects.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {client.projects.map(project => (
+                        <div key={project.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow transition-shadow">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-gray-900">{project.name}</h4>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              project.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                              project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {project.status?.replace('_', ' ')}
+                            </span>
+                          </div>
+                          {project.description && (
+                            <p className="text-sm text-gray-500 line-clamp-2 mb-4">{project.description}</p>
+                          )}
+                          <Link 
+                            to={`/projects/${project.id}`} 
+                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center"
+                          >
+                            <FolderOpen className="w-4 h-4 mr-1" /> View Project
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <FolderOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                      <p>No projects associated with this client.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useProjects } from "../hooks/useProjects";
 import { Plus, LayoutGrid, List as ListIcon, Search } from "lucide-react";
 import CreateProjectModal from "../CreateProjectModal";
+import { getStatusConfig } from "../utils/projectStatus";
 
 export default function ProjectsDashboard() {
   const { projectsQuery } = useProjects();
@@ -77,35 +78,51 @@ export default function ProjectsDashboard() {
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-lg font-medium mb-2">No projects found</p>
+          <p className="text-sm">Create your first project to get started.</p>
+        </div>
       ) : (
         <>
           {view === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map((project) => (
-                <Link
-                  key={project.id}
-                  to={`/projects/${project.id}`}
-                  className="block bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors shadow-sm hover:shadow-md"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {project.name}
-                    </h3>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      {project.status}
-                    </span>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4">
-                    {project.description || "No description provided."}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center">
-                      <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                      On Track
+              {filteredProjects.map((project) => {
+                // Issue 6 fix: derive status config from real project data
+                const statusConfig = getStatusConfig(project);
+                return (
+                  <Link
+                    key={project.id}
+                    to={`/projects/${project.id}`}
+                    className="block bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors shadow-sm hover:shadow-md"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
+                        {project.name}
+                      </h3>
+                      {/* Top badge: shows backend status value */}
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize flex-shrink-0 ml-2 ${statusConfig.badgeClass}`}>
+                        {statusConfig.label}
+                      </span>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4">
+                      {project.description || "No description provided."}
+                    </p>
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                      {/* Issue 6 fix: footer indicator derived from status, not hardcoded */}
+                      <div className="flex items-center">
+                        <span className={`w-2 h-2 rounded-full mr-2 ${statusConfig.dotColor}`}></span>
+                        {statusConfig.label}
+                      </div>
+                      {project.due_date && (
+                        <span className="text-xs">
+                          Due {new Date(project.due_date).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -114,29 +131,38 @@ export default function ProjectsDashboard() {
                   <tr>
                     <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Project Name</th>
                     <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
+                    <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Client</th>
                     <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <Link to={`/projects/${project.id}`} className="font-medium text-gray-900 dark:text-white hover:text-primary-600">
-                          {project.name}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          {project.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link to={`/projects/${project.id}`} className="text-primary-600 hover:text-primary-700 font-medium">
-                          Open
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredProjects.map((project) => {
+                    const statusConfig = getStatusConfig(project);
+                    return (
+                      <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <Link to={`/projects/${project.id}`} className="font-medium text-gray-900 dark:text-white hover:text-primary-600">
+                            {project.name}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4">
+                          {/* Issue 6 fix: use real status config in list view too */}
+                          <span className={`flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.badgeClass}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotColor}`} />
+                            {statusConfig.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {project.client_name ?? "—"}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Link to={`/projects/${project.id}`} className="text-primary-600 hover:text-primary-700 font-medium">
+                            Open
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

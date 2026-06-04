@@ -54,6 +54,9 @@ export const useTasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix: invalidate completion metrics after task changes
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 
@@ -62,6 +65,9 @@ export const useTasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix: invalidate completion metrics whenever a task is updated
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 
@@ -70,6 +76,9 @@ export const useTasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix: invalidate completion metrics after task deletion
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 
@@ -89,6 +98,9 @@ export const useSubtasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix: subtask changes also affect completion metrics
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 
@@ -97,6 +109,9 @@ export const useSubtasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix: subtask completion changes completion metrics
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 
@@ -105,6 +120,9 @@ export const useSubtasks = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      // Issue 1 fix
+      queryClient.invalidateQueries({ queryKey: ["projectOverview"] });
+      queryClient.invalidateQueries({ queryKey: ["projectHealth"] });
     },
   });
 

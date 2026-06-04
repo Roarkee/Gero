@@ -19,8 +19,10 @@ export const useProjects = () => {
   const updateProject = useMutation({
     mutationFn: projectsApi.updateProject,
     onSuccess: (data) => {
+      // Issue 2 fix: invalidate broadly — projectId from URL is a string, data.id is a number.
+      // Invalidating ["projects"] covers the list, ["project"] covers all detail queries.
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["project", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["project"] });
     },
   });
 
@@ -40,8 +42,6 @@ export const useProjects = () => {
 };
 
 export const useProject = (projectId) => {
-  const queryClient = useQueryClient();
-
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => projectsApi.getProject(projectId),
@@ -53,8 +53,9 @@ export const useProject = (projectId) => {
 
 export const useProjectActivities = (projectId) => {
   const activitiesQuery = useQuery({
-    queryKey: ["activities"],
+    queryKey: ["activities", projectId],
     queryFn: projectsApi.getActivities,
+    enabled: !!projectId,
   });
   return { activitiesQuery };
 };
@@ -63,8 +64,9 @@ export const useProjectAttachments = (projectId) => {
   const queryClient = useQueryClient();
 
   const attachmentsQuery = useQuery({
-    queryKey: ["attachments"],
+    queryKey: ["attachments", projectId],
     queryFn: projectsApi.getAttachments,
+    enabled: !!projectId,
   });
 
   const createAttachment = useMutation({

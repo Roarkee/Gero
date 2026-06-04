@@ -139,6 +139,10 @@ export default function ProjectBoardTab({ project }) {
     }
   };
 
+  const activeTask = selectedTask
+    ? taskLists.flatMap((l) => l.tasks || []).find((t) => t.id === selectedTask.id) || selectedTask
+    : null;
+
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <div className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
@@ -210,7 +214,7 @@ export default function ProjectBoardTab({ project }) {
       <TaskDetailDrawer
         isOpen={!!selectedTask}
         onClose={() => setSelectedTask(null)}
-        task={selectedTask}
+        task={activeTask}
       />
     </div>
   );

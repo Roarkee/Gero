@@ -23,6 +23,12 @@ export const invoicesApi = {
     const response = await api.delete(API_ENDPOINTS.INVOICE_DETAIL(id));
     return response.data;
   },
+  downloadPDF: async (id) => {
+    const response = await api.get(API_ENDPOINTS.INVOICE_DOWNLOAD_PDF(id), {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
 
   // Actions
   generateFromTime: async (id) => {
@@ -54,17 +60,29 @@ export const invoicesApi = {
     return response.data;
   },
 
-  // Intelligence (Fallbacks - Will return 404 until implemented, handled by hooks)
+  // Intelligence — wired to real backend routes
   getRevenueIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_REVENUE_INTELLIGENCE);
+    return response.data;
+  },
+  getRevenueTopClients: async () => {
+    const response = await api.get(API_ENDPOINTS.INVOICE_REVENUE_TOP_CLIENTS);
     return response.data;
   },
   getCollectionIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_COLLECTION_INTELLIGENCE);
     return response.data;
   },
+  getCollectionRate: async () => {
+    const response = await api.get(API_ENDPOINTS.INVOICE_COLLECTION_RATE);
+    return response.data;
+  },
   getClientIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_CLIENT_INTELLIGENCE);
+    return response.data;
+  },
+  getClientPaymentBehavior: async () => {
+    const response = await api.get(API_ENDPOINTS.INVOICE_CLIENT_PAYMENT_BEHAVIOR);
     return response.data;
   },
   getCashFlowIntelligence: async () => {
@@ -76,3 +94,4 @@ export const invoicesApi = {
     return response.data;
   },
 };
+

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { useTasks, useSubtasks } from "../hooks/useTasks";
 import { useTimeTracking } from "../hooks/useTimeTracking";
 import { format } from "date-fns";
-import { X, Play, Square, CheckCircle2, Circle, Clock, Tag, Calendar, AlignLeft, ListTodo, Activity } from "lucide-react";
+import { X, Play, Square, CheckCircle2, Circle, Clock, Tag, Calendar, AlignLeft, ListTodo } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function TaskDetailDrawer({ task, isOpen, onClose }) {
   if (!isOpen || !task) return null;
@@ -12,6 +13,22 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
   const { activeTimerQuery, startTimer, stopTimer, timeEntriesQuery } = useTimeTracking();
 
   const [newSubtask, setNewSubtask] = useState("");
+  const [isCompletingTask, setIsCompletingTask] = useState(false);
+  const [optimisticCompleted, setOptimisticCompleted] = useState(task.completed);
+  
+  // Edit states
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [editDesc, setEditDesc] = useState(task.description || "");
+
+  const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [editDueDate, setEditDueDate] = useState(task.due_date ? task.due_date.split("T")[0] : "");
+  
+  React.useEffect(() => {
+    setOptimisticCompleted(task.completed);
+  }, [task.completed]);
   
   const activeTimer = activeTimerQuery.data;
   const isTimerRunning = activeTimer && activeTimer.task === task.id;
@@ -21,13 +38,31 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
   const taskTimeEntries = timeEntries.filter(t => t.task === task.id);
   const totalMinutes = taskTimeEntries.reduce((acc, curr) => acc + curr.duration_minutes, 0);
 
-  const handleCompleteTask = () => {
-    updateTask.mutate({ id: task.id, completed: !task.completed });
+  // Issue 5 fix: loading state + toast feedback on complete
+  const handleCompleteTask = async () => {
+    setIsCompletingTask(true);
+    const newCompleted = !optimisticCompleted;
+    setOptimisticCompleted(newCompleted);
+    try {
+      await updateTask.mutateAsync({ id: task.id, completed: newCompleted });
+      toast.success(newCompleted ? "Task completed! ✅" : "Task marked incomplete");
+    } catch {
+      setOptimisticCompleted(!newCompleted);
+      toast.error("Failed to update task");
+    } finally {
+      setIsCompletingTask(false);
+    }
   };
 
   const handleAddSubtask = (e) => {
     if (e.key === 'Enter' && newSubtask.trim()) {
-      createSubtask.mutate({ todo: newSubtask, task: task.id });
+      createSubtask.mutate(
+        { todo: newSubtask, task: task.id },
+        {
+          onSuccess: () => toast.success("Subtask added"),
+          onError: () => toast.error("Failed to add subtask"),
+        }
+      );
       setNewSubtask("");
     }
   };
@@ -52,12 +87,19 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
           <div className="flex items-center space-x-3">
             <button 
               onClick={handleCompleteTask}
-              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                task.completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+              disabled={isCompletingTask}
+              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-60 ${
+                optimisticCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
               }`}
             >
-              {task.completed ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Circle className="w-4 h-4 mr-2" />}
-              {task.completed ? 'Completed' : 'Mark Complete'}
+              {isCompletingTask ? (
+                <span className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : optimisticCompleted ? (
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+              ) : (
+                <Circle className="w-4 h-4 mr-2" />
+              )}
+              {optimisticCompleted ? 'Completed' : 'Mark Complete'}
             </button>
             
             <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
@@ -79,9 +121,37 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
           
           {/* Title */}
           <div>
-            <h2 className={`text-2xl font-bold text-gray-900 dark:text-white ${task.completed ? 'line-through text-gray-400' : ''}`}>
-              {task.title}
-            </h2>
+            {isEditingTitle ? (
+              <input
+                autoFocus
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={() => {
+                  setIsEditingTitle(false);
+                  if (editTitle.trim() && editTitle !== task.title) {
+                    updateTask.mutate({ id: task.id, title: editTitle.trim() });
+                  } else {
+                    setEditTitle(task.title);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.target.blur();
+                  if (e.key === "Escape") {
+                    setEditTitle(task.title);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                className="w-full text-2xl font-bold bg-gray-50 dark:bg-gray-800 border border-primary-500 rounded-lg px-3 py-1 focus:outline-none"
+              />
+            ) : (
+              <h2 
+                onClick={() => setIsEditingTitle(true)}
+                className={`text-2xl font-bold text-gray-900 dark:text-white cursor-text hover:bg-gray-50 dark:hover:bg-gray-800 px-1 -mx-1 rounded transition-colors ${optimisticCompleted ? 'line-through text-gray-400' : ''}`}
+              >
+                {task.title}
+              </h2>
+            )}
           </div>
 
           {/* Time Tracking Action */}
@@ -113,9 +183,34 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                 <Calendar className="w-4 h-4 mr-2" /> Due Date
               </p>
-              <p className="text-sm text-gray-900 dark:text-white font-medium pl-6">
-                {task.due_date ? format(new Date(task.due_date), "MMM d, yyyy") : "No due date"}
-              </p>
+              <div className="pl-6">
+                {isEditingDueDate ? (
+                  <input
+                    autoFocus
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    onBlur={() => {
+                      setIsEditingDueDate(false);
+                      // Convert to full date if present, else null
+                      const newDate = editDueDate ? `${editDueDate}T00:00:00` : null;
+                      updateTask.mutate({ id: task.id, due_date: newDate });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.target.blur();
+                      if (e.key === "Escape") setIsEditingDueDate(false);
+                    }}
+                    className="text-sm bg-gray-50 dark:bg-gray-800 border border-primary-500 rounded px-2 py-0.5 focus:outline-none"
+                  />
+                ) : (
+                  <p 
+                    onClick={() => setIsEditingDueDate(true)}
+                    className="text-sm text-gray-900 dark:text-white font-medium cursor-text hover:bg-gray-50 dark:hover:bg-gray-800 px-1 -mx-1 rounded transition-colors inline-block"
+                  >
+                    {task.due_date ? format(new Date(task.due_date), "MMM d, yyyy") : "No due date"}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
@@ -140,9 +235,37 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
               <AlignLeft className="w-4 h-4 mr-2" /> Description
             </h3>
-            <p className="text-sm text-gray-900 dark:text-gray-300 whitespace-pre-wrap pl-6">
-              {task.description || "No description provided."}
-            </p>
+            <div className="pl-6">
+              {isEditingDesc ? (
+                <textarea
+                  autoFocus
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  onBlur={() => {
+                    setIsEditingDesc(false);
+                    if (editDesc !== (task.description || "")) {
+                      updateTask.mutate({ id: task.id, description: editDesc });
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setEditDesc(task.description || "");
+                      setIsEditingDesc(false);
+                    }
+                  }}
+                  rows={4}
+                  className="w-full text-sm bg-gray-50 dark:bg-gray-800 border border-primary-500 rounded-lg p-3 focus:outline-none resize-y"
+                  placeholder="Add a more detailed description..."
+                />
+              ) : (
+                <div 
+                  onClick={() => setIsEditingDesc(true)}
+                  className="text-sm text-gray-900 dark:text-gray-300 whitespace-pre-wrap cursor-text hover:bg-gray-50 dark:hover:bg-gray-800 p-3 -mx-3 rounded-lg transition-colors min-h-[4rem]"
+                >
+                  {task.description || <span className="text-gray-400 italic">No description provided. Click to add one.</span>}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Subtasks */}
@@ -151,19 +274,22 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
               <ListTodo className="w-4 h-4 mr-2" /> Subtasks
             </h3>
             <div className="pl-6 space-y-2">
-              {task.subtasks && task.subtasks.map((subtask) => (
-                <div key={subtask.id} className="flex items-center group">
-                  <button 
-                    onClick={() => handleToggleSubtask(subtask.id, subtask.completed)}
-                    className="text-gray-400 hover:text-primary-600 focus:outline-none mr-3"
-                  >
-                    {subtask.completed ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5" />}
-                  </button>
-                  <span className={`text-sm ${subtask.completed ? 'line-through text-gray-400' : 'text-gray-900 dark:text-gray-300'}`}>
-                    {subtask.todo}
-                  </span>
-                </div>
-              ))}
+              {task.subtasks && task.subtasks.map((subtask) => {
+                const isSubCompleted = subtask.completed || task.completed;
+                return (
+                  <div key={subtask.id} className="flex items-center group">
+                    <button 
+                      onClick={() => handleToggleSubtask(subtask.id, subtask.completed)}
+                      className="text-gray-400 hover:text-primary-600 focus:outline-none mr-3"
+                    >
+                      {isSubCompleted ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5" />}
+                    </button>
+                    <span className={`text-sm ${isSubCompleted ? 'line-through text-gray-400' : 'text-gray-900 dark:text-gray-300'}`}>
+                      {subtask.todo}
+                    </span>
+                  </div>
+                );
+              })}
               <div className="flex items-center pt-2">
                 <Circle className="w-5 h-5 text-gray-300 mr-3" />
                 <input

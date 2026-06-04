@@ -8,7 +8,11 @@ import { ClientModal } from "../components/ClientModal";
 
 export default function ClientsList() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [healthFilter, setHealthFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   
   const { data: clients, isLoading, error } = useClients();
 
@@ -20,10 +24,14 @@ export default function ClientsList() {
     return <div className="p-8 text-red-500">Error loading clients.</div>;
   }
 
-  const filteredClients = clients?.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    (c.company_name && c.company_name.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredClients = clients?.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+                          (c.company_name && c.company_name.toLowerCase().includes(search.toLowerCase()));
+    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+    const matchesHealth = healthFilter === "all" || c.health_label === healthFilter;
+    const matchesPriority = priorityFilter === "all" || c.client_priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesHealth && matchesPriority;
+  });
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-6">
@@ -41,7 +49,10 @@ export default function ClientsList() {
               className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
-          <button className="flex items-center justify-center px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center justify-center px-4 py-2 border rounded-lg text-sm font-medium ${showFilters ? 'bg-gray-100 border-gray-300 text-gray-900' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </button>
@@ -54,6 +65,76 @@ export default function ClientsList() {
           </button>
         </div>
       </div>
+
+      {showFilters && (
+        <div className="bg-white p-4 border border-gray-200 rounded-xl shadow-sm flex flex-wrap gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">Status</label>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="block w-full text-sm border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="all">All Statuses</option>
+              <option value="lead">Lead</option>
+              <option value="inquiry">Inquiry</option>
+              <option value="proposal_sent">Proposal Sent</option>
+              <option value="negotiating">Negotiating</option>
+              <option value="onboarding">Onboarding</option>
+              <option value="active">Active</option>
+              <option value="waiting_on_client">Waiting On Client</option>
+              <option value="revision">Revision</option>
+              <option value="completed">Completed</option>
+              <option value="paused">Paused</option>
+              <option value="dormant">Dormant</option>
+              <option value="churned">Churned</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">Health</label>
+            <select 
+              value={healthFilter}
+              onChange={(e) => setHealthFilter(e.target.value)}
+              className="block w-full text-sm border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="all">All Health</option>
+              <option value="healthy">Healthy</option>
+              <option value="stable">Stable</option>
+              <option value="at_risk">At Risk</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700">Priority</label>
+            <select 
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="block w-full text-sm border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="all">All Priorities</option>
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          
+          <div className="flex items-end">
+            <button 
+              onClick={() => {
+                setStatusFilter("all");
+                setHealthFilter("all");
+                setPriorityFilter("all");
+              }}
+              className="text-sm text-gray-500 hover:text-gray-900 mb-2"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { useInvoice } from "../hooks/useInvoices";
 import { useInvoiceItems } from "../hooks/useInvoiceItems";
+import { invoicesApi } from "../api/invoices.api";
 import GenerateFromTimeModal from "../components/GenerateFromTimeModal";
 import { 
   ArrowLeft, 
@@ -29,9 +30,10 @@ export default function InvoiceDetails() {
   
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({ description: "", quantity: 1, rate: 0 });
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const invoice = invoiceQuery.data;
-  const items = invoiceItemsQuery.data || [];
+  const items = invoice?.items || [];
 
   if (invoiceQuery.isLoading) {
     return <div className="p-12 text-center text-gray-500 animate-pulse">Loading invoice...</div>;
@@ -63,9 +65,27 @@ export default function InvoiceDetails() {
     deleteInvoiceItem.mutate(itemId);
   };
 
-  const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.quantity) * parseFloat(item.rate)), 0);
-  const tax = subtotal * (parseFloat(invoice.tax_rate || 0) / 100);
-  const total = subtotal + tax;
+  const handleDownloadPDF = async () => {
+    try {
+      setIsDownloading(true);
+      const blob = await invoicesApi.downloadPDF(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${invoice.invoice_number || `Invoice_${id}`}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading PDF", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const subtotal = invoice?.subtotal || 0;
+  const tax = invoice?.tax_amount || 0;
+  const total = invoice?.total_amount || 0;
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -90,15 +110,19 @@ export default function InvoiceDetails() {
               </span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Client: {typeof invoice.client === 'object' ? invoice.client?.name : `Client #${invoice.client}`}
+              Client: {invoice.client_name || `Client #${invoice.client}`}
             </p>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-xl transition-colors shadow-sm">
+          <button 
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className="flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            {isDownloading ? "Downloading..." : "Download PDF"}
           </button>
         </div>
       </div>
@@ -126,7 +150,7 @@ export default function InvoiceDetails() {
               <div className="sm:col-span-2">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Project</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {typeof invoice.project === 'object' ? invoice.project?.name : (invoice.project ? `Project #${invoice.project}` : 'No Project')}
+                  {invoice.project_name || (invoice.project ? `Project #${invoice.project}` : 'No Project')}
                 </p>
               </div>
               <div className="col-span-2 sm:col-span-4">

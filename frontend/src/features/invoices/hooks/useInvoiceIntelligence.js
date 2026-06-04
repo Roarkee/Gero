@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { invoicesApi } from "../api/invoices.api";
 import { useInvoices } from "./useInvoices";
 
-// Frontend calculation helpers
+// ─── Local fallback calculators ──────────────────────────────────────────────
+
 const calculateRevenueIntelligence = (invoices) => {
   const paidInvoices = invoices.filter(inv => inv.status === 'paid');
   const outstandingInvoices = invoices.filter(inv => ['sent', 'draft', 'overdue'].includes(inv.status));
@@ -11,10 +12,8 @@ const calculateRevenueIntelligence = (invoices) => {
   const totalRevenue = paidInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
   const outstandingRevenue = outstandingInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
   const overdueRevenue = overdueInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
-
   const avgInvoiceSize = paidInvoices.length ? totalRevenue / paidInvoices.length : 0;
 
-  // Monthly breakdown for trend chart
   const monthlyRevenue = {};
   paidInvoices.forEach(inv => {
     if (!inv.issue_date) return;
@@ -28,170 +27,231 @@ const calculateRevenueIntelligence = (invoices) => {
     revenue: monthlyRevenue[key]
   }));
 
-  return {
-    totalRevenue,
-    outstandingRevenue,
-    overdueRevenue,
-    avgInvoiceSize,
-    paidCount: paidInvoices.length,
-    sentCount: outstandingInvoices.length,
-    trendData
-  };
+  return { totalRevenue, outstandingRevenue, overdueRevenue, avgInvoiceSize, paidCount: paidInvoices.length, sentCount: outstandingInvoices.length, trendData };
 };
 
 const calculateCollectionIntelligence = (invoices) => {
   const paidInvoices = invoices.filter(inv => inv.status === 'paid' && inv.issue_date);
-  
   let totalDaysToPay = 0;
   paidInvoices.forEach(inv => {
-    // Proxy for payment date: if paid, calculate diff from issue date to current date or a stored paid_date if it exists
-    const paidDate = inv.paid_at ? new Date(inv.paid_at) : new Date(inv.updated_at || inv.issue_date);
+    const paidDate = inv.paid_date ? new Date(inv.paid_date) : new Date(inv.updated_at || inv.issue_date);
     const issueDate = new Date(inv.issue_date);
-    const diffTime = Math.abs(paidDate - issueDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    totalDaysToPay += diffDays;
+    totalDaysToPay += Math.ceil(Math.abs(paidDate - issueDate) / (1000 * 60 * 60 * 24));
   });
-
   const avgCollectionDays = paidInvoices.length ? Math.round(totalDaysToPay / paidInvoices.length) : 0;
   const overdueCount = invoices.filter(inv => inv.status === 'overdue').length;
   const totalCount = invoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled').length;
   const collectionRate = totalCount ? Math.round((paidInvoices.length / totalCount) * 100) : 100;
-  
   let healthScore = 'Good';
   if (collectionRate < 70) healthScore = 'Critical';
   else if (collectionRate < 85 || avgCollectionDays > 30) healthScore = 'Needs Attention';
   else if (collectionRate > 95 && avgCollectionDays < 15) healthScore = 'Excellent';
-
-  return {
-    collectionRate,
-    avgCollectionDays,
-    healthScore,
-    latePaymentTrends: overdueCount > 0 ? 'increasing' : 'stable'
-  };
+  const needsAttentionInvoices = invoices.filter(inv => inv.status === 'overdue');
+  return { collectionRate, avgCollectionDays, healthScore, latePaymentTrends: overdueCount > 0 ? 'increasing' : 'stable', needsAttentionInvoices };
 };
 
 const calculateClientIntelligence = (invoices) => {
   const clientStats = {};
-
   invoices.forEach(inv => {
-    // If inv.client is an object with id/name, use it. If it's an ID, we might just group by ID.
-    // For this example, assuming backend provides at least client name or we just map by string.
     const clientId = typeof inv.client === 'object' ? inv.client?.id : inv.client;
     const clientName = typeof inv.client === 'object' ? inv.client?.name : `Client #${inv.client}`;
-    
     if (!clientId) return;
-
     if (!clientStats[clientId]) {
-      clientStats[clientId] = {
-        id: clientId,
-        name: clientName,
-        totalInvoiced: 0,
-        paidCount: 0,
-        overdueCount: 0,
-        totalCount: 0
-      };
+      clientStats[clientId] = { id: clientId, name: clientName, totalInvoiced: 0, paidCount: 0, overdueCount: 0, totalCount: 0 };
     }
-
     clientStats[clientId].totalInvoiced += parseFloat(inv.total_amount || 0);
     clientStats[clientId].totalCount += 1;
     if (inv.status === 'paid') clientStats[clientId].paidCount += 1;
     if (inv.status === 'overdue') clientStats[clientId].overdueCount += 1;
   });
-
   return Object.values(clientStats).map(client => {
     const overdueRatio = client.totalCount ? (client.overdueCount / client.totalCount) * 100 : 0;
     let riskLevel = 'Low';
     if (overdueRatio > 40) riskLevel = 'High';
     else if (overdueRatio > 15) riskLevel = 'Medium';
-
-    return {
-      ...client,
-      overdueRatio: Math.round(overdueRatio),
-      riskLevel
-    };
+    return { ...client, overdueRatio: Math.round(overdueRatio), riskLevel };
   });
 };
 
 const calculateCashFlowIntelligence = (invoices) => {
   const unpaidInvoices = invoices.filter(inv => ['sent', 'overdue'].includes(inv.status));
-  const buckets = {
-    '0-30 days': 0,
-    '31-60 days': 0,
-    '61-90 days': 0,
-    '90+ days': 0
-  };
-
+  const buckets = { '0-30 days': 0, '31-60 days': 0, '61-90 days': 0, '90+ days': 0 };
   const today = new Date();
-
   unpaidInvoices.forEach(inv => {
     if (!inv.due_date) return;
     const dueDate = new Date(inv.due_date);
-    const diffTime = today - dueDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+    const diffDays = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
     const amount = parseFloat(inv.total_amount || 0);
-
-    if (diffDays <= 0) {
-      // Upcoming
-    } else if (diffDays <= 30) {
-      buckets['0-30 days'] += amount;
-    } else if (diffDays <= 60) {
-      buckets['31-60 days'] += amount;
-    } else if (diffDays <= 90) {
-      buckets['61-90 days'] += amount;
-    } else {
-      buckets['90+ days'] += amount;
-    }
+    if (diffDays <= 0) { /* upcoming */ }
+    else if (diffDays <= 30) buckets['0-30 days'] += amount;
+    else if (diffDays <= 60) buckets['31-60 days'] += amount;
+    else if (diffDays <= 90) buckets['61-90 days'] += amount;
+    else buckets['90+ days'] += amount;
   });
+  return { buckets, upcomingInvoices: unpaidInvoices.filter(inv => inv.due_date && new Date(inv.due_date) >= today) };
+};
+
+// ─── Backend response normalizers ────────────────────────────────────────────
+
+/**
+ * Backend returns [{month, amount}, ...] from revenue/monthly/
+ * plus [{client_id, client__name, total}, ...] from revenue/top-clients/
+ * We need to combine them into the shape pages expect.
+ */
+const normalizeRevenue = (monthlyData, topClients, invoices) => {
+  if (!monthlyData || !Array.isArray(monthlyData)) return calculateRevenueIntelligence(invoices);
+
+  const trendData = monthlyData
+    .filter(d => d.month)
+    .map(d => ({ month: d.month ? d.month.slice(0, 7) : '', revenue: parseFloat(d.amount || 0) }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  const totalRevenue = trendData.reduce((acc, d) => acc + d.revenue, 0);
+
+  // Supplement with local invoice data for outstanding/overdue
+  const local = calculateRevenueIntelligence(invoices);
 
   return {
-    buckets,
-    upcomingInvoices: unpaidInvoices.filter(inv => inv.due_date && new Date(inv.due_date) >= today)
+    totalRevenue,
+    outstandingRevenue: local.outstandingRevenue,
+    overdueRevenue: local.overdueRevenue,
+    avgInvoiceSize: local.avgInvoiceSize,
+    paidCount: local.paidCount,
+    sentCount: local.sentCount,
+    trendData,
   };
 };
+
+/**
+ * Backend returns {score, rating} from collection/performance/
+ * and {collection_rate} from collection/rate/
+ * Pages expect {collectionRate, avgCollectionDays, healthScore}
+ */
+const normalizeCollection = (performanceData, rateData, invoices) => {
+  if (!performanceData) return calculateCollectionIntelligence(invoices);
+  const local = calculateCollectionIntelligence(invoices);
+  return {
+    collectionRate: rateData?.collection_rate ?? local.collectionRate,
+    avgCollectionDays: local.avgCollectionDays,
+    healthScore: performanceData.rating ?? local.healthScore,
+    score: performanceData.score,
+    latePaymentTrends: local.latePaymentTrends,
+    needsAttentionInvoices: local.needsAttentionInvoices,
+  };
+};
+
+/**
+ * Backend returns [{client, risk, score}] from clients/risk/
+ * Pages expect [{id, name, totalInvoiced, paidCount, totalCount, overdueRatio, riskLevel}]
+ * The backend risk report doesn't include financial totals, so we merge with local data.
+ */
+const normalizeClientData = (backendRiskData, invoices) => {
+  const localData = calculateClientIntelligence(invoices);
+
+  if (!backendRiskData || !Array.isArray(backendRiskData) || backendRiskData.length === 0) {
+    return localData;
+  }
+
+  // Build a lookup of backend risk levels by client name
+  const riskByName = {};
+  backendRiskData.forEach(item => {
+    if (item.client) riskByName[item.client] = item.risk;
+  });
+
+  // Overlay backend risk level on top of locally-calculated financial data
+  return localData.map(client => ({
+    ...client,
+    riskLevel: riskByName[client.name] ?? client.riskLevel,
+  }));
+};
+
+/**
+ * Backend returns {outstanding_amount, overdue_amount} from cashflow/receivables/
+ * Pages also need {buckets, upcomingInvoices} for the aging chart — those come from local calc.
+ */
+const normalizeCashFlow = (backendData, invoices) => {
+  const local = calculateCashFlowIntelligence(invoices);
+  if (!backendData) return local;
+  return {
+    ...local,
+    outstandingAmount: backendData.outstanding_amount,
+    overdueAmount: backendData.overdue_amount,
+  };
+};
+
+// ─── Hook ────────────────────────────────────────────────────────────────────
 
 export const useInvoiceIntelligence = () => {
   const { invoicesQuery } = useInvoices();
   const rawData = invoicesQuery.data;
   const invoices = rawData?.results || rawData || [];
 
-  // Revenue Intelligence
-  const revenueQuery = useQuery({
-    queryKey: ["invoiceRevenueIntelligence"],
+  // Revenue: monthly trend
+  const revenueMonthlyQuery = useQuery({
+    queryKey: ["invoiceRevenueMonthly"],
     queryFn: invoicesApi.getRevenueIntelligence,
-    retry: false, // Don't retry if endpoint is missing
+    retry: false,
   });
 
-  // Collection Intelligence
-  const collectionQuery = useQuery({
-    queryKey: ["invoiceCollectionIntelligence"],
+  // Revenue: top clients (for concentration calc)
+  const revenueTopClientsQuery = useQuery({
+    queryKey: ["invoiceRevenueTopClients"],
+    queryFn: invoicesApi.getRevenueTopClients,
+    retry: false,
+  });
+
+  // Collection: performance score & rating
+  const collectionPerfQuery = useQuery({
+    queryKey: ["invoiceCollectionPerformance"],
     queryFn: invoicesApi.getCollectionIntelligence,
     retry: false,
   });
 
-  // Client Intelligence
-  const clientQuery = useQuery({
-    queryKey: ["invoiceClientIntelligence"],
+  // Collection: collection rate %
+  const collectionRateQuery = useQuery({
+    queryKey: ["invoiceCollectionRate"],
+    queryFn: invoicesApi.getCollectionRate,
+    retry: false,
+  });
+
+  // Client: risk report
+  const clientRiskQuery = useQuery({
+    queryKey: ["invoiceClientRisk"],
     queryFn: invoicesApi.getClientIntelligence,
     retry: false,
   });
 
-  // Cash Flow Intelligence
+  // Cash flow: receivables summary
   const cashFlowQuery = useQuery({
-    queryKey: ["invoiceCashFlowIntelligence"],
+    queryKey: ["invoiceCashFlow"],
     queryFn: invoicesApi.getCashFlowIntelligence,
     retry: false,
   });
 
-  // Fallbacks
-  const revenueData = revenueQuery.isError ? calculateRevenueIntelligence(invoices) : revenueQuery.data;
-  const collectionData = collectionQuery.isError ? calculateCollectionIntelligence(invoices) : collectionQuery.data;
-  const clientData = clientQuery.isError ? calculateClientIntelligence(invoices) : clientQuery.data;
-  const cashFlowData = cashFlowQuery.isError ? calculateCashFlowIntelligence(invoices) : cashFlowQuery.data;
+  // Normalize/merge backend data with local fallbacks
+  const revenueData = normalizeRevenue(
+    revenueMonthlyQuery.data,
+    revenueTopClientsQuery.data,
+    invoices
+  );
 
-  // Concentration Risk calculation
+  const collectionData = normalizeCollection(
+    collectionPerfQuery.isError ? null : collectionPerfQuery.data,
+    collectionRateQuery.isError ? null : collectionRateQuery.data,
+    invoices
+  );
+
+  const rawClientData = clientRiskQuery.isError ? null : clientRiskQuery.data;
+  const mergedClientData = normalizeClientData(rawClientData, invoices);
+
+  const cashFlowData = normalizeCashFlow(
+    cashFlowQuery.isError ? null : cashFlowQuery.data,
+    invoices
+  );
+
+  // Concentration Risk
   const totalRevenue = revenueData?.totalRevenue || 1;
-  const clientsWithConcentration = (clientData || []).map(client => ({
+  const clientsWithConcentration = mergedClientData.map(client => ({
     ...client,
     revenueShare: Math.round((client.totalInvoiced / totalRevenue) * 100)
   })).sort((a, b) => b.revenueShare - a.revenueShare);
@@ -209,3 +269,4 @@ export const useInvoiceIntelligence = () => {
     isLoading: invoicesQuery.isLoading,
   };
 };
+

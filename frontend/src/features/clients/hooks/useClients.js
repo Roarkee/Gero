@@ -100,3 +100,16 @@ export const useScheduleFollowUp = () => {
     },
   });
 };
+
+export const useCreateClientActivity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clientApi.createClientActivity,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: clientKeys.activities(variables.id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.clientIntelligence(variables.id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
+    },
+  });
+};

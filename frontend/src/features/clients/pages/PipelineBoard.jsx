@@ -22,7 +22,11 @@ const PIPELINE_COLUMNS = [
   { id: "onboarding", title: "Onboarding" },
   { id: "active", title: "Active" },
   { id: "waiting_on_client", title: "Waiting" },
+  { id: "revision", title: "Revision" },
   { id: "completed", title: "Completed" },
+  { id: "paused", title: "Paused" },
+  { id: "dormant", title: "Dormant" },
+  { id: "churned", title: "Churned" },
 ];
 
 function SortableClientCard({ client }) {
@@ -48,14 +52,14 @@ function Column({ column, clients }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
   const columnBg = isOver ? "bg-emerald-50" : "bg-gray-50/50";
   return (
-    <div ref={setNodeRef} className={columnBg + " flex flex-col rounded-xl border border-gray-200 w-80 shrink-0"}>
-      <div className="p-4 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
+    <div ref={setNodeRef} className={columnBg + " flex flex-col rounded-xl border border-gray-200 w-72 shrink-0"}>
+      <div className="p-3 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
         <h3 className="font-medium text-sm text-gray-700">{column.title}</h3>
         <span className="bg-white text-gray-500 text-xs py-0.5 px-2 rounded-full border border-gray-200 font-medium">
           {clients.length}
         </span>
       </div>
-      <div className="p-3 flex-1 overflow-y-auto min-h-[500px]">
+      <div className="p-3 flex-1 overflow-y-auto min-h-[400px]">
         <SortableContext items={clients.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {clients.map((client) => (
             <SortableClientCard key={client.id} client={client} />
@@ -133,20 +137,20 @@ export default function PipelineBoard() {
   }
 
   return (
-    <div className="h-full flex flex-col pt-8 pl-8 pb-8 pr-0">
-      <div className="mb-6 pr-8">
+    <div className="h-full flex flex-col p-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Pipeline Board</h1>
         <p className="text-sm text-gray-500 mt-1">Drag and drop clients to update their status.</p>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4 pr-8">
+      <div className="flex-1 overflow-x-auto pb-4 scroll-smooth">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 h-full items-start">
+          <div className="flex gap-4 h-full items-start min-w-max pr-4">
             {PIPELINE_COLUMNS.map((col) => (
               <Column 
                 key={col.id} 
@@ -154,11 +158,13 @@ export default function PipelineBoard() {
                 clients={clients.filter(c => c.status === col.id)} 
               />
             ))}
+            {/* Spacer to prevent last column from clipping */}
+            <div className="w-1 shrink-0" aria-hidden="true"></div>
           </div>
 
           <DragOverlay>
             {activeClient ? (
-              <div className="rotate-2 scale-105 opacity-90 cursor-grabbing">
+              <div className="rotate-2 scale-105 opacity-90 cursor-grabbing shadow-2xl">
                 <ClientCard client={activeClient} />
               </div>
             ) : null}

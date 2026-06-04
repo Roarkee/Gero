@@ -106,7 +106,7 @@ export default function CashFlowDashboard() {
                   <div key={inv.id} className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 hover:border-indigo-300 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {typeof inv.client === 'object' ? inv.client?.name : `Client #${inv.client}`}
+                        {inv.client_name || `Client #${inv.client}`}
                       </p>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">
                         ${parseFloat(inv.total_amount).toLocaleString()}

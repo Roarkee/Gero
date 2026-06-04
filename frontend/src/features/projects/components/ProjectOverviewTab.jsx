@@ -19,8 +19,14 @@ export default function ProjectOverviewTab({ project }) {
   // Filter activities for this project
   const projectActivities = activities?.filter(a => a.project === project.id).slice(0, 5);
   
-  // Calculate completion percentage
-  const completionPercent = overview.completion_percentage || 0;
+  // Calculate metrics from nested intelligence data
+  const completionPercent = overview.productivity?.completion_percentage || 0;
+  const activeTasks = overview.delivery?.remaining_tasks || 0;
+  const overdueTasks = overview.delivery?.overdue_tasks || 0;
+  
+  // Convert minutes to hours
+  const totalLoggedHours = Math.round((overview.productivity?.time_logged_minutes || 0) / 60 * 10) / 10;
+  const estimatedHours = 0; // The intelligence API doesn't seem to return estimated hours currently
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -46,14 +52,14 @@ export default function ProjectOverviewTab({ project }) {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Open Tasks</p>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{overview.active_tasks || 0}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{activeTasks}</h3>
             </div>
             <div className="p-2 bg-orange-50 dark:bg-orange-900/50 rounded-lg">
               <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
           </div>
           <p className="text-sm mt-3 text-orange-600 dark:text-orange-400 font-medium">
-            {overview.overdue_tasks || 0} Overdue
+            {overdueTasks} Overdue
           </p>
         </div>
 
@@ -61,14 +67,14 @@ export default function ProjectOverviewTab({ project }) {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Hours Logged</p>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{overview.total_logged_hours || 0}h</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{totalLoggedHours}h</h3>
             </div>
             <div className="p-2 bg-purple-50 dark:bg-purple-900/50 rounded-lg">
               <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
           </div>
           <p className="text-sm mt-3 text-gray-500 dark:text-gray-400">
-            Est: {overview.estimated_hours || 0}h
+            Est: {estimatedHours}h
           </p>
         </div>
 

@@ -11,7 +11,7 @@ import ProtectedRoute from "./components/shared/ProtectedRoute";
 // Pages
 import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
-import Dashboard from "./features/dashboard/Dashboard";
+import Dashboard from "./features/dashboard/pages/Dashboard";
 import ProjectsDashboard from "./features/projects/pages/ProjectsDashboard";
 import ProjectWorkspace from "./features/projects/pages/ProjectWorkspace";
 import DashboardLayout from "./layouts/DashboardLayout";

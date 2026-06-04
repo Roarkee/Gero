@@ -5,6 +5,8 @@ export const API_ENDPOINTS = {
   REFRESH: "/api/users/refresh/",
   PROFILE: "/api/users/profile/",
   LOGOUT: "/api/users/logout/",
+  // Dashboard
+  DASHBOARD: "/api/dashboard/",
 
   // Projects
   PROJECTS: "/api/projects/",
@@ -40,12 +42,12 @@ export const API_ENDPOINTS = {
   ACTIVE_TIMER: "/api/time-entries/active_timer/",
 
   // Project Intelligence
-  PROJECT_OVERVIEW: (id) => `/api/projects/${id}/overview/`,
-  PROJECT_PROFITABILITY: (id) => `/api/projects/${id}/profitability/`,
-  PROJECT_PRODUCTIVITY: (id) => `/api/projects/${id}/productivity/`,
-  PROJECT_DELIVERY: (id) => `/api/projects/${id}/delivery/`,
-  PROJECT_BUDGET: (id) => `/api/projects/${id}/budget/`,
-  PROJECT_HEALTH: (id) => `/api/projects/${id}/health/`,
+  PROJECT_OVERVIEW: (id) => `/api/intelligence/projects/${id}/overview/`,
+  PROJECT_PROFITABILITY: (id) => `/api/intelligence/projects/${id}/profitability/`,
+  PROJECT_PRODUCTIVITY: (id) => `/api/intelligence/projects/${id}/productivity/`,
+  PROJECT_DELIVERY: (id) => `/api/intelligence/projects/${id}/delivery/`,
+  PROJECT_BUDGET: (id) => `/api/intelligence/projects/${id}/budget/`,
+  PROJECT_HEALTH: (id) => `/api/intelligence/projects/${id}/health/`,
 
   // Additional Project APIs
   ACTIVITIES: "/api/activities/",
@@ -57,17 +59,23 @@ export const API_ENDPOINTS = {
   INVOICE_DETAIL: (id) => `/api/invoices/${id}/`,
   INVOICE_DASHBOARD: "/api/invoices/dashboard_stats/",
   INVOICE_GENERATE_FROM_TIME: (id) => `/api/invoices/${id}/generate_from_time/`,
+  INVOICE_DOWNLOAD_PDF: (id) => `/api/invoices/${id}/download_pdf/`,
 
   // Invoice Items
   INVOICE_ITEMS: "/api/invoice-items/",
   INVOICE_ITEM_DETAIL: (id) => `/api/invoice-items/${id}/`,
 
-  // Intelligence (Fallbacks/Placeholders)
-  INVOICE_REVENUE_INTELLIGENCE: "/api/invoices/revenue_intelligence/",
-  INVOICE_COLLECTION_INTELLIGENCE: "/api/invoices/collection_intelligence/",
-  INVOICE_CLIENT_INTELLIGENCE: "/api/invoices/client_intelligence/",
-  INVOICE_CASH_FLOW_INTELLIGENCE: "/api/invoices/cash_flow_intelligence/",
-  INVOICE_RISK_INTELLIGENCE: "/api/invoices/risk_intelligence/",
+  // Intelligence — real routes under /api/intelligence/invoices/
+  INVOICE_REVENUE_INTELLIGENCE: "/api/intelligence/invoices/revenue/monthly/",
+  INVOICE_REVENUE_TOP_CLIENTS: "/api/intelligence/invoices/revenue/top-clients/",
+  INVOICE_REVENUE_CONCENTRATION: "/api/intelligence/invoices/revenue/concentration/",
+  INVOICE_COLLECTION_INTELLIGENCE: "/api/intelligence/invoices/collection/performance/",
+  INVOICE_COLLECTION_RATE: "/api/intelligence/invoices/collection/rate/",
+  INVOICE_CLIENT_INTELLIGENCE: "/api/intelligence/invoices/clients/risk/",
+  INVOICE_CLIENT_PAYMENT_BEHAVIOR: "/api/intelligence/invoices/clients/payment-behaviour/",
+  INVOICE_CASH_FLOW_INTELLIGENCE: "/api/intelligence/invoices/cashflow/receivables/",
+  INVOICE_RISK_INTELLIGENCE: "/api/intelligence/invoices/risk/invoices/",
+
 
   // Expenses
   EXPENSES: "/api/expenses/",

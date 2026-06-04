@@ -64,7 +64,7 @@ export default function RevenueOverviewCards({ data, isLoading }) {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{card.title}</p>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</h3>
+              <h3 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate" title={card.value}>{card.value}</h3>
             </div>
           </div>
         );
