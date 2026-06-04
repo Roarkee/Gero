@@ -7,6 +7,7 @@ migrations/
 venv/
 backend/Dockerfile
 backend/docker-compose.yml
+staticfiles/
 *.pyc
 frontend/.vite/
 
