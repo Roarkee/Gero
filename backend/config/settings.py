@@ -261,6 +261,7 @@ CSRF_COOKIE_SECURE = False
 
 # CORS settings for React frontend
 CORS_ALLOWED_ORIGINS = [
+    "https://gero-eosin.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",  # Vite default port
@@ -268,6 +269,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://gero-eosin.vercel.app",
+]
 
 
 if 'pytest' in sys.modules or 'test' in sys.argv:
