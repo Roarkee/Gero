@@ -37,7 +37,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', "https://gero-backend.onrender.com"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com"]
 
 
 # Application definition
