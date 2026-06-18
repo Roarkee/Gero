@@ -41,7 +41,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         #to the authenticated user. 
         client_id = self.request.data.get('client')
         client=get_object_or_404(Client, id=client_id, user=self.request.user)
-        serializer.save(client=client)
+        serializer.save(client=client, user=self.request.user)
 
 
 class TaskListViewSet(viewsets.ModelViewSet):

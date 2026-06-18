@@ -10,7 +10,7 @@ class ProjectSerializer(serializers.ModelSerializer,OwnerValidationMixin):
     class Meta:
         model = Project
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'user')
 
     def validate_client(self, client):#this is a field level validator. it checks if the project belongs to the client
         #and if the client belongs to the authenticated user

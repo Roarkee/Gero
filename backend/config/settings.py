@@ -33,7 +33,9 @@ environ.Env.read_env(BASE_DIR/ '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
-
+PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')#storing this for if i'll use
+#the paystack connect method
+PAYSTACK_PUBLIC_KEY=env('PAYSTACK_PUBLIC_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 

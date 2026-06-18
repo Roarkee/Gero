@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from encrypted_model_fields.fields import EncryptedCharField
+from .utils import generate_reference
 import uuid
 from decimal import Decimal, ROUND_HALF_UP
 # Create your models here.
@@ -75,7 +76,7 @@ class PaymentIntent(models.Model):
         ('expired', 'Expired'),
         ('refunded', 'Refunded')
     ]
-    2
+    
     ALLOWED_TRANSITIONS = {
     'pending': ['processing', 'failed', 'canceled', 'expired'],
     'processing': ['completed', 'failed', 'canceled'],
@@ -92,7 +93,7 @@ class PaymentIntent(models.Model):
     provider = models.ForeignKey(PaymentProvider, on_delete=models.CASCADE, related_name='payment_intents')
     currency = models.CharField(max_length=3, default='GHS')
     amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
-    reference = models.CharField(max_length=100, unique=True, editable=False, default='utils.generate_reference')
+    reference = models.CharField(max_length=100, unique=True, editable=False, default=generate_reference)
     external_reference = models.CharField(max_length=150, blank=True, null=True)
     status = models.CharField(choices=STATUS_CHOICES, default='pending', max_length=12)
     payment_url = models.URLField(blank=True, null=True)
@@ -181,7 +182,7 @@ class PaymentTransaction(models.Model):
         if not self.pk:
             return
 
-        original = PaymentIntent.objects.get(pk=self.pk)
+        original = PaymentTransaction.objects.get(pk=self.pk)
 
         if original.status != self.status:
 
