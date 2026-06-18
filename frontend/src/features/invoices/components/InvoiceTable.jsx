@@ -28,15 +28,17 @@ const getStatusBadge = (status) => {
   }
 };
 
-export default function InvoiceTable({ invoices, isLoading, onDelete }) {
+import CreateInvoiceModal from "./CreateInvoiceModal";
+
+export default function InvoiceTable({ invoices = [], isLoading }) {
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
+
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden p-6 animate-pulse">
-         <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-6"></div>
-         <div className="space-y-4">
-           {[1, 2, 3, 4, 5].map(i => (
-             <div key={i} className="h-12 bg-gray-100 dark:bg-gray-700/50 rounded w-full"></div>
-           ))}
+      <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm p-12">
+         <div className="flex flex-col items-center justify-center space-y-4">
+           <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+           <p className="text-gray-500 dark:text-gray-400 font-medium">Loading invoices...</p>
          </div>
       </div>
     );
@@ -52,12 +54,13 @@ export default function InvoiceTable({ invoices, isLoading, onDelete }) {
         <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
           Create your first invoice or generate one from unbilled time entries.
         </p>
-        <Link 
-          to="/invoices/create" 
+        <button 
+          onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
         >
           Create Invoice
-        </Link>
+        </button>
+        <CreateInvoiceModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
       </div>
     );
   }

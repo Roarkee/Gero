@@ -20,7 +20,8 @@ export const useInvoices = () => {
     mutationFn: invoicesApi.updateInvoice,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      queryClient.invalidateQueries({ queryKey: ["invoice", data.id] });
+      // id from URL params is a string; data.id is an integer — coerce to match
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(data.id)] });
     },
   });
 

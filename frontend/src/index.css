@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 13px; /* Scales down entire UI by ~18.75% to address excessively large fonts */
+  }
+  
   * {
     box-sizing: border-box;
   }

@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
-import { useInvoice } from "../hooks/useInvoices";
-import { useInvoiceItems } from "../hooks/useInvoiceItems";
+import { useInvoice, useInvoices } from "../hooks/useInvoices";
 import { invoicesApi } from "../api/invoices.api";
 import GenerateFromTimeModal from "../components/GenerateFromTimeModal";
 import { 
@@ -26,43 +25,84 @@ const formatCurrency = (amount) => {
 export default function InvoiceDetails() {
   const { id } = useParams();
   const { invoiceQuery } = useInvoice(id);
-  const { invoiceItemsQuery, createInvoiceItem, updateInvoiceItem, deleteInvoiceItem } = useInvoiceItems(id);
+  const { updateInvoice } = useInvoices(); // To save changes
   
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({ description: "", quantity: 1, rate: 0 });
   const [isDownloading, setIsDownloading] = useState(false);
-
+  
+  // Local state for invoice and items
+  const [localInvoice, setLocalInvoice] = useState(null);
+  const [localItems, setLocalItems] = useState([]);
+  
   const invoice = invoiceQuery.data;
-  const items = invoice?.items || [];
+
+  // Sync local state when invoice data loads
+  useEffect(() => {
+    if (invoice) {
+      setLocalInvoice({ ...invoice });
+      setLocalItems(invoice.items || []);
+    }
+  }, [invoice]);
 
   if (invoiceQuery.isLoading) {
     return <div className="p-12 text-center text-gray-500 animate-pulse">Loading invoice...</div>;
   }
 
-  if (!invoice) {
+  if (!invoice || !localInvoice) {
     return <div className="p-12 text-center text-gray-500">Invoice not found.</div>;
   }
 
   const handleAddItem = () => {
     if (!newItem.description.trim() || newItem.rate < 0) return;
-    createInvoiceItem.mutate({
-      invoice: parseInt(id),
-      description: newItem.description,
-      quantity: newItem.quantity,
-      rate: newItem.rate
-    }, {
-      onSuccess: () => {
-        setNewItem({ description: "", quantity: 1, rate: 0 });
-      }
-    });
+    const newId = `temp-${Date.now()}`;
+    setLocalItems([...localItems, {
+      ...newItem,
+      id: newId,
+      isTemp: true,
+      amount: newItem.quantity * newItem.rate
+    }]);
+    setNewItem({ description: "", quantity: 1, rate: 0 });
   };
 
   const handleUpdateItem = (itemId, field, value) => {
-    updateInvoiceItem.mutate({ id: itemId, [field]: value });
+    setLocalItems(prevItems => prevItems.map(item => {
+      if (item.id === itemId) {
+        const updated = { ...item, [field]: value };
+        // Recalculate amount dynamically
+        updated.amount = (parseFloat(updated.quantity) || 0) * (parseFloat(updated.rate) || 0);
+        return updated;
+      }
+      return item;
+    }));
   };
 
   const handleDeleteItem = (itemId) => {
-    deleteInvoiceItem.mutate(itemId);
+    setLocalItems(prevItems => prevItems.filter(item => item.id !== itemId));
+  };
+
+  const handleUpdateInvoiceField = (field, value) => {
+    setLocalInvoice(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveChanges = () => {
+    const payloadItems = localItems.map(item => {
+      // Only send the fields the backend ItemSerializer accepts
+      const { description, quantity, rate } = item;
+      const base = { description, quantity: parseFloat(quantity) || 0, rate: parseFloat(rate) || 0 };
+      // Include id only for existing (non-temp) items so the backend can match them
+      if (!item.isTemp && item.id) {
+        base.id = item.id;
+      }
+      return base;
+    });
+
+    updateInvoice.mutate({
+      id: parseInt(id),
+      description: localInvoice.description,
+      tax_rate: localInvoice.tax_rate,
+      items: payloadItems
+    });
   };
 
   const handleDownloadPDF = async () => {
@@ -83,9 +123,11 @@ export default function InvoiceDetails() {
     }
   };
 
-  const subtotal = invoice?.subtotal || 0;
-  const tax = invoice?.tax_amount || 0;
-  const total = invoice?.total_amount || 0;
+  // Local calculation of totals
+  const localSubtotal = localItems.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0)), 0);
+  const localTaxRate = parseFloat(localInvoice.tax_rate) || 0;
+  const localTax = localSubtotal * (localTaxRate / 100);
+  const localTotal = localSubtotal + localTax;
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -155,9 +197,13 @@ export default function InvoiceDetails() {
               </div>
               <div className="col-span-2 sm:col-span-4">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Description</p>
-                <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                  {invoice.notes || "No additional notes provided."}
-                </p>
+                <textarea
+                  value={localInvoice.description || ""}
+                  onChange={(e) => handleUpdateInvoiceField("description", e.target.value)}
+                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-2 text-sm text-gray-900 dark:text-white transition-colors"
+                  placeholder="Additional notes or description..."
+                  rows={2}
+                />
               </div>
             </div>
           </div>
@@ -189,15 +235,13 @@ export default function InvoiceDetails() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {items.map((item) => (
+                  {localItems.map((item) => (
                     <tr key={item.id} className="group">
                       <td className="px-6 py-4">
                         <input 
                           type="text" 
-                          defaultValue={item.description}
-                          onBlur={(e) => {
-                            if(e.target.value !== item.description) handleUpdateItem(item.id, 'description', e.target.value)
-                          }}
+                          value={item.description || ""}
+                          onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
                           className="w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
                         />
                       </td>
@@ -205,11 +249,8 @@ export default function InvoiceDetails() {
                         <input 
                           type="number" 
                           step="0.01"
-                          defaultValue={item.quantity}
-                          onBlur={(e) => {
-                            const val = parseFloat(e.target.value);
-                            if(!isNaN(val) && val !== item.quantity) handleUpdateItem(item.id, 'quantity', val)
-                          }}
+                          value={item.quantity}
+                          onChange={(e) => handleUpdateItem(item.id, 'quantity', e.target.value)}
                           className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
                         />
                       </td>
@@ -217,16 +258,13 @@ export default function InvoiceDetails() {
                         <input 
                           type="number" 
                           step="0.01"
-                          defaultValue={item.rate}
-                          onBlur={(e) => {
-                            const val = parseFloat(e.target.value);
-                            if(!isNaN(val) && val !== item.rate) handleUpdateItem(item.id, 'rate', val)
-                          }}
+                          value={item.rate}
+                          onChange={(e) => handleUpdateItem(item.id, 'rate', e.target.value)}
                           className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
                         />
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(item.quantity * item.rate)}
+                        {formatCurrency((parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0))}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 
@@ -274,7 +312,7 @@ export default function InvoiceDetails() {
                     <td className="px-6 py-4 text-right">
                       <button 
                         onClick={handleAddItem}
-                        disabled={!newItem.description.trim() || createInvoiceItem.isPending}
+                        disabled={!newItem.description.trim()}
                         className="p-1.5 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors disabled:opacity-50"
                       >
                         <Plus className="w-4 h-4" />
@@ -295,22 +333,38 @@ export default function InvoiceDetails() {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(subtotal)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(localSubtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Tax ({invoice.tax_rate || 0}%)</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(tax)}</span>
+              <div className="flex justify-between text-sm items-center">
+                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                  Tax 
+                  <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1">
+                    <input 
+                      type="number"
+                      step="0.1"
+                      className="w-12 text-right bg-transparent border-none p-0 text-sm focus:ring-0 text-gray-900 dark:text-white"
+                      value={localInvoice.tax_rate || 0}
+                      onChange={(e) => handleUpdateInvoiceField("tax_rate", e.target.value)}
+                    />
+                    <span>%</span>
+                  </div>
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(localTax)}</span>
               </div>
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
                 <span className="font-bold text-gray-900 dark:text-white">Total</span>
-                <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{formatCurrency(total)}</span>
+                <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{formatCurrency(localTotal)}</span>
               </div>
             </div>
 
             <div className="space-y-3">
-               <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center">
+               <button 
+                 onClick={handleSaveChanges}
+                 disabled={updateInvoice.isPending}
+                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center"
+               >
                  <Save className="w-4 h-4 mr-2" />
-                 Save Changes
+                 {updateInvoice.isPending ? "Saving..." : "Save Changes"}
                </button>
             </div>
             

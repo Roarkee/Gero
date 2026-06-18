@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useInvoices } from "../hooks/useInvoices";
 import InvoiceTable from "../components/InvoiceTable";
 import InvoiceKanban from "../components/InvoiceKanban";
+import CreateInvoiceModal from "../components/CreateInvoiceModal";
 import { Plus, Search, Filter, LayoutList, Kanban } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -12,6 +13,7 @@ export default function InvoicesList() {
   
   const [viewMode, setViewMode] = useState("table");
   const [search, setSearch] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleUpdateStatus = (id, newStatus) => {
     updateInvoice.mutate({ id, status: newStatus });
@@ -37,13 +39,13 @@ export default function InvoicesList() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link 
-            to="/invoices/create" 
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Invoice
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -95,6 +97,8 @@ export default function InvoicesList() {
       ) : (
         <InvoiceKanban invoices={filteredInvoices} isLoading={invoicesQuery.isLoading} onUpdateStatus={handleUpdateStatus} />
       )}
+
+      <CreateInvoiceModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   );
 }
