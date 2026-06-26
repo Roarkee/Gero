@@ -29,7 +29,8 @@ class PaymentProvider(models.Model):
         ('vodafone_cash', 'Vodafone Cash'),
         ('stripe', 'Stripe'),
         ('paypal', 'PayPal'),
-        ('paystack', 'Paystack')
+        ('paystack', 'Paystack'),
+        ('bank', 'Bank Transfer')
     ]
 
     user = models.ForeignKey(

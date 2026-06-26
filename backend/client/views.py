@@ -40,7 +40,6 @@ class ClientViewSet(viewsets.ModelViewSet):
     def intelligence_dashboard(self, request):
         """Returns overall intelligence data for the user's clients."""
         data = get_dashboard_intelligence(request.user)
-        print(data)
         return Response(data)
 
     @action(detail=True, methods=['get'])

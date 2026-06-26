@@ -20,6 +20,7 @@ class Invoice(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='invoices')
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='invoices')
     project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name='invoices', null=True, blank=True)
+    payment_methods = models.ManyToManyField("payments.PaymentProvider",related_name='invoices', blank=True)
     sequence_number = models.PositiveIntegerField()
     invoice_number = models.CharField(max_length=50, editable=False)
     title = models.CharField(max_length=200)

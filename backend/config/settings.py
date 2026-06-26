@@ -36,6 +36,14 @@ SECRET_KEY = env('SECRET_KEY')
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')#storing this for if i'll use
 #the paystack connect method
 PAYSTACK_PUBLIC_KEY=env('PAYSTACK_PUBLIC_KEY')
+# OPENAI SETTINGS
+OPENAI_API_KEY=env('OPENAI_API_KEY')
+O_EXTRACTION_TEMP = 0.1
+O_PROPOSAL_TEMP = 0.7
+O_CONTRACT_TEMP = 0.0
+OPENAI_DEFAULT_MODEL = "gpt-5"
+OPENAI_FAST_MODEL = "gpt-5-mini"
+OPENAI_REASONING_MODEL = "gpt-5"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 

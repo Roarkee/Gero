@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 from .models import Invoice, InvoiceItem
+from payments.models import PaymentProvider
 
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
@@ -13,11 +14,27 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         read_only_fields = ('amount',)
 
 
+class InvoicePaymentProviderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentProvider
+        fields = ['id', 'provider_type', 'display_name', 'encrypted_config']
+
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True, required=False)
     client_name = serializers.CharField(source='client.name', read_only=True)
     # Allow null project without crashing on .name access
     project_name = serializers.SerializerMethodField()
+    
+    # Accept IDs for write operations
+    payment_method_ids = serializers.PrimaryKeyRelatedField(
+        source='payment_methods',
+        many=True,
+        queryset=PaymentProvider.objects.all(),
+        write_only=True,
+        required=False
+    )
+    # Output nested objects for read operations
+    payment_methods = InvoicePaymentProviderSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
@@ -26,6 +43,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None
+    
+    def validate_payment_method_ids(self, methods):
+        user = self.context["request"].user
+        for method in methods:
+            if method.user != user:
+                raise serializers.ValidationError("Invalid payment method.")
+        return methods
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
@@ -91,12 +115,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
 class InvoiceListSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client.name', read_only=True)
     project_name = serializers.SerializerMethodField()
+    payment_methods = InvoicePaymentProviderSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
         fields = ['id', 'invoice_number', 'title', 'client_name', 'project_name',
                   'total_amount', 'status', 'due_date', 'created_at',
-                  'paid_date', 'issue_date']
+                  'paid_date', 'issue_date', 'payment_methods']
 
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None
