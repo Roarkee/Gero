@@ -40,6 +40,8 @@ import CategoryDetail from "./features/expenses/pages/CategoryDetail";
 import BudgetsDashboard from "./features/expenses/pages/BudgetsDashboard";
 import BudgetDetail from "./features/expenses/pages/BudgetDetail";
 import BudgetForm from "./features/expenses/pages/BudgetForm";
+import SettingsLayout from "./features/settings/SettingsLayout";
+import PaymentSettings from "./features/payments/pages/PaymentSettings";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -114,12 +116,10 @@ function App() {
               <Route path=":expenseId" element={<ExpenseDetail />} />
               <Route path=":expenseId/edit" element={<ExpenseForm />} />
             </Route>
-            <Route
-              path="/settings"
-              element={
-                <div className="p-8 text-gray-500">Settings Coming Soon</div>
-              }
-            />
+            <Route path="/settings" element={<SettingsLayout />}>
+              <Route index element={<Navigate to="/settings/payments" replace />} />
+              <Route path="payments" element={<PaymentSettings />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

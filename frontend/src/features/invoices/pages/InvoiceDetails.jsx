@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { useInvoice, useInvoices } from "../hooks/useInvoices";
 import { invoicesApi } from "../api/invoices.api";
 import GenerateFromTimeModal from "../components/GenerateFromTimeModal";
+import { usePaymentProviders } from "../../payments/hooks/usePayments";
 import { 
   ArrowLeft, 
   FileText, 
@@ -12,7 +13,9 @@ import {
   Trash2, 
   Save, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  CreditCard,
+  Check
 } from "lucide-react";
 
 const formatCurrency = (amount) => {
@@ -31,9 +34,13 @@ export default function InvoiceDetails() {
   const [newItem, setNewItem] = useState({ description: "", quantity: 1, rate: 0 });
   const [isDownloading, setIsDownloading] = useState(false);
   
-  // Local state for invoice and items
+  // Local state for invoice, items, and selected payment method IDs
   const [localInvoice, setLocalInvoice] = useState(null);
   const [localItems, setLocalItems] = useState([]);
+  const [selectedPaymentMethodIds, setSelectedPaymentMethodIds] = useState([]);
+
+  // Fetch all user's payment providers for the selector
+  const { data: availableProviders = [] } = usePaymentProviders();
   
   const invoice = invoiceQuery.data;
 
@@ -42,6 +49,8 @@ export default function InvoiceDetails() {
     if (invoice) {
       setLocalInvoice({ ...invoice });
       setLocalItems(invoice.items || []);
+      // Extract IDs from the nested payment_methods objects
+      setSelectedPaymentMethodIds((invoice.payment_methods || []).map(pm => pm.id));
     }
   }, [invoice]);
 
@@ -101,8 +110,15 @@ export default function InvoiceDetails() {
       id: parseInt(id),
       description: localInvoice.description,
       tax_rate: localInvoice.tax_rate,
-      items: payloadItems
+      items: payloadItems,
+      payment_method_ids: selectedPaymentMethodIds,
     });
+  };
+
+  const togglePaymentMethod = (pmId) => {
+    setSelectedPaymentMethodIds(prev =>
+      prev.includes(pmId) ? prev.filter(x => x !== pmId) : [...prev, pmId]
+    );
   };
 
   const handleDownloadPDF = async () => {
@@ -356,6 +372,39 @@ export default function InvoiceDetails() {
                 <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{formatCurrency(localTotal)}</span>
               </div>
             </div>
+
+            {/* Payment Methods Selector */}
+            {availableProviders.length > 0 && (
+              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 mb-3">
+                  <CreditCard className="w-4 h-4 text-indigo-500" />
+                  Payment Options
+                </h4>
+                <div className="space-y-2">
+                  {availableProviders.map(pm => {
+                    const isSelected = selectedPaymentMethodIds.includes(pm.id);
+                    return (
+                      <button
+                        key={pm.id}
+                        type="button"
+                        onClick={() => togglePaymentMethod(pm.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-sm transition-all ${
+                          isSelected
+                            ? "bg-indigo-50 border-indigo-300 dark:bg-indigo-900/30 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300"
+                            : "bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                        }`}
+                      >
+                        <span className="font-medium truncate">{pm.display_name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  Checked methods will appear on the invoice PDF.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-3">
                <button 

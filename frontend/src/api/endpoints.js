@@ -89,4 +89,8 @@ export const API_ENDPOINTS = {
   // Budgets
   BUDGETS: "/api/budgets/",
   BUDGET_DETAIL: (id) => `/api/budgets/${id}/`,
+
+  // Payments
+  PAYMENT_PROVIDERS: "/api/payments/providers/",
+  PAYMENT_PROVIDER_DETAIL: (id) => `/api/payments/providers/${id}/`,
 };
