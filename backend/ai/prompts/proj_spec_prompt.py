@@ -62,9 +62,20 @@ high:
 0.4 = highly ambiguous request
 
 9. Return ONLY raw JSON.
+Do not wrap JSON in ```json blocks.
+
+Do not include any text before or after the JSON object.
 
 Do not explain.
 
 Do not use markdown.
 
 """
+
+
+
+
+
+
+
+
