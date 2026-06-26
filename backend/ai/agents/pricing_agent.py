@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Dict, Any
+from django.conf import settings
 
 from ai.schemas.proj_spec_schema import ProjectSpecification
 from ai.schemas.scope_schema import ScopeAnalysis
@@ -36,10 +37,12 @@ class PricingAgent:
             instructions = self.prompt.replace("{schema}", schema_json)
 
             logger.info("%s Invoking LLM for pricing generation...", ctx)
-            
+
             raw_response = self.llm.generate(
                 input=input_text,
                 instructions=instructions,
+                model=settings.OPENAI_DEFAULT_MODEL,
+                temperature=settings.O_EXTRACTION_TEMP,
                 request_id=request_id
             )
 

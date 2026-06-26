@@ -139,13 +139,17 @@ class OpenAILLM:
             len(input),
         )
 
-        response = self.client.responses.create(
-            model=model,
-            input=input,
-            instructions=instructions,
-            temperature=temperature,
-            timeout=60,
-        )
+        kwargs = {
+            "model": model,
+            "input": input,
+            "instructions": instructions,
+            "timeout": 60,
+        }
+        
+        if "o1" not in model.lower() and "gpt-5" not in model.lower():
+            kwargs["temperature"] = temperature
+
+        response = self.client.responses.create(**kwargs)
 
         output_text: str | None = getattr(response, "output_text", None)
 

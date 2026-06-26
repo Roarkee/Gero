@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Textarea } from "../ui";
 import { UploadCloud, Loader2 } from "lucide-react";
-import axios from "axios";
+import apiClient from "../../api/client";
 import toast from "react-hot-toast";
 
 export function ClientRequestForm({ onComplete }) {
@@ -22,12 +22,11 @@ export function ClientRequestForm({ onComplete }) {
       if (message) formData.append("message", message);
       if (file) formData.append("file", file);
 
-      // In a real app we'd use api.post or an axios instance with auth headers
-      // For this test, we assume the token is handled or we use a basic fetch
-      const token = localStorage.getItem("auth_token");
-      const headers = token ? { Authorization: `Token ${token}` } : {};
-
-      const response = await axios.post("/api/ai/ai-requests/", formData, { headers });
+      const response = await apiClient.post("/api/ai/ai-requests/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       
       toast.success("Extraction complete!");
       onComplete(response.data.id, response.data.parsed_output);
