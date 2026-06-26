@@ -76,7 +76,8 @@ INSTALLED_APPS = [
     'notifications',
     'payments',
     'intelligence',
-    'core'
+    'core',
+    'ai',
 ]
 
 
