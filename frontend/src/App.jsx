@@ -15,6 +15,7 @@ import Dashboard from "./features/dashboard/pages/Dashboard";
 import ProjectsDashboard from "./features/projects/pages/ProjectsDashboard";
 import ProjectWorkspace from "./features/projects/pages/ProjectWorkspace";
 import DashboardLayout from "./layouts/DashboardLayout";
+import AIWorkflow from "./features/dashboard/pages/AIWorkflow";
 import ClientsLayout from "./features/clients/ClientsLayout";
 import ClientsDashboard from "./features/clients/pages/ClientsDashboard";
 import ClientsList from "./features/clients/pages/ClientsList";
@@ -83,6 +84,7 @@ function App() {
             }
           >
             <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard/ai-workflow" element={<AIWorkflow />} />
             <Route path="/projects" element={<ProjectsDashboard />} />
             <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
             <Route path="/clients" element={<ClientsLayout />}>

@@ -300,3 +300,53 @@ if 'pytest' in sys.modules or 'test' in sys.argv:
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     },
 }
+
+
+
+AI_MAX_INPUT_CHARS: int = 50_000
+AI_MAX_FILE_SIZE_MB: int = 10
+AI_RECOVERY_ENABLED: bool = True
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} [{levelname}] {name}: {message}",
+            "style": "{",
+            "datefmt": "%Y-%m-%dT%H:%M:%S",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "ai": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
+

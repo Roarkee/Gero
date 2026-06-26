@@ -34,6 +34,7 @@ class FeatureSchema(BaseModel):
     assumptions: List[str] = Field(default_factory=list)
 
 
+
 class ClientInfoSchema(BaseModel):
     name: Optional[str] = None
     company: Optional[str] = None
