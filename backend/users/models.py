@@ -43,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
     password = models.CharField(max_length=128)
-    provider = models.CharField(max_length=30, blank=True, choices =PROVIDERS, default=email)
+    provider = models.CharField(max_length=30, blank=True, choices =PROVIDERS, default='email')
     provider_id = models.CharField(max_length=255, blank=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

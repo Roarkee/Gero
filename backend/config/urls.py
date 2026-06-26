@@ -49,4 +49,5 @@ urlpatterns = [
     path('api/', include('notifications.urls')),  # Notification URLs
     path('api/intelligence/', include('intelligence.urls')), #intelligence urls
     path('api/', include('core.urls')), # core urls
+    path('api/ai/', include('ai.urls'))
 ]
