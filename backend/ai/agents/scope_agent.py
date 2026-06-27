@@ -1,4 +1,4 @@
-from ai.services.llm import LLMFactory
+from ai.services.llm.llm_factory import LLMFactory
 from ai.prompts.scope_prompt import SCOPE_PROMPT
 from django.conf import settings
 from ai.schemas.scope_schema import ScopeAnalysis

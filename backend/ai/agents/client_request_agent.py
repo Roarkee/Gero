@@ -26,7 +26,7 @@ from django.conf import settings
 from ..prompts.proj_spec_prompt import EXTRACTION_PROMPT
 from ..schemas.proj_spec_schema import ProjectSpecification
 from ..services.errors import ErrorType, ExtractionResult, PipelineError, Stage
-from ..services.llm import LLMFactory
+from ..services.llm.llm_factory import LLMFactory
 from ..services.recovery import attempt_recovery
 from ..services.sanitization import sanitize_input
 

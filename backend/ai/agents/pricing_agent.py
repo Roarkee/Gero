@@ -9,7 +9,7 @@ from ai.schemas.proj_spec_schema import ProjectSpecification
 from ai.schemas.scope_schema import ScopeAnalysis
 from ai.schemas.pricing_schema import PricingAnalysis
 from ai.prompts.pricing_prompt import PRICING_PROMPT
-from ai.services.llm import LLMFactory
+from ai.services.llm.llm_factory import LLMFactory
 from ai.services.errors import ExtractionResult, PipelineError, ErrorType, Stage
 from ai.services.recovery import attempt_recovery
 from pydantic import ValidationError
