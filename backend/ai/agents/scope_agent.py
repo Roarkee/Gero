@@ -22,9 +22,9 @@ class ScopeAgent:
 
             instructions=self.prompt,
 
-            model=settings.AI_MODELS["scope"]["model"],
+            model=settings.OPENAI_DEFAULT_MODEL,
 
-            temperature=settings.AI_MODELS["scope"]["temperature"]
+            temperature=settings.O_EXTRACTION_TEMP
         )
 
         validated = ScopeAnalysis.model_validate_json(

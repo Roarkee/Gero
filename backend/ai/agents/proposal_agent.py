@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Dict, Any
+from django.conf import settings
 
 from django.conf import settings
 
@@ -40,7 +41,7 @@ class ProposalAgent:
             instructions = self.prompt.replace("{schema}", schema_json)
 
             logger.info("%s Invoking LLM for proposal generation...", ctx)
-            
+
             raw_response = self.llm.generate(
                 input=input_text,
                 instructions=instructions,

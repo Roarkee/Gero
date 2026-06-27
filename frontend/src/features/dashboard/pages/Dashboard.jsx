@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { useDashboard } from "../hooks/useDashboard";
 import TodaysFocus from "../components/TodaysFocus";
 import KpiGrid from "../components/KpiGrid";
@@ -44,6 +44,12 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/dashboard/ai-workflow"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 border border-transparent rounded-lg text-sm font-medium text-white hover:from-indigo-700 hover:to-violet-700 transition-all duration-200 shadow-sm"
+          >
+            <Sparkles className="w-4 h-4" /> AI Workflow
+          </Link>
           <Link
             to="/clients"
             className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"

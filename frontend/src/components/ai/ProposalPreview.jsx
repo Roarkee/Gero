@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Textarea } from "../ui";
 import { Loader2, AlertCircle, FileText, Download } from "lucide-react";
-import axios from "axios";
+import apiClient from "../../api/client";
 import toast from "react-hot-toast";
 
 export function ProposalPreview({ requestId, onComplete, onBack }) {
@@ -16,10 +16,7 @@ export function ProposalPreview({ requestId, onComplete, onBack }) {
     setIsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("auth_token");
-      const headers = token ? { Authorization: `Token ${token}` } : {};
-
-      const response = await axios.post("/api/ai/proposal/", { request_id: requestId }, { headers });
+      const response = await apiClient.post("/api/ai/proposal/", { request_id: requestId });
       setData(response.data);
       setEditableText(response.data.proposal_text);
       if (onComplete) {

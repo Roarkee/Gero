@@ -14,12 +14,14 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { clsx } from "clsx";
 
 const navigation = [
   { name: "Home", href: "/", icon: LayoutDashboard },
+  { name: "AI Workflow", href: "/dashboard/ai-workflow", icon: Sparkles },
   { name: "Projects", href: "/projects", icon: Briefcase },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Invoices", href: "/invoices", icon: FileText },
