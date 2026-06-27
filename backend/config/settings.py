@@ -36,14 +36,37 @@ SECRET_KEY = env('SECRET_KEY')
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')#storing this for if i'll use
 #the paystack connect method
 PAYSTACK_PUBLIC_KEY=env('PAYSTACK_PUBLIC_KEY')
-# OPENAI SETTINGS
-OPENAI_API_KEY=env('OPENAI_API_KEY')
+OPENAI_API_KEY = env('OPENAI_API_KEY')
 O_EXTRACTION_TEMP = 0.1
 O_PROPOSAL_TEMP = 0.7
 O_CONTRACT_TEMP = 0.0
 OPENAI_DEFAULT_MODEL = "gpt-5"
 OPENAI_FAST_MODEL = "gpt-5-mini"
 OPENAI_REASONING_MODEL = "gpt-5"
+
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
+ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-4-5"
+
+AI_PROVIDER = env("AI_PROVIDER", default="anthropic")
+
+AI_MODELS = {
+    "extraction": {
+        "model": env("AI_EXTRACTION_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
+        "temperature": O_EXTRACTION_TEMP,
+    },
+    "scope": {
+        "model": env("AI_SCOPE_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
+        "temperature": 0.3,
+    },
+    "pricing": {
+        "model": env("AI_PRICING_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
+        "temperature": 0.2,
+    },
+    "proposal": {
+        "model": env("AI_PROPOSAL_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
+        "temperature": O_PROPOSAL_TEMP,
+    },
+}
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
