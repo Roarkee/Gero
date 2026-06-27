@@ -26,7 +26,7 @@ from django.conf import settings
 from ..prompts.proj_spec_prompt import EXTRACTION_PROMPT
 from ..schemas.proj_spec_schema import ProjectSpecification
 from ..services.errors import ErrorType, ExtractionResult, PipelineError, Stage
-from ..services.llm.openai_llm import OpenAILLM
+from ..services.llm import LLMFactory
 from ..services.recovery import attempt_recovery
 from ..services.sanitization import sanitize_input
 
@@ -44,7 +44,7 @@ class ClientRequestAgent:
     prompt = EXTRACTION_PROMPT
 
     def __init__(self) -> None:
-        self.llm = OpenAILLM()
+        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
 
     def extract(self, client_message: str, request_id: str = "") -> ExtractionResult:
         """
@@ -100,8 +100,8 @@ class ClientRequestAgent:
             raw = self.llm.generate(
                 input=sanitized,
                 instructions=self.prompt,
-                temperature=settings.O_EXTRACTION_TEMP,
-                model=settings.OPENAI_DEFAULT_MODEL,
+                temperature=settings.AI_MODELS["extraction"]["temperature"],
+                model=settings.AI_MODELS["extraction"]["model"],
                 request_id=request_id,
             )
         except ValueError as exc:

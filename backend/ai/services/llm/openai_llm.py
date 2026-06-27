@@ -1,44 +1,13 @@
-"""
-ai/services/llm/openai_llm.py
-==============================
-Thin wrapper around the OpenAI Responses API.
-
-Key behaviours
---------------
-- Retries automatically on TRANSIENT errors only:
-    RateLimitError, APIConnectionError, InternalServerError
-- Does NOT retry on:
-    AuthenticationError, BadRequestError, PermissionDeniedError
-- Uses exponential backoff with full jitter to spread retries.
-- Logs WARNING on each retry sleep (not ERROR — only final failure is ERROR).
-- Guards against None / missing output_text from the API.
-"""
 from __future__ import annotations
-
 import logging
-
-from openai import (
-    APIConnectionError,
-    InternalServerError,
-    OpenAI,
-    OpenAIError,
-    RateLimitError,
-)
-from tenacity import (
-    RetryCallState,
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
+from openai import (APIConnectionError,InternalServerError,OpenAI,OpenAIError,RateLimitError,)
+from tenacity import (RetryCallState,before_sleep_log,retry,retry_if_exception_type,
     stop_after_attempt,
     wait_random_exponential,
 )
-
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
-
-
-# ─── Retry configuration ─────────────────────────────────────────────────────
 
 #: Errors that are safe to retry (transient / infrastructure faults).
 _TRANSIENT_ERRORS = (RateLimitError, APIConnectionError, InternalServerError)
@@ -54,12 +23,6 @@ _WAIT_MAX: int = 30
 
 
 def _log_retry(retry_state: RetryCallState) -> None:
-    """
-    Custom before-sleep callback.
-
-    Logs at WARNING level — not ERROR — so that retries that eventually
-    succeed do NOT appear as errors in monitoring dashboards.
-    """
     exc = retry_state.outcome.exception()
     attempt = retry_state.attempt_number
     next_wait = getattr(retry_state.next_action, "sleep", "?")
@@ -72,23 +35,7 @@ def _log_retry(retry_state: RetryCallState) -> None:
         exc,
     )
 
-
-# ─── LLM client ──────────────────────────────────────────────────────────────
-
 class OpenAILLM:
-    """
-    Thin, production-hardened wrapper around the OpenAI Responses API.
-
-    Usage
-    -----
-    llm = OpenAILLM()
-    text = llm.generate(
-        input="Build me a SaaS app...",
-        instructions=EXTRACTION_PROMPT,
-        model="gpt-5",
-        temperature=0.1,
-    )
-    """
 
     def __init__(self) -> None:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -100,15 +47,7 @@ class OpenAILLM:
         before_sleep=_log_retry,
         reraise=True,
     )
-    def generate(
-        self,
-        *,
-        input: str,
-        instructions: str,
-        model: str,
-        temperature: float,
-        request_id: str = "",
-    ) -> str:
+    def generate(self,*,input: str,instructions: str,model: str,temperature: float,request_id: str = "",) -> str:
         """
         Call the OpenAI Responses API and return the raw text output.
 
@@ -132,12 +71,7 @@ class OpenAILLM:
         """
         ctx = f"[request_id={request_id}] " if request_id else ""
 
-        logger.info(
-            "%sSending request to OpenAI | model=%s input_chars=%d",
-            ctx,
-            model,
-            len(input),
-        )
+        logger.info("%sSending request to OpenAI | model=%s input_chars=%d",ctx,model,len(input),)
 
         response = self.client.responses.create(
             model=model,

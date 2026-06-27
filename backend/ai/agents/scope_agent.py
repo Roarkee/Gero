@@ -1,4 +1,4 @@
-from ai.services.llm.openai_llm import OpenAILLM
+from ai.services.llm import LLMFactory
 from ai.prompts.scope_prompt import SCOPE_PROMPT
 from django.conf import settings
 from ai.schemas.scope_schema import ScopeAnalysis
@@ -8,8 +8,7 @@ class ScopeAgent:
 
 
     def __init__(self):
-
-        self.llm = OpenAILLM()
+        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
 
 
     def analyze(

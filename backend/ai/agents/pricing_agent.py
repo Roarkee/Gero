@@ -2,11 +2,13 @@ import json
 import logging
 from typing import Dict, Any
 
+from django.conf import settings
+
 from ai.schemas.proj_spec_schema import ProjectSpecification
 from ai.schemas.scope_schema import ScopeAnalysis
 from ai.schemas.pricing_schema import PricingAnalysis
 from ai.prompts.pricing_prompt import PRICING_PROMPT
-from ai.services.llm.openai_llm import OpenAILLM
+from ai.services.llm import LLMFactory
 from ai.services.errors import ExtractionResult, PipelineError, ErrorType, Stage
 from ai.services.recovery import attempt_recovery
 from pydantic import ValidationError
@@ -17,7 +19,7 @@ class PricingAgent:
     """Agent responsible for determining professional project pricing."""
 
     def __init__(self):
-        self.llm = OpenAILLM()
+        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
         self.prompt = PRICING_PROMPT
 
     def analyze(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, request_id: str = "unknown") -> ExtractionResult:
@@ -40,7 +42,9 @@ class PricingAgent:
             raw_response = self.llm.generate(
                 input=input_text,
                 instructions=instructions,
-                request_id=request_id
+                model=settings.AI_MODELS["pricing"]["model"],
+                temperature=settings.AI_MODELS["pricing"]["temperature"],
+                request_id=request_id,
             )
 
             # Try to validate directly

@@ -2,12 +2,14 @@ import json
 import logging
 from typing import Dict, Any
 
+from django.conf import settings
+
 from ai.schemas.proj_spec_schema import ProjectSpecification
 from ai.schemas.scope_schema import ScopeAnalysis
 from ai.schemas.pricing_schema import PricingAnalysis
 from ai.schemas.proposal_schema import ProposalOutput
 from ai.prompts.proposal_prompt import PROPOSAL_PROMPT
-from ai.services.llm.openai_llm import OpenAILLM
+from ai.services.llm import LLMFactory
 from ai.services.errors import ExtractionResult, PipelineError, ErrorType, Stage
 from ai.services.recovery import attempt_recovery
 from pydantic import ValidationError
@@ -18,7 +20,7 @@ class ProposalAgent:
     """Agent responsible for generating a professional business proposal."""
 
     def __init__(self):
-        self.llm = OpenAILLM()
+        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
         self.prompt = PROPOSAL_PROMPT
 
     def generate(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, pricing_analysis: PricingAnalysis, request_id: str = "unknown") -> ExtractionResult:
@@ -42,7 +44,9 @@ class ProposalAgent:
             raw_response = self.llm.generate(
                 input=input_text,
                 instructions=instructions,
-                request_id=request_id
+                model=settings.AI_MODELS["proposal"]["model"],
+                temperature=settings.AI_MODELS["proposal"]["temperature"],
+                request_id=request_id,
             )
 
             # Try to validate directly
