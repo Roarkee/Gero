@@ -27,8 +27,9 @@ class ClientAPITests(APITestCase):
     def test_list_clients(self):
         response = self.client.get(self.list_create_url, **self.auth_headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertTrue(all(item['name'] in ['Client A', 'Client B'] for item in response.data))
+        print("CLIENTS:", response.data)
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertTrue(all(item['name'] in ['Client A', 'Client B'] for item in response.data['results']))
 
     def test_create_client(self):
         data = {

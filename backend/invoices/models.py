@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Sum
+from django.utils import timezone
 from client.models import Client
 from projects.models import Project
 
@@ -111,6 +112,7 @@ class Invoice(models.Model):
             # need to take a look at the state machine 
             if original.is_finalized:
                 allowed_statuses = [
+                    self.InvoiceStatus.DRAFT,
                     self.InvoiceStatus.PAID,
                     self.InvoiceStatus.OVERDUE,
                     self.InvoiceStatus.CANCELLED
@@ -199,7 +201,10 @@ class InvoiceItem(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         self.amount = self.calculate_amount()
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            self.invoice.recalculate_totals()
+            self.invoice.save()
 
     def delete(self, *args, **kwargs):
         if self.invoice.is_finalized:
@@ -210,3 +215,27 @@ class InvoiceItem(models.Model):
             super().delete(*args, **kwargs)
             invoice.recalculate_totals()
             invoice.save()
+
+class InvoicePayment(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments_received')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_date = models.DateField(default=timezone.now)
+    method = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-payment_date', '-created_at']
+
+    def __str__(self):
+        return f'{self.amount} for {self.invoice.invoice_number}'
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            total_paid = self.invoice.payments_received.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            if total_paid >= self.invoice.total_amount:
+                if self.invoice.status != Invoice.InvoiceStatus.PAID:
+                    self.invoice.status = Invoice.InvoiceStatus.PAID
+                    self.invoice.paid_date = self.payment_date
+                    self.invoice.save(update_fields=['status', 'paid_date'])

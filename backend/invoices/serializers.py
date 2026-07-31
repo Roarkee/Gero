@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, InvoicePayment
 from payments.models import PaymentProvider
 
 
@@ -10,7 +10,7 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InvoiceItem
-        fields = ('id', 'description', 'quantity', 'rate', 'amount', 'time_entries')
+        fields = ('id', 'invoice', 'description', 'quantity', 'rate', 'amount', 'time_entries')
         read_only_fields = ('amount',)
 
 
@@ -35,11 +35,25 @@ class InvoiceSerializer(serializers.ModelSerializer):
     )
     # Output nested objects for read operations
     payment_methods = InvoicePaymentProviderSerializer(many=True, read_only=True)
+    payments_received = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = '__all__'
         read_only_fields = ('user', 'subtotal', 'tax_amount', 'total_amount', 'sequence_number', 'invoice_number')
+
+    def get_payments_received(self, obj):
+        payments = obj.payments_received.all()
+        return [
+            {
+                "id": p.id,
+                "amount": p.amount,
+                "payment_date": p.payment_date,
+                "method": p.method,
+                "notes": p.notes,
+                "created_at": p.created_at
+            } for p in payments
+        ]
 
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None
@@ -71,6 +85,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
+        payment_methods = validated_data.pop('payment_methods', None)
 
         with transaction.atomic():
             # Update scalar invoice fields directly — do NOT call super().update()
@@ -105,6 +120,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 orphan_ids = [iid for iid in existing_items if iid not in incoming_ids]
                 if orphan_ids:
                     InvoiceItem.objects.filter(id__in=orphan_ids).delete()
+                
+                if payment_methods is not None:
+                    instance.payment_methods.set(payment_methods)
 
             # One single save at the end: recalculate_totals → full_clean → DB write
             instance.save()
@@ -125,3 +143,16 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None
+
+class InvoicePaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoicePayment
+        fields = '__all__'
+        read_only_fields = ('created_at',)
+
+    def validate(self, attrs):
+        invoice = attrs.get('invoice')
+        user = self.context['request'].user
+        if invoice and invoice.user != user:
+            raise serializers.ValidationError("Invalid invoice.")
+        return attrs

@@ -5,6 +5,8 @@ export const API_ENDPOINTS = {
   REFRESH: "/api/users/refresh/",
   PROFILE: "/api/users/profile/",
   LOGOUT: "/api/users/logout/",
+  GOOGLE_LOGIN: "/api/users/auth/google",
+  ACCEPT_INVITE: "/api/users/accept-invite/",
   // Dashboard
   DASHBOARD: "/api/dashboard/",
 
@@ -34,6 +36,7 @@ export const API_ENDPOINTS = {
   CLIENT_DASHBOARD_INTELLIGENCE: "/api/clients/intelligence_dashboard/",
   CLIENT_DETAIL_INTELLIGENCE: (id) => `/api/clients/${id}/intelligence/`,
   CLIENT_ACTIVITIES: (id) => `/api/clients/${id}/activities/`,
+  CLIENT_INVITE: (id) => `/api/clients/${id}/invite_client/`,
 
   // Time Tracking
   TIME_ENTRIES: "/api/time-entries/",
@@ -60,6 +63,11 @@ export const API_ENDPOINTS = {
   INVOICE_DASHBOARD: "/api/invoices/dashboard_stats/",
   INVOICE_GENERATE_FROM_TIME: (id) => `/api/invoices/${id}/generate_from_time/`,
   INVOICE_DOWNLOAD_PDF: (id) => `/api/invoices/${id}/download_pdf/`,
+  INVOICE_SEND: (id) => `/api/invoices/${id}/send_invoice/`,
+  INVOICE_CANCEL: (id) => `/api/invoices/${id}/cancel_invoice/`,
+  INVOICE_DUPLICATE: (id) => `/api/invoices/${id}/duplicate_invoice/`,
+  INVOICE_MARK_VIEWED: (id) => `/api/invoices/${id}/mark_viewed/`,
+  INVOICE_PAYMENTS: "/api/invoice-payments/",
 
   // Invoice Items
   INVOICE_ITEMS: "/api/invoice-items/",
@@ -93,4 +101,29 @@ export const API_ENDPOINTS = {
   // Payments
   PAYMENT_PROVIDERS: "/api/payments/providers/",
   PAYMENT_PROVIDER_DETAIL: (id) => `/api/payments/providers/${id}/`,
+
+  // Notifications
+  NOTIFICATIONS: "/api/notifications/",
+  NOTIFICATION_READ: (id) => `/api/notifications/${id}/mark_read/`,
+  NOTIFICATIONS_READ_ALL: "/api/notifications/mark_all_read/",
+  NOTIFICATIONS_UNREAD_COUNT: "/api/notifications/unread_notifications_number/",
+
+  // Invoice extra actions
+  INVOICE_RESEND: (id) => `/api/invoices/${id}/resend_invoice/`,
+
+  // Client Portal — client-facing
+  PORTAL_PROJECTS: "/api/portal/projects/",
+  PORTAL_PROJECT_DETAIL: (id) => `/api/portal/projects/${id}/`,
+  PORTAL_MESSAGES: (projectId) => `/api/portal/projects/${projectId}/messages/`,
+  PORTAL_FILES: (projectId) => `/api/portal/projects/${projectId}/files/`,
+  PORTAL_PROPOSALS: (projectId) => `/api/portal/projects/${projectId}/proposals/`,
+  PORTAL_PROPOSAL_ACTION: (projectId, proposalId, action) =>
+    `/api/portal/projects/${projectId}/proposals/${proposalId}/${action}/`,
+  PORTAL_INVOICES: "/api/portal/invoices/",
+  PORTAL_INVOICE_DETAIL: (id) => `/api/portal/invoices/${id}/`,
+  PORTAL_REQUESTS: "/api/portal/requests/",
+
+  // Client Portal — freelancer-side helpers
+  PORTAL_PUSH_PROPOSAL: "/api/portal/push-proposal/",
+  PORTAL_FREELANCER_MESSAGE: (projectId) => `/api/portal/projects/${projectId}/freelancer-message/`,
 };

@@ -65,106 +65,29 @@ class PaymentProvider(models.Model):
         return f"{self.display_name} ({self.get_provider_type_display()})"
     
 
-#this is similar to what instagram does with uploading pictures. so once you're in the process of creating
-#an invoice, a payment intent is created. and this intent is updated as the payment process goes on
-class PaymentIntent(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('processing', 'Processing'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-        ('canceled', 'Canceled'),
-        ('expired', 'Expired'),
-        ('refunded', 'Refunded')
-    ]
-    
-    ALLOWED_TRANSITIONS = {
-    'pending': ['processing', 'failed', 'canceled', 'expired'],
-    'processing': ['completed', 'failed', 'canceled'],
-    'completed': ['refunded'],
-    'failed': [],
-    'canceled': [],
-    'expired': [],
-    'refunded': [],
-}
-    
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_intents')
-    invoice = models.ForeignKey('invoices.Invoice', on_delete=models.CASCADE, related_name='payment_intent')
-    provider = models.ForeignKey(PaymentProvider, on_delete=models.CASCADE, related_name='payment_intents')
-    currency = models.CharField(max_length=3, default='GHS')
-    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
-    reference = models.CharField(max_length=100, unique=True, editable=False, default=generate_reference)
-    external_reference = models.CharField(max_length=150, blank=True, null=True)
-    status = models.CharField(choices=STATUS_CHOICES, default='pending', max_length=12)
-    payment_url = models.URLField(blank=True, null=True)
-    metadata = models.JSONField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField()
-
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['reference']),
-            models.Index(fields=['external_reference']),
-            models.Index(fields=['status', 'created_at']),
-        ]
-# i would later build a mixin to handle the transitions and centralize this logic
-# so i'll not repeat it in transaction model
-    def clean(self):
-        if not self.pk:
-            return
-
-        original = PaymentIntent.objects.get(pk=self.pk)
-        if original.status != self.status:
-            allowed = self.ALLOWED_TRANSITIONS.get(
-                original.status,
-                []
-            )
-
-            if self.status not in allowed:
-                raise ValidationError(
-                    f"Invalid status transition "
-                    f"from '{original.status}' "
-                    f"to '{self.status}'."
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
 #this stores the actual transactions that happen. the intent might go through many transacs
 class PaymentTransaction(models.Model):
-    TRANSACTION_TYPES = [('credit', 'Credit'),
-                         ('debit', 'Debit'),
-                         ('refund', 'Refund'),
-                   
-                         ]
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
-        ('canceled', 'Canceled'),
         ('refunded', 'Refunded')
     ]
 
     ALLOWED_TRANSITIONS = {
-    'pending': ['completed', 'failed', 'canceled'],
+    'pending': ['completed', 'failed'],
     'completed': ['refunded'],
     'failed': [],
-    'canceled': [],
     'refunded': [],
 }
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    payment_intent = models.ForeignKey(PaymentIntent, on_delete=models.CASCADE, related_name='transactions')
-    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    invoice = models.ForeignKey("invoices.Invoice", on_delete=models.PROTECT, related_name = 'payment_transactions')
     amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(3.00)])
     status = models.CharField(choices=STATUS_CHOICES, default='pending', max_length=12)
     fee = models.DecimalField(max_digits=12, decimal_places=2, default=1.5)
     net_amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
-    external_transaction_id = models.CharField(max_length=150, blank=True, null=True, unique=True)
+    provider_reference = models.CharField(max_length=150, blank=True, null=True, unique=True)
     processed_at =models.DateTimeField(null=True, blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
     gateway_response = models.JSONField(blank=True, null=True)
@@ -172,8 +95,10 @@ class PaymentTransaction(models.Model):
 
     class Meta: 
         indexes = [
-            models.Index(fields=[ 'external_transaction_id', 'processed_at']),
-            models.Index(fields=['processed_at'])
+            models.Index(fields=["invoice"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["processed_at"]),
+            models.Index(fields=["provider_reference"])
         ]
         verbose_name= 'Payment Transaction'
         verbose_name_plural = 'Payment Transactions'

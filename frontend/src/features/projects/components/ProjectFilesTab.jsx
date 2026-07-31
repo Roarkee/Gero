@@ -12,10 +12,10 @@ export default function ProjectFilesTab({ project }) {
 
   const projectAttachments = attachments.filter(a => a.project === project.id);
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const [isDragActive, setIsDragActive] = useState(false);
 
+  const uploadFile = async (file) => {
+    if (!file) return;
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -28,6 +28,33 @@ export default function ProjectFilesTab({ project }) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    uploadFile(e.target.files[0]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      uploadFile(e.dataTransfer.files[0]);
+      e.dataTransfer.clearData();
     }
   };
 
@@ -52,11 +79,19 @@ export default function ProjectFilesTab({ project }) {
         />
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-10 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
+            isDragActive 
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' 
+              : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+          } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
         >
-          <UploadCloud className="w-12 h-12 text-primary-500 mx-auto mb-4" />
+          <UploadCloud className={`w-12 h-12 mx-auto mb-4 ${isDragActive ? 'text-primary-600' : 'text-primary-500'}`} />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            {isUploading ? "Uploading..." : "Click or drag file to this area to upload"}
+            {isUploading ? "Uploading..." : isDragActive ? "Drop file here" : "Click or drag file to this area to upload"}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Support for a single or bulk upload. Strictly prohibit from uploading company data or other band files.

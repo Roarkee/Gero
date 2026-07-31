@@ -28,10 +28,14 @@ export default function CreateProjectModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name) return toast.error("Project name is required");
-    if (!formData.client) return toast.error("Please select a client");
 
     try {
-      await createProject(formData);
+      const payload = { ...formData };
+      if (!payload.client) {
+        payload.client = null;
+      }
+      
+      await createProject(payload);
       toast.success("Project created successfully!");
       setFormData({ name: "", description: "", client: "" });
       onClose();
@@ -154,7 +158,7 @@ export default function CreateProjectModal({ isOpen, onClose }) {
                       }
                       disabled={loadingClients}
                     >
-                      <option value="">Select a client...</option>
+                      <option value="">None / Personal Project</option>
                       {clients?.map((client) => (
                         <option key={client.id} value={client.id}>
                           {client.company_name
@@ -169,12 +173,6 @@ export default function CreateProjectModal({ isOpen, onClose }) {
                       </svg>
                     </div>
                   </div>
-                )}
-
-                {!isCreatingClient && clients?.length === 0 && (
-                  <p className="text-xs text-orange-500 mt-2">
-                    You need to add a client before creating a project.
-                  </p>
                 )}
               </div>
 

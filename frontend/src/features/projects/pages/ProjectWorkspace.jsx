@@ -83,9 +83,9 @@ export default function ProjectWorkspace() {
   const statusConfig = getStatusConfig(project);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div className="px-6 pt-6">
           <div className="flex items-center mb-4">
             <Link to="/projects" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-4">
@@ -141,7 +141,7 @@ export default function ProjectWorkspace() {
           </div>
           
           {/* Tabs Navigation */}
-          <div className="flex space-x-6 overflow-x-auto mt-6">
+          <div className="flex space-x-6 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -165,7 +165,7 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ActiveComponent project={project} />
       </div>
     </div>

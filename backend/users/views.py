@@ -1,10 +1,12 @@
-from rest_framework import generics, permissions,views,status
+from rest_framework import generics, permissions, views, status
 from rest_framework.response import Response
-from users.serializers import UserSerializer,MyTokenObtainPairSerializer
+from users.serializers import UserSerializer, MyTokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
-
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 
 # for google sign in
 from google.oauth2 import id_token
@@ -134,3 +136,54 @@ class GoogleLogin(views.APIView):
 
     
 
+
+
+class AcceptInvite(views.APIView):
+    """
+    Called from the frontend /portal/accept-invite page.
+    Validates the uid + token, sets the client's password,
+    and returns JWT tokens so the client is immediately logged in.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        password = request.data.get('password')
+
+        if not uid or not token or not password:
+            return Response(
+                {'detail': 'uid, token and password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Decode uid → user
+        try:
+            user_pk = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_pk)
+        except (User.DoesNotExist, ValueError, TypeError):
+            return Response({'detail': 'Invalid invitation link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate the token
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, token):
+            return Response({'detail': 'This invitation link has expired or already been used.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set password and activate
+        user.set_password(password)
+        user.is_active = True
+        user.save()
+
+        # Return JWT so they're logged in immediately
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role,
+            },
+        })

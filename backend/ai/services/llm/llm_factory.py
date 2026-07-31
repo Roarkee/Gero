@@ -3,13 +3,17 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from .gemini_llm import GeminiService
 from .anthropic_llm import AnthropicService
 from .openai_llm import OpenAILLM
+from .groq_llm import GroqService
 
 logger = logging.getLogger(__name__)
 
 _REGISTRY: dict[str, type] = {
-    "openai": OpenAILLM,
+    "groq":      GroqService,
+    "gemini":    GeminiService,
+    "openai":    OpenAILLM,
     "anthropic": AnthropicService,
 }
 

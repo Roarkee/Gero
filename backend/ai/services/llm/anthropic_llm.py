@@ -66,6 +66,15 @@ class AnthropicService:
     ) -> str:
         ctx = f"[request_id={request_id}] " if request_id else ""
 
+        # Map model name if it's an OpenAI model name
+        if model.startswith("gpt-") or model == "gpt-5" or model == "gpt-5-mini":
+            if "mini" in model:
+                model = "claude-3-5-haiku-20241022"
+            else:
+                model = "claude-3-5-sonnet-20241022"
+        elif model == "claude-sonnet-4" or model == "claude-sonnet-4-5":
+            model = "claude-3-5-sonnet-20241022"
+
         logger.info(
             "%sSending request to Anthropic | model=%s input_chars=%d",
             ctx,

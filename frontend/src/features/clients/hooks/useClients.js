@@ -113,3 +113,14 @@ export const useCreateClientActivity = () => {
     },
   });
 };
+
+export const useInviteClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clientApi.inviteClient,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: clientKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
+    },
+  });
+};

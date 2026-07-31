@@ -5,7 +5,8 @@ import {
   useClientIntelligence, 
   useClientActivities,
   useUpdateClient,
-  useCreateClientActivity
+  useCreateClientActivity,
+  useInviteClient
 } from "../hooks/useClients";
 import { StatusBadge } from "../components/StatusBadge";
 import { HealthIndicator } from "../components/HealthIndicator";
@@ -13,8 +14,9 @@ import { TimelineItem } from "../components/TimelineItem";
 import { ClientModal } from "../components/ClientModal";
 import { 
   Building2, Mail, Phone, Globe, Calendar, ArrowLeft, 
-  MessageSquare, Edit3, AlertCircle, TrendingUp, Check, X, FileText, FolderOpen
+  MessageSquare, Edit3, AlertCircle, TrendingUp, Check, X, FileText, FolderOpen, UserPlus
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { formatDistanceToNow, parseISO, format } from "date-fns";
 
 export default function ClientDetail() {
@@ -32,6 +34,7 @@ export default function ClientDetail() {
   
   const updateClientMutation = useUpdateClient();
   const createActivityMutation = useCreateClientActivity();
+  const inviteClientMutation = useInviteClient();
 
   const handleSaveNote = () => {
     updateClientMutation.mutate({ id, note: noteContent }, {
@@ -136,6 +139,27 @@ export default function ClientDetail() {
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit Profile
               </button>
+              
+              {!client.has_portal_access ? (
+                <button 
+                  onClick={() => {
+                    inviteClientMutation.mutate(id, {
+                      onSuccess: (res) => toast.success(res.detail || "Invitation sent successfully!"),
+                      onError: () => toast.error("Failed to send invitation.")
+                    });
+                  }}
+                  disabled={inviteClientMutation.isPending}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 mt-3 disabled:opacity-50"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {inviteClientMutation.isPending ? "Sending..." : "Invite to Portal"}
+                </button>
+              ) : (
+                <div className="w-full flex items-center justify-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-medium rounded-lg text-emerald-700 bg-emerald-50 mt-3">
+                  <Check className="w-4 h-4 mr-2" />
+                  Portal Access Active
+                </div>
+              )}
             </div>
           </div>
         </div>

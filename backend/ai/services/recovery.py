@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import ValidationError
 
-from .errors import ErrorType, ExtractionResult, PipelineError, Stage
+from .errors import ErrorType, ValidationResult, PipelineError, Stage
 
 if TYPE_CHECKING:
     from ai.schemas.proj_spec_schema import ProjectSpecification
@@ -195,37 +195,24 @@ def _stage2_repair(text: str) -> str:
 
 # ─── Core validation helper ──────────────────────────────────────────────────
 
-def _try_validate(text: str) -> "ProjectSpecification | None":
+def _try_validate(text: str, schema_cls: Any) -> Any | None:
     """
     Attempt Pydantic validation on a JSON string.
-
-    Returns the validated ProjectSpecification or None on any failure.
     """
-    from ai.schemas.proj_spec_schema import ProjectSpecification
-
     try:
-        return ProjectSpecification.model_validate_json(text)
+        return schema_cls.model_validate_json(text)
     except (ValidationError, ValueError, Exception):
         return None
-
 
 # ─── Public entry point ──────────────────────────────────────────────────────
 
 def attempt_recovery(
     raw_output: str,
+    schema_cls: Any,
     request_id: str = "",
-) -> ExtractionResult:
+) -> ValidationResult:
     """
     Attempt local JSON repair on a failed LLM output.
-
-    Parameters
-    ----------
-    raw_output  : The raw text returned by the LLM that failed validation.
-    request_id  : Optional correlation ID for log tracing.
-
-    Returns
-    -------
-    ExtractionResult — success if repair worked, failure with PipelineError if not.
     """
     ctx = f"[request_id={request_id}] " if request_id else ""
 
@@ -237,31 +224,30 @@ def attempt_recovery(
     stage1_text = _stage1_clean(raw_output)
 
     # Attempt 1a: after basic cleaning
-    spec = _try_validate(stage1_text)
+    spec = _try_validate(stage1_text, schema_cls)
     if spec is not None:
         logger.info("%sRecovery Stage 1a succeeded (basic clean)", ctx)
-        return ExtractionResult.ok(spec)
+        return ValidationResult.ok(spec)
 
     # Attempt 1b: also apply single-quote fix
     stage1b_text = _fix_single_quotes(stage1_text)
     if stage1b_text != stage1_text:
-        spec = _try_validate(stage1b_text)
+        spec = _try_validate(stage1b_text, schema_cls)
         if spec is not None:
             logger.info("%sRecovery Stage 1b succeeded (single-quote fix)", ctx)
-            return ExtractionResult.ok(spec)
+            return ValidationResult.ok(spec)
 
     logger.debug("%sRecovery Stage 1 failed, proceeding to Stage 2", ctx)
 
     # ── Stage 2: structural repair ────────────────────────────────────────────
     logger.debug("%sRecovery Stage 2: structural repair", ctx)
 
-    # Apply Stage 2 to the Stage 1 cleaned text (it's already cleaner)
     stage2_text = _stage2_repair(stage1b_text if stage1b_text != stage1_text else stage1_text)
 
-    spec = _try_validate(stage2_text)
+    spec = _try_validate(stage2_text, schema_cls)
     if spec is not None:
         logger.info("%sRecovery Stage 2 succeeded (structural repair)", ctx)
-        return ExtractionResult.ok(spec)
+        return ValidationResult.ok(spec)
 
     # ── All stages exhausted ──────────────────────────────────────────────────
     logger.warning(
@@ -272,17 +258,15 @@ def attempt_recovery(
         len(stage2_text),
     )
 
-    # Collect Pydantic errors from the closest attempt (Stage 2 result)
     pydantic_details = None
     try:
-        from ai.schemas.proj_spec_schema import ProjectSpecification
-        ProjectSpecification.model_validate_json(stage2_text)
+        schema_cls.model_validate_json(stage2_text)
     except ValidationError as exc:
         pydantic_details = exc.errors()
     except Exception:
         pass
 
-    return ExtractionResult.fail(
+    return ValidationResult.fail(
         PipelineError(
             error_type=ErrorType.RECOVERY_EXHAUSTED,
             stage=Stage.JSON_REPAIR_STAGE2,

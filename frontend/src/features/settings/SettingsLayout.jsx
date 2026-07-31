@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 const settingsNav = [
   { name: "Payment Methods", href: "/settings/payments", icon: CreditCard },
   { name: "Profile",         href: "/settings/profile",  icon: User, disabled: true },
-  { name: "Notifications",   href: "/settings/notifications", icon: Bell, disabled: true },
+  { name: "Notifications",   href: "/settings/notifications", icon: Bell },
 ];
 
 export default function SettingsLayout() {

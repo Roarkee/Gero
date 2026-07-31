@@ -38,14 +38,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+    <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header & Quick Actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            to="/dashboard/ai-workflow"
+            to="/dashboard/ai-history"
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 border border-transparent rounded-lg text-sm font-medium text-white hover:from-indigo-700 hover:to-violet-700 transition-all duration-200 shadow-sm"
           >
             <Sparkles className="w-4 h-4" /> AI Workflow
@@ -80,22 +81,23 @@ export default function Dashboard() {
 
       <KpiGrid kpis={data.kpis} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-2 space-y-8">
-          <NeedsAttention 
-            overdueInvoices={data.overdue_invoices}
-            upcomingDeadlines={data.upcoming_deadlines}
-            tasksDueSoon={data.tasks_due_soon}
-            clientsWaiting={data.clients_waiting_on_response}
-          />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2 space-y-8">
+            <NeedsAttention 
+              overdueInvoices={data.overdue_invoices}
+              upcomingDeadlines={data.upcoming_deadlines}
+              tasksDueSoon={data.tasks_due_soon}
+              clientsWaiting={data.clients_waiting_on_response}
+            />
+            
+            <FinancialCharts financialSummary={data.financial_summary} />
+            
+            <ProjectHealthTable projectHealth={data.project_health} />
+          </div>
           
-          <FinancialCharts financialSummary={data.financial_summary} />
-          
-          <ProjectHealthTable projectHealth={data.project_health} />
-        </div>
-        
-        <div className="xl:col-span-1">
-          <RecentActivityFeed activities={data.recent_activity} />
+          <div className="xl:col-span-1">
+            <RecentActivityFeed activities={data.recent_activity} />
+          </div>
         </div>
       </div>
     </div>

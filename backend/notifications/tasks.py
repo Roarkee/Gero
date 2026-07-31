@@ -54,7 +54,7 @@ def notify_invoice_overdue():
     for invoice in overdue_invoices:
         overdue = (now - invoice.due_date).days
         notification = Notification.objects.create(
-            user=invoice.user.id,
+            user=invoice.user,
             type='invoice_overdue',
             title=f'Invoice{invoice.invoice_number} is overdue by {overdue} days',
             message=f'{invoice.client.name.upper()} has an outstanding balance of {invoice.total_amount} left to pay',
@@ -91,5 +91,33 @@ def notify_task_deadline():
             action_url=url
         )
         send_notifications_task.delay_on_commit(notification.id)
+
+@shared_task
+def notify_followup_overdue():
+    '''
+    Finds clients whose next_followup_at has passed and sends a notification.
+    '''
+    from client.models import Client
+    now = timezone.now()
+    clients = Client.objects.filter(
+        next_followup_at__lt=now,
+        status__in=['lead', 'inquiry', 'proposal_sent', 'negotiating', 'active', 'dormant']
+    ).select_related('user')
+
+    for client in clients:
+        # Assuming frontend client detail page uses this format
+        url = f'/clients/{client.id}'
+        notification = Notification.objects.create(
+            user=client.user,
+            type='follow_up_overdue',
+            title=f'Follow-up due for {client.name}',
+            message=f'You have a scheduled follow-up for client {client.name} that is now overdue.',
+            action_url=url
+        )
+        send_notifications_task.delay_on_commit(notification.id)
+        
+        # Optionally, clear the followup date so we don't notify repeatedly every night
+        client.next_followup_at = None
+        client.save(update_fields=['next_followup_at'])
 
         

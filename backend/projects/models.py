@@ -20,7 +20,7 @@ class Project(models.Model):
         ('retainer', 'Retainer'),
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='projects')
-    client = models.ForeignKey(Client,on_delete=models.CASCADE,related_name='projects')
+    client = models.ForeignKey(Client,on_delete=models.CASCADE,related_name='projects', null=True, blank=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='active')
@@ -121,6 +121,14 @@ class SubTask(models.Model):
     updated_at=models.DateTimeField(auto_now=True)
     position= models.PositiveIntegerField(default=0)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.completed:
+            task = self.task
+            if task.subtasks.exists() and not task.subtasks.filter(completed=False).exists():
+                if not task.completed:
+                    task.completed = True
+                    task.save(update_fields=['completed'])
 
 
 class TimeEntry(models.Model):

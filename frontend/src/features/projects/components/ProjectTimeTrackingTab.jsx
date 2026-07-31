@@ -115,14 +115,17 @@ export default function ProjectTimeTrackingTab({ project }) {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      <div className="h-full overflow-y-auto">
+        <div className="p-6 flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-5xl mx-auto space-y-8">
 
       {/* Summary KPI Row */}
       <div className="grid grid-cols-3 gap-4">
@@ -329,6 +332,7 @@ export default function ProjectTimeTrackingTab({ project }) {
             )}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

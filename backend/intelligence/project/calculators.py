@@ -124,16 +124,18 @@ class BudgetCalculator:
 class HealthScoreCalculator:
 
     @staticmethod
-    def calculate_health_score(completion_percentage,overdue_percentage,profit_margin):
+    def calculate_health_score(completion_percentage, overdue_percentage, profit_margin, total_tasks=0, revenue=0):
 
         score = Decimal('100')
 
         score -= overdue_percentage * Decimal('0.5')
 
-        if profit_margin < 20:
+        # Do not penalize profit margin if there is no revenue yet
+        if revenue > 0 and profit_margin < 20:
             score -= Decimal('20')
 
-        if completion_percentage < 50:
+        # Do not penalize completion if there are no tasks yet
+        if total_tasks > 0 and completion_percentage < 50:
             score -= Decimal('15')
 
         if score < 0:

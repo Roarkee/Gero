@@ -4,7 +4,7 @@ import { Loader2, AlertCircle, FileText, Download } from "lucide-react";
 import apiClient from "../../api/client";
 import toast from "react-hot-toast";
 
-export function ProposalPreview({ requestId, onComplete, onBack }) {
+export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -146,10 +146,17 @@ export function ProposalPreview({ requestId, onComplete, onBack }) {
 
       <CardFooter className="flex justify-between border-t dark:border-gray-800 pt-6">
         <Button variant="outline" onClick={onBack}>Back to Pricing</Button>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-          <Download className="mr-2 h-4 w-4" />
-          Export Proposal
-        </Button>
+        <div className="flex space-x-4">
+          <Button variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-600 dark:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950">
+            <Download className="mr-2 h-4 w-4" />
+            Export Proposal
+          </Button>
+          {onNext && (
+            <Button onClick={onNext} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              Generate Project
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

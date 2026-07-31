@@ -4,6 +4,7 @@ import { useProjectIntelligence } from "../hooks/useProjectIntelligence";
 import { DollarSign, PieChart as PieChartIcon, TrendingDown, Edit2, Trash2, Plus, X, Save } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import toast from "react-hot-toast";
+import { useExpenses, useCreateExpense, useDeleteExpense, useExpenseCategories } from "../../../api/queries/useExpenses";
 
 const fmt = (v) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v ?? 0);
@@ -11,6 +12,11 @@ const fmt = (v) =>
 export default function ProjectBudgetTab({ project }) {
   const { budgetQuery, profitabilityQuery } = useProjectIntelligence(project.id);
   const { updateProject } = useProjects();
+  
+  const { data: expenses = [], isLoading: expensesLoading } = useExpenses(project.id);
+  const { data: categories = [] } = useExpenseCategories();
+  const createExpense = useCreateExpense();
+  const deleteExpense = useDeleteExpense();
 
   const budget = budgetQuery.data || {};
   const profitability = profitabilityQuery.data || {};
@@ -19,6 +25,23 @@ export default function ProjectBudgetTab({ project }) {
   const [isEditing, setIsEditing] = useState(false);
   const [budgetInput, setBudgetInput] = useState(project.budget ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [newExpense, setNewExpense] = useState({ title: "", amount: "", date: new Date().toISOString().split('T')[0], category: "" });
+
+  const handleAddExpense = async () => {
+    try {
+      await createExpense.mutateAsync({
+        ...newExpense,
+        project: project.id,
+      });
+      toast.success("Expense added");
+      setShowExpenseModal(false);
+      setNewExpense({ title: "", amount: "", date: new Date().toISOString().split('T')[0], category: "" });
+    } catch {
+      toast.error("Failed to add expense");
+    }
+  };
 
   const hasBudget = project.budget !== null && project.budget !== undefined;
   const budgetAmount = Number(project.budget ?? 0);
@@ -69,31 +92,34 @@ export default function ProjectBudgetTab({ project }) {
   // Empty state — no budget set
   if (!hasBudget && !isEditing) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-12 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center mb-4">
-            <DollarSign className="w-8 h-8 text-primary-500" />
+      <div className="h-full overflow-y-auto">
+        <div className="p-6 max-w-5xl mx-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center mb-4">
+              <DollarSign className="w-8 h-8 text-primary-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              No budget set
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-sm">
+              Set a budget to track spending, monitor utilization, and get over-budget alerts.
+            </p>
+            <button
+              onClick={() => { setBudgetInput(""); setIsEditing(true); }}
+              className="flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium text-sm transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Set Project Budget
+            </button>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            No budget set
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-sm">
-            Set a budget to track spending, monitor utilization, and get over-budget alerts.
-          </p>
-          <button
-            onClick={() => { setBudgetInput(""); setIsEditing(true); }}
-            className="flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium text-sm transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Set Project Budget
-          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
+    <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-5xl mx-auto space-y-8">
       
       {/* Budget Header: show edit form or summary */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
@@ -275,8 +301,145 @@ export default function ProjectBudgetTab({ project }) {
               </div>
             </div>
           </div>
+
+          {/* Expenses List */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Expenses</h3>
+              <button 
+                onClick={() => setShowExpenseModal(true)}
+                className="flex items-center px-3 py-1.5 bg-primary-50 text-primary-600 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/40 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Add Expense
+              </button>
+            </div>
+            
+            {expensesLoading ? (
+              <div className="p-8 text-center text-gray-500">Loading expenses...</div>
+            ) : expenses.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200 dark:border-gray-700">
+                  <TrendingDown className="w-8 h-8 text-gray-400" />
+                </div>
+                <h4 className="text-gray-900 dark:text-white font-medium mb-1">No expenses yet</h4>
+                <p className="text-sm text-gray-500">Track your project costs by adding an expense.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {expenses.map((expense) => {
+                  const category = categories.find(c => c.id === expense.category);
+                  return (
+                    <div key={expense.id} className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" 
+                          style={{ backgroundColor: `${category?.color || '#3B82F6'}20`, color: category?.color || '#3B82F6' }}
+                        >
+                          <TrendingDown className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{expense.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-500">{expense.date}</span>
+                            <span className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
+                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                              {category?.name || 'Uncategorized'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-base font-bold text-gray-900 dark:text-white">
+                          -{fmt(expense.amount)}
+                        </span>
+                        <button
+                          onClick={() => deleteExpense.mutate(expense.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
+
+      {/* Add Expense Modal (Inline for simplicity) */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Add Expense</h3>
+              <button onClick={() => setShowExpenseModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <input 
+                  type="text" 
+                  value={newExpense.title}
+                  onChange={e => setNewExpense({...newExpense, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="e.g. Server Hosting"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={newExpense.amount}
+                    onChange={e => setNewExpense({...newExpense, amount: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                  <input 
+                    type="date" 
+                    value={newExpense.date}
+                    onChange={e => setNewExpense({...newExpense, date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                <select 
+                  value={newExpense.category}
+                  onChange={e => setNewExpense({...newExpense, category: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                {categories.length === 0 && (
+                  <p className="text-xs text-orange-500 mt-1">You need to create categories in Expenses first.</p>
+                )}
+              </div>
+              <button 
+                onClick={handleAddExpense}
+                disabled={!newExpense.title || !newExpense.amount || !newExpense.category || !newExpense.date || createExpense.isPending}
+                className="w-full py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 disabled:opacity-50 mt-4"
+              >
+                {createExpense.isPending ? "Adding..." : "Add Expense"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 }

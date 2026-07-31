@@ -38,6 +38,7 @@ class AIWorkflowTask(models.Model):
         ("pricing", "Pricing"),
         ("proposal_generation", "Proposal Generation"),
         ("contract_generation", "Contract Generation"),
+        ("project_generation", "Project Generation"),
     ]
 
     STATUS_CHOICES = [

@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
 from ai.agents.client_request_agent import ClientRequestAgent
 from ai.models import AIRequest, AIWorkflowTask
 from ai.serializers import AIRequestSerializer
@@ -150,6 +151,32 @@ class ClientRequestViewSet(ModelViewSet):
             error.to_response_dict(),
             status=http_status,
         )
+        
+    @action(detail=True, methods=["get"])
+    def workflow_state(self, request, pk=None):
+        ai_req = self.get_object()
+        
+        # Load records
+        from ai.models import ScopeAnalysisRecord, PricingRecord, ProposalRecord
+        scope_record = ScopeAnalysisRecord.objects.filter(request=ai_req).last()
+        pricing_record = PricingRecord.objects.filter(request=ai_req).last()
+        proposal_record = ProposalRecord.objects.filter(request=ai_req).last()
+        
+        # Project Generation check
+        project_gen_task = ai_req.workflow_tasks.filter(task_type="project_generation", status="completed").last()
+        project_id = project_gen_task.metadata.get("project_id") if project_gen_task and project_gen_task.metadata else None
+
+        # Format output to match frontend `aiData` structure
+        data = {
+            "request_id": ai_req.id,
+            "extraction": ai_req.parsed_output if ai_req.status == "completed" else None,
+            "scope": scope_record.analysis if scope_record else None,
+            "pricing": pricing_record.pricing if pricing_record else None,
+            "proposal": proposal_record.proposal if proposal_record else None,
+            "project_id": project_id,
+        }
+        
+        return Response(data, status=status.HTTP_200_OK)
     
 
 
@@ -230,3 +257,30 @@ class ProposalView(APIView):
             return Response(result.data.model_dump(), status=status.HTTP_200_OK)
         else:
             return Response(result.error.to_response_dict(), status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+class ProjectGenerationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request_id = request.data.get("request_id")
+        
+        try:
+            ai_req = AIRequest.objects.get(id=request_id, user=request.user)
+        except AIRequest.DoesNotExist:
+            return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        workflow_task = AIWorkflowTask.objects.create(
+            request=ai_req,
+            task_type="project_generation",
+            status="pending"
+        )
+        
+        from .services.project_gen_service import ProjectGenerationService
+        service = ProjectGenerationService()
+        result = service.generate_project(request_id, workflow_task)
+        
+        if result.success:
+            return Response(result.data.model_dump(), status=status.HTTP_200_OK)
+        else:
+            return Response(result.error.to_response_dict(), status=status.HTTP_422_UNPROCESSABLE_ENTITY)

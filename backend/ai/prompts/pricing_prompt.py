@@ -26,6 +26,25 @@ Your task is to determine the professional project pricing and output the result
 10. Negotiation Floor: The absolute minimum price the agency can accept without losing money.
 
 ### SCHEMA:
-You MUST output valid JSON matching the following schema exactly. Do not wrap in markdown or add explanations outside the JSON.
+The following is the validation schema. Use it only as a reference. Return a JSON object that conforms to this schema. Do NOT reproduce the schema.
 {schema}
+
+CRITICAL INSTRUCTIONS:
+Return ONLY a valid JSON object.
+Return an INSTANCE of PricingAnalysis with real values.
+Do NOT return the schema definition.
+Do NOT include the following schema keywords in your output:
+  - `$defs`
+  - `properties`
+  - `required`
+  - `title`
+  - `type`
+The output must validate directly with `PricingAnalysis.model_validate_json()`.
+No markdown.
+No code fences (do not wrap in ```json).
+No explanations or text before or after the JSON.
+Do not omit required fields.
+Do not rename fields.
+If a value cannot be determined, use null or [].
+Never invent new keys.
 """

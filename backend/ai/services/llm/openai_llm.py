@@ -71,6 +71,13 @@ class OpenAILLM:
         """
         ctx = f"[request_id={request_id}] " if request_id else ""
 
+        # Map model name if it's an Anthropic model name
+        if model.startswith("claude-"):
+            if "haiku" in model:
+                model = "gpt-5-mini"
+            else:
+                model = "gpt-5"
+
         logger.info("%sSending request to OpenAI | model=%s input_chars=%d",ctx,model,len(input),)
 
         kwargs = {

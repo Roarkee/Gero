@@ -1,6 +1,6 @@
 import paystack
 from django.conf import settings
-from .base import BasePaymentProcessor
+from ..processors.base import BasePaymentProcessor
 import requests
 
 class PaystackProcessor(BasePaymentProcessor):

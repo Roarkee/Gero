@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -30,18 +31,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
 
     def get_queryset(self):
-        return self.queryset.filter(client__user=self.request.user).order_by('-created_at')
+        qs = self.queryset.filter(user=self.request.user).order_by('-created_at')
+        if self.action == 'retrieve':
+            qs = qs.prefetch_related(
+                'task_lists',
+                'task_lists__tasks',
+                'task_lists__tasks__subtasks',
+                'task_lists__tasks__time_entries',
+                'task_lists__tasks__labels',
+                'labels'
+            ).select_related('client')
+        elif self.action == 'list':
+            qs = qs.select_related('client')
+        return qs
 
     def get_serializer_class(self):
         if self.action in ['retrieve']:
             return ProjectDetailSerializer
         return ProjectSerializer
 
-    def perform_create(self, serializer):#this is making sure that the project belongs to a client that belongs 
-        #to the authenticated user. 
+    def perform_create(self, serializer):
         client_id = self.request.data.get('client')
-        client=get_object_or_404(Client, id=client_id, user=self.request.user)
-        serializer.save(client=client, user=self.request.user)
+        if client_id:
+            client = get_object_or_404(Client, id=client_id, user=self.request.user)
+            serializer.save(client=client, user=self.request.user)
+        else:
+            serializer.save(client=None, user=self.request.user)
 
 
 class TaskListViewSet(viewsets.ModelViewSet):
@@ -50,8 +65,15 @@ class TaskListViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return TaskList.objects.filter(project__client__user=self.request.user)
-        
+        qs = TaskList.objects.filter(project__user=self.request.user)
+        if self.action == 'with_tasks':
+            qs = qs.prefetch_related(
+                'tasks',
+                'tasks__subtasks',
+                'tasks__time_entries',
+                'tasks__labels'
+            )
+        return qs
 
     @action(detail=True, methods=['get'])
     def with_tasks(self, request, pk=None):
@@ -66,7 +88,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Task.objects.filter(task_list__project__client__user=self.request.user)
+        qs = Task.objects.filter(task_list__project__user=self.request.user)
+        if self.action in ['retrieve', 'with_subtasks']:
+            qs = qs.prefetch_related('subtasks', 'time_entries', 'labels')
+        elif self.action == 'list':
+            qs = qs.prefetch_related('labels')
+        return qs
 
     @action(detail=True, methods=['get'])
     def with_subtasks(self, request, pk=None):
@@ -91,7 +118,7 @@ class LabelViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        return Label.objects.filter(project__client__user=self.request.user)
+        return Label.objects.filter(project__user=self.request.user)
     
 
 
@@ -159,16 +186,17 @@ class ProjectActivityViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return self.queryset.filter(project__client__user=self.request.user)
+        return self.queryset.filter(project__user=self.request.user)
 
 
 class AttachmentViewSet(viewsets.ModelViewSet):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
-        return self.queryset.filter(project__client__user=self.request.user)
+        return self.queryset.filter(project__user=self.request.user)
 
 
 class RecurringTaskViewSet(viewsets.ModelViewSet):
@@ -177,4 +205,4 @@ class RecurringTaskViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return self.queryset.filter(project__client__user=self.request.user)
+        return self.queryset.filter(project__user=self.request.user)

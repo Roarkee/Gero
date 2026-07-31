@@ -30,6 +30,7 @@ class Client(models.Model):
 ]
     
     user= models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='clients')
+    user_account = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='client_profiles')
     name = models.CharField(max_length=150)
     email = models.EmailField()
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -105,3 +106,75 @@ class ClientActivity(models.Model):
     def __str__(self):
         return f"{self.client.name} - {self.activity_type}"
 
+
+
+class PortalMessage(models.Model):
+    """
+    A message thread between a freelancer and client scoped to a project.
+    Either party can post; sender is identified by the user FK.
+    """
+    project = models.ForeignKey(
+        'projects.Project',
+        on_delete=models.CASCADE,
+        related_name='portal_messages',
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='portal_messages_sent',
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['project', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"Message on {self.project.name} by {self.sender.email}"
+
+
+class PortalProposal(models.Model):
+    """
+    A proposal surfaced to the client for review/approval.
+    Wraps an AIRequest's ProposalRecord or a manually created one.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('revision_requested', 'Revision Requested'),
+    ]
+
+    project = models.ForeignKey(
+        'projects.Project',
+        on_delete=models.CASCADE,
+        related_name='portal_proposals',
+    )
+    # optional link back to AI-generated proposal
+    ai_request = models.ForeignKey(
+        'ai.AIRequest',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='portal_proposals',
+    )
+    title = models.CharField(max_length=200)
+    content = models.JSONField()          # proposal body (from ProposalRecord or manual)
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='pending')
+    client_note = models.TextField(blank=True)   # client's response note
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='portal_proposals_created',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} — {self.project.name}"

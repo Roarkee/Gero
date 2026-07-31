@@ -14,8 +14,8 @@ def client_user(user):
     return Client.objects.create(name="Cool Client", user=user)
 
 @pytest.fixture
-def project(client_user):
-    return Project.objects.create(name="Project 1", client=client_user)
+def project(client_user, user):
+    return Project.objects.create(name="Project 1", client=client_user, user=user)
 
 @pytest.fixture
 def task_list(project):

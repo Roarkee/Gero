@@ -50,9 +50,13 @@ class TaskSerializer(serializers.ModelSerializer):
             
         return data
 
-    def get_human_due(self, obj):#this makes the date human readable
-        #like Wednesday, 01 Jan 2020 12:00 PM
+    def get_human_due(self, obj):
         return obj.due_date.strftime("%b %d, %Y %I:%M %p") if obj.due_date else None
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['labels'] = LabelSerializer(instance.labels.all(), many=True).data
+        return rep
 
 
 class TaskListSerializer(serializers.ModelSerializer,OwnerValidationMixin):
@@ -106,6 +110,11 @@ class TaskWithSubTasksSerializer(serializers.ModelSerializer):
         
     def get_total_minutes(self, obj):
         return sum(entry.duration_minutes for entry in obj.time_entries.all())
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['labels'] = LabelSerializer(instance.labels.all(), many=True).data
+        return rep
 
 
 class TaskListWithTasksSerializer(serializers.ModelSerializer):

@@ -60,13 +60,13 @@ export default function TaskList({ list, projectId, onTaskClick }) {
     ) || [];
 
   const handleCreate = async () => {
-    if (!title.trim()) { setIsAdding(false); return; }
+    if (!title.trim() || createTask.isPending) { setIsAdding(false); return; }
     try {
       await createTask.mutateAsync({
         title,
         task_list: list.id,
         priority,
-        duedate: dueDate || null,
+        due_date: dueDate || null,
         labels: selectedLabels,
         optimisticLabels: allLabels?.filter((l) => selectedLabels.includes(l.id)) || [],
         projectId,
@@ -230,9 +230,10 @@ export default function TaskList({ list, projectId, onTaskClick }) {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={handleCreate}
-                  className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded hover:bg-indigo-700 font-medium"
+                  disabled={createTask.isPending}
+                  className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded hover:bg-indigo-700 font-medium disabled:opacity-50"
                 >
-                  Add Card
+                  {createTask.isPending ? "Adding..." : "Add Card"}
                 </button>
                 <button
                   onClick={() => setIsAdding(false)}

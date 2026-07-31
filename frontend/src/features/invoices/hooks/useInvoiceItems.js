@@ -22,8 +22,9 @@ export const useInvoiceItems = (invoiceId = null) => {
       queryClient.invalidateQueries({ queryKey: ["invoiceItems"] });
       // Invalidate specific invoice query to refresh total amount
       if (invoiceId) {
-        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+        queryClient.invalidateQueries({ queryKey: ["invoice", String(invoiceId)] });
       }
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
     },
   });
 
@@ -32,8 +33,9 @@ export const useInvoiceItems = (invoiceId = null) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoiceItems"] });
       if (invoiceId) {
-        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+        queryClient.invalidateQueries({ queryKey: ["invoice", String(invoiceId)] });
       }
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
     },
   });
 
@@ -42,8 +44,9 @@ export const useInvoiceItems = (invoiceId = null) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoiceItems"] });
       if (invoiceId) {
-        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+        queryClient.invalidateQueries({ queryKey: ["invoice", String(invoiceId)] });
       }
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
     },
   });
 

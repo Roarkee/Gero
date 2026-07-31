@@ -5,11 +5,13 @@ from django.conf import settings
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('invoice_overdue', 'Invoice Overdue'),
+        ('invoice_viewed', 'Invoice Viewed'),
         ('budget_exceeded', 'Budget Exceeded'),
         ('budget_warning', 'Budget Warning (80%)'),
         ('payment_received', 'Payment Received'),
         ('project_deadline', 'Project Deadline'),
         ('task_overdue', 'Task Overdue'),
+        ('follow_up_overdue', 'Follow-up Overdue'),
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')

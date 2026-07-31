@@ -44,31 +44,48 @@ OPENAI_DEFAULT_MODEL = "gpt-5"
 OPENAI_FAST_MODEL = "gpt-5-mini"
 OPENAI_REASONING_MODEL = "gpt-5"
 
-ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
-ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-4-5"
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
+ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-3-5"
 
-AI_PROVIDER = env("AI_PROVIDER", default="anthropic")
+GROQ_API_KEY = env("GROQ_API_KEY", default="")
+GROQ_MODEL = env("GROQ_MODEL", default="llama-3.3-70b-versatile")
+GROQ_FAST_MODEL = env("GROQ_FAST_MODEL", default="llama-3.1-8b-instant")
+
+AI_PROVIDER = env("AI_PROVIDER", default="groq")
+
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.0-flash-lite")
+GEMINI_EXTRACTION_MODEL = env("GEMINI_EXTRACTION_MODEL", default="gemini-2.0-flash-lite")
+
+_GEMINI_DEFAULT = GEMINI_MODEL
+
+AI_ENABLE_SELF_CORRECTION = env.bool("AI_ENABLE_SELF_CORRECTION", default=True)
+AI_MAX_SELF_CORRECTION_ATTEMPTS = env.int("AI_MAX_SELF_CORRECTION_ATTEMPTS", default=1)
 
 AI_MODELS = {
     "extraction": {
-        "model": env("AI_EXTRACTION_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
-        "temperature": O_EXTRACTION_TEMP,
+        "model": env("AI_EXTRACTION_MODEL", default="llama-3.3-70b-versatile"),
+        "temperature": 0.0,
     },
     "scope": {
-        "model": env("AI_SCOPE_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
-        "temperature": 0.3,
+        "model": env("AI_SCOPE_MODEL", default="llama-3.3-70b-versatile"),
+        "temperature": 0.1,
     },
     "pricing": {
-        "model": env("AI_PRICING_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
-        "temperature": 0.2,
+        "model": env("AI_PRICING_MODEL", default="llama-3.1-8b-instant"),
+        "temperature": 0.0,
     },
     "proposal": {
-        "model": env("AI_PROPOSAL_MODEL", default=ANTHROPIC_DEFAULT_MODEL),
-        "temperature": O_PROPOSAL_TEMP,
+        "model": env("AI_PROPOSAL_MODEL", default="llama-3.3-70b-versatile"),
+        "temperature": 0.4,
+    },
+    "project_generation": {
+        "model": env("AI_PROJECT_GEN_MODEL", default="llama-3.3-70b-versatile"),
+        "temperature": 0.2,
     },
 }
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com"]
 
@@ -282,6 +299,8 @@ EMAIL_HOST_USER = 'henokammaccarthy10@gmail.com'
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
+
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
 
 
 # security

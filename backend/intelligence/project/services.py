@@ -283,6 +283,12 @@ class ProjectHealthService:
                 ),
                 profit_margin=(
                     profitability['profit_margin']
+                ),
+                total_tasks=(
+                    productivity['total_tasks']
+                ),
+                revenue=(
+                    profitability['revenue']
                 )
             )
         )

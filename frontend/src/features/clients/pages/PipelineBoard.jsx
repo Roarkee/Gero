@@ -137,29 +137,36 @@ export default function PipelineBoard() {
   }
 
   return (
-    <div className="h-full flex flex-col p-8">
+    <div className="p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Pipeline Board</h1>
         <p className="text-sm text-gray-500 mt-1">Drag and drop clients to update their status.</p>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4 scroll-smooth">
+      {/* 160px = ClientsLayout nav bar (~57px) + PipelineBoard header (~96px) + breathing room */}
+      <div
+        className="custom-scrollbar"
+        style={{
+          height: "calc(100vh - 250px)",
+          overflowX: "auto",
+          overflowY: "hidden",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 h-full items-start min-w-max pr-4">
+          <div className="inline-flex flex-nowrap gap-4 items-start h-full pr-4 pb-4">
             {PIPELINE_COLUMNS.map((col) => (
-              <Column 
-                key={col.id} 
-                column={col} 
-                clients={clients.filter(c => c.status === col.id)} 
+              <Column
+                key={col.id}
+                column={col}
+                clients={clients.filter((c) => c.status === col.id)}
               />
             ))}
-            {/* Spacer to prevent last column from clipping */}
-            <div className="w-1 shrink-0" aria-hidden="true"></div>
           </div>
 
           <DragOverlay>

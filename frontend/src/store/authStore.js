@@ -61,6 +61,31 @@ export const useAuthStore = create(
         }
       },
 
+      googleLogin: async (token) => {
+        set({ isLoading: true });
+        try {
+          const response = await apiClient.post(API_ENDPOINTS.GOOGLE_LOGIN, { token });
+          const { access, refresh, user } = response.data;
+          if (!access) {
+            throw new Error("No access token received");
+          }
+          localStorage.setItem("accessToken", access);
+          localStorage.setItem("refreshToken", refresh);
+          set({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+          return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          return {
+            success: false,
+            error: error.response?.data?.error || error.message || "Google login failed",
+          };
+        }
+      },
+
       register: async (userData) => {
         set({ isLoading: true });
         try {

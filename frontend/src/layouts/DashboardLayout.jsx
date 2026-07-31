@@ -15,17 +15,20 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Bell,
 } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { clsx } from "clsx";
+import NotificationDropdown from "../components/shared/NotificationDropdown";
 
 const navigation = [
-  { name: "Home", href: "/", icon: LayoutDashboard },
-  { name: "AI Workflow", href: "/dashboard/ai-workflow", icon: Sparkles },
+  { name: "Home", href: "/dashboard", icon: LayoutDashboard },
+  { name: "AI Workflow", href: "/dashboard/ai-history", icon: Sparkles },
   { name: "Projects", href: "/projects", icon: Briefcase },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Expenses", href: "/expenses", icon: Receipt },
+  { name: "Notifications", href: "/settings/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -161,35 +164,6 @@ export default function DashboardLayout() {
                 </ul>
               </li>
 
-              <li className={clsx(isDesktopCollapsed && "hidden")}>
-                <div className="text-xs font-semibold leading-6 text-gray-400 uppercase tracking-wider mb-2 px-2">
-                  Workspaces
-                </div>
-                <ul role="list" className="mt-2 space-y-1">
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-600 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold items-center"
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800">
-                        P
-                      </span>
-                      <span className="truncate">Product Design</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="text-gray-600 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800 group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold items-center"
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-[0.625rem] font-medium text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-800">
-                        E
-                      </span>
-                      <span className="truncate">Engineering</span>
-                    </a>
-                  </li>
-                </ul>
-              </li>
 
               <li className="mt-auto pt-4 flex flex-col gap-4">
                 {/* Pro Banner */}
@@ -212,14 +186,27 @@ export default function DashboardLayout() {
                   </div>
                 )}
 
-                <div
-                  className={clsx(
-                    "flex items-center rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
-                    isDesktopCollapsed ? "justify-center p-2" : "gap-x-4 px-2 py-3 bg-gray-50 dark:bg-gray-800/50"
-                  )}
-                  onClick={() => logout()}
-                  title={isDesktopCollapsed ? "Logout" : undefined}
-                >
+                <div className="flex flex-col gap-2">
+                  <Link
+                    to="/portal"
+                    title={isDesktopCollapsed ? "Client Portal" : undefined}
+                    className={clsx(
+                      "flex items-center rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/30 hover:bg-indigo-100 transition-colors",
+                      isDesktopCollapsed ? "justify-center p-2.5" : "gap-x-2.5 px-3 py-2.5"
+                    )}
+                  >
+                    <Briefcase className="h-4 w-4 shrink-0" />
+                    {!isDesktopCollapsed && <span>Client Portal &rarr;</span>}
+                  </Link>
+
+                  <div
+                    className={clsx(
+                      "flex items-center rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                      isDesktopCollapsed ? "justify-center p-2" : "gap-x-4 px-2 py-3 bg-gray-50 dark:bg-gray-800/50"
+                    )}
+                    onClick={() => logout()}
+                    title={isDesktopCollapsed ? "Logout" : undefined}
+                  >
                   <div className="h-8 w-8 min-w-[32px] rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs ring-2 ring-white dark:ring-gray-700">
                     {user?.email?.[0].toUpperCase() || "U"}
                   </div>
@@ -237,7 +224,8 @@ export default function DashboardLayout() {
                     </>
                   )}
                 </div>
-              </li>
+              </div>
+            </li>
             </ul>
           </nav>
           
@@ -250,33 +238,44 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      <div 
+      <div
         className={clsx(
           "flex flex-1 flex-col transition-all duration-300 ease-in-out",
           isDesktopCollapsed ? "lg:pl-20" : "lg:pl-72"
         )}
       >
         {/* Top bar for mobile */}
-        <div className="sticky top-0 z-40 lg:hidden flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 lg:hidden flex h-16 shrink-0 items-center justify-between gap-x-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 shadow-sm sm:gap-x-6 sm:px-6">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-700"
+            className="-m-2.5 p-2.5 text-gray-700 dark:text-gray-300"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
             <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-4">
+            <NotificationDropdown align="right" />
             <div className="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
               G
             </div>
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto bg-[#F8F9FC] dark:bg-[#0B0F19]">
-          <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
-            <Outlet />
+        {/* Top header for desktop */}
+        <div className="hidden lg:flex h-16 shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-8">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Welcome back, {user?.first_name || user?.email?.split('@')[0] || "User"}
+            </span>
           </div>
+          <div className="flex items-center gap-4">
+            <NotificationDropdown align="right" />
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-hidden bg-[#F8F9FC] dark:bg-[#0B0F19]">
+          <Outlet />
         </main>
       </div>
     </div>

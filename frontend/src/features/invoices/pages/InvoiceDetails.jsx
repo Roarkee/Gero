@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
 import { useInvoice, useInvoices } from "../hooks/useInvoices";
 import { invoicesApi } from "../api/invoices.api";
 import GenerateFromTimeModal from "../components/GenerateFromTimeModal";
+import RecordPaymentModal from "../components/RecordPaymentModal";
 import { usePaymentProviders } from "../../payments/hooks/usePayments";
 import { 
   ArrowLeft, 
@@ -15,7 +17,12 @@ import {
   Clock,
   AlertCircle,
   CreditCard,
-  Check
+  Check,
+  Send,
+  DollarSign,
+  RotateCcw,
+  Copy,
+  XCircle
 } from "lucide-react";
 
 const formatCurrency = (amount) => {
@@ -27,10 +34,11 @@ const formatCurrency = (amount) => {
 
 export default function InvoiceDetails() {
   const { id } = useParams();
-  const { invoiceQuery } = useInvoice(id);
+  const { invoiceQuery, sendInvoice, cancelInvoice, duplicateInvoice, markViewed, resendInvoice } = useInvoice(id);
   const { updateInvoice } = useInvoices(); // To save changes
   
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({ description: "", quantity: 1, rate: 0 });
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -43,6 +51,7 @@ export default function InvoiceDetails() {
   const { data: availableProviders = [] } = usePaymentProviders();
   
   const invoice = invoiceQuery.data;
+  const isReadOnly = invoice && invoice.status !== "draft";
 
   // Sync local state when invoice data loads
   useEffect(() => {
@@ -139,6 +148,72 @@ export default function InvoiceDetails() {
     }
   };
 
+  const handleSendInvoice = () => {
+    // If there are unsaved changes, save them first
+    const hasChanges = 
+      localInvoice.description !== invoice.description ||
+      localInvoice.tax_rate !== invoice.tax_rate ||
+      JSON.stringify(localItems.map(i => ({ description: i.description, quantity: parseFloat(i.quantity), rate: parseFloat(i.rate) }))) !==
+      JSON.stringify((invoice.items || []).map(i => ({ description: i.description, quantity: parseFloat(i.quantity), rate: parseFloat(i.rate) }))) ||
+      JSON.stringify(selectedPaymentMethodIds.sort()) !== JSON.stringify((invoice.payment_methods || []).map(pm => pm.id).sort());
+
+    if (hasChanges) {
+      const payloadItems = localItems.map(item => {
+        const { description, quantity, rate } = item;
+        const base = { description, quantity: parseFloat(quantity) || 0, rate: parseFloat(rate) || 0 };
+        if (!item.isTemp && item.id) {
+          base.id = item.id;
+        }
+        return base;
+      });
+
+      updateInvoice.mutate({
+        id: parseInt(id),
+        description: localInvoice.description,
+        tax_rate: localInvoice.tax_rate,
+        items: payloadItems,
+        payment_method_ids: selectedPaymentMethodIds,
+      }, {
+        onSuccess: () => {
+          sendInvoice.mutate(undefined, {
+            onSuccess: () => {
+              toast.success("Invoice saved and sent successfully via email!");
+            },
+            onError: (err) => {
+              toast.error(err?.response?.data?.detail || "Failed to send invoice.");
+            }
+          });
+        },
+        onError: () => {
+          toast.error("Failed to save changes before sending.");
+        }
+      });
+    } else {
+      sendInvoice.mutate(undefined, {
+        onSuccess: () => {
+          toast.success("Invoice sent successfully via email!");
+        },
+        onError: (err) => {
+          toast.error(err?.response?.data?.detail || "Failed to send invoice.");
+        }
+      });
+    }
+  };
+
+  const handleRevertToDraft = () => {
+    updateInvoice.mutate({
+      id: parseInt(id),
+      status: 'draft'
+    }, {
+      onSuccess: () => {
+        toast.success("Invoice reverted to draft. You can now edit it.");
+      },
+      onError: (err) => {
+        toast.error("Failed to revert invoice to draft.");
+      }
+    });
+  };
+
   // Local calculation of totals
   const localSubtotal = localItems.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0)), 0);
   const localTaxRate = parseFloat(localInvoice.tax_rate) || 0;
@@ -175,8 +250,78 @@ export default function InvoiceDetails() {
         
         <div className="flex items-center gap-3">
           <button 
+            onClick={() => {
+              duplicateInvoice.mutate(undefined, {
+                onSuccess: (res) => toast.success("Invoice duplicated!"),
+                onError: () => toast.error("Failed to duplicate invoice.")
+              });
+            }}
+            disabled={duplicateInvoice.isPending}
+            className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            Duplicate
+          </button>
+          {invoice.status !== 'cancelled' && (
+            <button 
+              onClick={() => {
+                if(window.confirm('Are you sure you want to cancel this invoice?')) {
+                  cancelInvoice.mutate(undefined, {
+                    onSuccess: () => toast.success("Invoice cancelled."),
+                    onError: () => toast.error("Failed to cancel invoice.")
+                  });
+                }
+              }}
+              disabled={cancelInvoice.isPending}
+              className="flex items-center px-4 py-2 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-400 text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Cancel
+            </button>
+          )}
+          {invoice.status !== 'draft' && (
+            <button 
+              onClick={handleRevertToDraft}
+              disabled={updateInvoice.isPending}
+              className="flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {updateInvoice.isPending ? "Reverting..." : "Revert to Draft"}
+            </button>
+          )}
+          <button 
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+          >
+            <DollarSign className="w-4 h-4 mr-2" />
+            Record Payment
+          </button>
+          <button 
+            onClick={handleSendInvoice}
+            disabled={sendInvoice.isPending || isDownloading}
+            className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            {sendInvoice.isPending ? "Sending..." : "Send Invoice"}
+          </button>
+          {invoice.status !== 'draft' && invoice.status !== 'cancelled' && (
+            <button
+              onClick={() => {
+                resendInvoice.mutate(undefined, {
+                  onSuccess: () => toast.success("Invoice resent successfully!"),
+                  onError: (err) => toast.error(err?.response?.data?.detail || "Failed to resend invoice."),
+                });
+              }}
+              disabled={resendInvoice.isPending}
+              className="flex items-center px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium border border-transparent rounded-xl transition-colors shadow-sm disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {resendInvoice.isPending ? "Resending..." : "Resend"}
+            </button>
+          )}
+          <button 
             onClick={handleDownloadPDF}
-            disabled={isDownloading}
+            disabled={isDownloading || sendInvoice.isPending}
             className="flex items-center px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
           >
             <Download className="w-4 h-4 mr-2" />
@@ -216,7 +361,8 @@ export default function InvoiceDetails() {
                 <textarea
                   value={localInvoice.description || ""}
                   onChange={(e) => handleUpdateInvoiceField("description", e.target.value)}
-                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-2 text-sm text-gray-900 dark:text-white transition-colors"
+                  disabled={isReadOnly}
+                  className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-2 text-sm text-gray-900 dark:text-white transition-colors disabled:opacity-50"
                   placeholder="Additional notes or description..."
                   rows={2}
                 />
@@ -228,7 +374,7 @@ export default function InvoiceDetails() {
           <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Line Items</h3>
-              {invoice.project && (
+              {invoice.project && !isReadOnly && (
                 <button 
                   onClick={() => setIsGenerateModalOpen(true)}
                   className="flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
@@ -244,7 +390,7 @@ export default function InvoiceDetails() {
                 <thead className="bg-gray-50 dark:bg-gray-900/50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">Qty</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Qty</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Rate</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Amount</th>
                     <th scope="col" className="px-6 py-3 w-16"></th>
@@ -258,7 +404,8 @@ export default function InvoiceDetails() {
                           type="text" 
                           value={item.description || ""}
                           onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                          className="w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
+                          disabled={isReadOnly}
+                          className="w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors disabled:opacity-50"
                         />
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -267,7 +414,8 @@ export default function InvoiceDetails() {
                           step="0.01"
                           value={item.quantity}
                           onChange={(e) => handleUpdateItem(item.id, 'quantity', e.target.value)}
-                          className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
+                          disabled={isReadOnly}
+                          className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors disabled:opacity-50"
                         />
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -276,69 +424,110 @@ export default function InvoiceDetails() {
                           step="0.01"
                           value={item.rate}
                           onChange={(e) => handleUpdateItem(item.id, 'rate', e.target.value)}
-                          className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors"
+                          disabled={isReadOnly}
+                          className="w-full text-right bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 px-0 py-1 text-sm text-gray-900 dark:text-white transition-colors disabled:opacity-50"
                         />
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium text-gray-900 dark:text-white">
                         {formatCurrency((parseFloat(item.quantity) || 0) * (parseFloat(item.rate) || 0))}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="text-gray-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {!isReadOnly && (
+                          <button 
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="text-gray-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
                   
                   {/* Add New Row */}
-                  <tr className="bg-gray-50/50 dark:bg-gray-900/30">
-                    <td className="px-6 py-4">
-                      <input 
-                        type="text" 
-                        placeholder="Item description..."
-                        value={newItem.description}
-                        onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                        className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={newItem.quantity}
-                        onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
-                        className="w-full text-right bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={newItem.rate}
-                        onChange={(e) => setNewItem({...newItem, rate: e.target.value})}
-                        className="w-full text-right bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {formatCurrency((parseFloat(newItem.quantity) || 0) * (parseFloat(newItem.rate) || 0))}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={handleAddItem}
-                        disabled={!newItem.description.trim()}
-                        className="p-1.5 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
+                  {!isReadOnly && (
+                    <tr className="bg-gray-50/50 dark:bg-gray-900/30">
+                      <td className="px-6 py-4">
+                        <input 
+                          type="text" 
+                          placeholder="Item description..."
+                          value={newItem.description}
+                          onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+                          className="w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          value={newItem.quantity}
+                          onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
+                          className="w-full text-right bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          value={newItem.rate}
+                          onChange={(e) => setNewItem({...newItem, rate: e.target.value})}
+                          className="w-full text-right bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {formatCurrency((parseFloat(newItem.quantity) || 0) * (parseFloat(newItem.rate) || 0))}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={handleAddItem}
+                          disabled={!newItem.description.trim()}
+                          className="p-1.5 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+          {/* Payment History */}
+          {invoice.payments_received && invoice.payments_received.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Payment History</h3>
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Method</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {invoice.payments_received.map((payment) => (
+                      <tr key={payment.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {formatCurrency(payment.amount)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
+                          {payment.method || 'Manual'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {payment.notes || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Financials */}
@@ -358,9 +547,10 @@ export default function InvoiceDetails() {
                     <input 
                       type="number"
                       step="0.1"
-                      className="w-12 text-right bg-transparent border-none p-0 text-sm focus:ring-0 text-gray-900 dark:text-white"
+                      className="w-12 text-right bg-transparent border-none p-0 text-sm focus:ring-0 text-gray-900 dark:text-white disabled:opacity-50"
                       value={localInvoice.tax_rate || 0}
                       onChange={(e) => handleUpdateInvoiceField("tax_rate", e.target.value)}
+                      disabled={isReadOnly}
                     />
                     <span>%</span>
                   </div>
@@ -406,16 +596,18 @@ export default function InvoiceDetails() {
               </div>
             )}
 
-            <div className="space-y-3">
-               <button 
-                 onClick={handleSaveChanges}
-                 disabled={updateInvoice.isPending}
-                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center"
-               >
-                 <Save className="w-4 h-4 mr-2" />
-                 {updateInvoice.isPending ? "Saving..." : "Save Changes"}
-               </button>
-            </div>
+            {!isReadOnly && (
+              <div className="space-y-3">
+                 <button 
+                   onClick={handleSaveChanges}
+                   disabled={updateInvoice.isPending}
+                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-sm transition-colors flex items-center justify-center"
+                 >
+                   <Save className="w-4 h-4 mr-2" />
+                   {updateInvoice.isPending ? "Saving..." : "Save Changes"}
+                 </button>
+              </div>
+            )}
             
             {invoice.status === 'overdue' && (
                <div className="mt-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-2xl p-4 flex items-start">
@@ -436,6 +628,13 @@ export default function InvoiceDetails() {
         invoiceId={id} 
         isOpen={isGenerateModalOpen} 
         onClose={() => setIsGenerateModalOpen(false)} 
+      />
+
+      <RecordPaymentModal 
+        invoiceId={id}
+        totalAmount={invoice.total_amount}
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
       />
     </div>
   );

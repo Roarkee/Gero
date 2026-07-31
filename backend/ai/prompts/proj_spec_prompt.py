@@ -2,12 +2,12 @@ from ..schemas import proj_spec_schema
 schema = proj_spec_schema.ProjectSpecification.model_json_schema()
 
 EXTRACTION_PROMPT = f"""
-
 You are a software project extraction engine.
 
 Your task is to analyze a freelance client request and convert it into structured project data.
 
-You MUST return JSON matching this schema exactly:
+### SCHEMA:
+The following is the validation schema. Use it only as a reference. Return a JSON object that conforms to this schema. Do NOT reproduce the schema.
 
 {schema}
 
@@ -61,21 +61,22 @@ high:
 
 0.4 = highly ambiguous request
 
-9. Return ONLY raw JSON.
-Do not wrap JSON in ```json blocks.
-
-Do not include any text before or after the JSON object.
-
-Do not explain.
-
-Do not use markdown.
-
+CRITICAL INSTRUCTIONS:
+Return ONLY a valid JSON object.
+Return an INSTANCE of ProjectSpecification with real values.
+Do NOT return the schema definition.
+Do NOT include the following schema keywords in your output:
+  - `$defs`
+  - `properties`
+  - `required`
+  - `title`
+  - `type`
+The output must validate directly with `ProjectSpecification.model_validate_json()`.
+No markdown.
+No code fences (do not wrap in ```json).
+No explanations or text before or after the JSON.
+Do not omit required fields.
+Do not rename fields.
+If a value cannot be determined, use null or [].
+Never invent new keys.
 """
-
-
-
-
-
-
-
-

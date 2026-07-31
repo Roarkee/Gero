@@ -61,17 +61,17 @@ def get_dashboard_intelligence(user):
     active_clients = clients.filter(status="active").count()
     dormant_clients = clients.filter(status="dormant").count()
     
-    # Find clients needing attention
     attention_items = []
-    attention_clients = clients.filter(attention_required=True)
-    for c in attention_clients:
-        _, reasons = AttentionEngine.calculate_attention_required(c)
-        attention_items.append({
-            "id": c.id,
-            "name": c.name,
-            "status": c.status,
-            "reasons": reasons
-        })
+    # Evaluate all clients dynamically to ensure accuracy regardless of Celery schedule
+    for c in clients:
+        requires_attention, reasons = AttentionEngine.calculate_attention_required(c)
+        if requires_attention:
+            attention_items.append({
+                "id": c.id,
+                "name": c.name,
+                "status": c.status,
+                "reasons": reasons
+            })
 
     return {
         "attention_items": attention_items,

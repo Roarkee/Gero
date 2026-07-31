@@ -31,10 +31,10 @@ export const useCreateTask = () => {
                 ...updatedLists[listIndex].tasks,
                 {
                   ...newTask,
-                  id: "temp-" + Date.now(),
+                  id: "temp-" + crypto.randomUUID(),
                   created_at: new Date().toISOString(),
                   labels: newTask.optimisticLabels || [], // Use full label objects for UI
-                  duedate: newTask.optimisticDueDate || newTask.duedate || null,
+                  due_date: newTask.due_date || null,
                   priority: newTask.priority || "medium",
                 },
               ],
@@ -76,9 +76,35 @@ export const useUpdateTask = () => {
       );
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProjects = queryClient.getQueriesData({ queryKey: ["project"] });
+      
+      queryClient.setQueriesData({ queryKey: ["project"] }, (old) => {
+        if (!old || !old.task_lists) return old;
+        return {
+          ...old,
+          task_lists: old.task_lists.map(list => ({
+            ...list,
+            tasks: list.tasks.map(task => 
+              task.id === id ? { ...task, ...data } : task
+            )
+          }))
+        };
+      });
+      return { previousProjects };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProjects) {
+        context.previousProjects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["project"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 };
@@ -91,8 +117,32 @@ export const useDeleteTask = () => {
     mutationFn: async (taskId) => {
       await apiClient.delete(API_ENDPOINTS.TASK_DETAIL(taskId));
     },
-    onSuccess: () => {
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProjects = queryClient.getQueriesData({ queryKey: ["project"] });
+      
+      queryClient.setQueriesData({ queryKey: ["project"] }, (old) => {
+        if (!old || !old.task_lists) return old;
+        return {
+          ...old,
+          task_lists: old.task_lists.map(list => ({
+            ...list,
+            tasks: list.tasks.filter(task => task.id !== taskId)
+          }))
+        };
+      });
+      return { previousProjects };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProjects) {
+        context.previousProjects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["project"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 };

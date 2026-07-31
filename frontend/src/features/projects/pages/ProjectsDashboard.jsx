@@ -19,7 +19,8 @@ export default function ProjectsDashboard() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -176,6 +177,7 @@ export default function ProjectsDashboard() {
           onClose={() => setIsModalOpen(false)}
         />
       )}
+      </div>
     </div>
   );
 }

@@ -24,6 +24,7 @@ class ErrorType:
     VALIDATION_ERROR = "validation_error"
     RECOVERY_EXHAUSTED = "recovery_exhausted"
     UNKNOWN = "unknown_error"
+    UNKNOWN_ERROR = "unknown_error"
 
 
 class Stage:
@@ -96,32 +97,34 @@ class PipelineError:
 
 # ─── ExtractionResult ────────────────────────────────────────────────────────
 
-@dataclass
-class ExtractionResult:
-    """
-    Output envelope for ClientRequestAgent.extract().
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-    The pipeline ALWAYS returns an ExtractionResult — never raises.
+T = TypeVar('T')
+
+@dataclass
+class ValidationResult(Generic[T]):
+    """
+    Output envelope for ValidationPipeline.
 
     Usage
     -----
-    result = agent.extract(text)
+    result = pipeline.run(...)
     if result.success:
         do_something_with(result.data)
     else:
         handle_error(result.error)
     """
-
     success: bool
-    data: "ProjectSpecification | None" = None
+    data: T | None = None
     error: PipelineError | None = None
 
     @classmethod
-    def ok(cls, spec: "ProjectSpecification") -> "ExtractionResult":
-        """Construct a successful result."""
-        return cls(success=True, data=spec, error=None)
+    def ok(cls, data: T) -> "ValidationResult[T]":
+        return cls(success=True, data=data, error=None)
 
     @classmethod
-    def fail(cls, error: PipelineError) -> "ExtractionResult":
-        """Construct a failure result."""
+    def fail(cls, error: PipelineError) -> "ValidationResult[T]":
         return cls(success=False, data=None, error=error)
+
+# Legacy alias for backward compatibility during refactor
+ExtractionResult = ValidationResult

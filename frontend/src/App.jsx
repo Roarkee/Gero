@@ -7,15 +7,19 @@ import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
 import { useUIStore } from "./store/uiStore";
 import ProtectedRoute from "./components/shared/ProtectedRoute";
+import PortalRoute from "./components/shared/PortalRoute";
 
 // Pages
 import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
+import LandingPage from "./features/landing/LandingPage";
 import Dashboard from "./features/dashboard/pages/Dashboard";
 import ProjectsDashboard from "./features/projects/pages/ProjectsDashboard";
 import ProjectWorkspace from "./features/projects/pages/ProjectWorkspace";
 import DashboardLayout from "./layouts/DashboardLayout";
+import ClientPortalLayout from "./layouts/ClientPortalLayout";
 import AIWorkflow from "./features/dashboard/pages/AIWorkflow";
+import AIHistory from "./features/dashboard/pages/AIHistory";
 import ClientsLayout from "./features/clients/ClientsLayout";
 import ClientsDashboard from "./features/clients/pages/ClientsDashboard";
 import ClientsList from "./features/clients/pages/ClientsList";
@@ -43,6 +47,11 @@ import BudgetDetail from "./features/expenses/pages/BudgetDetail";
 import BudgetForm from "./features/expenses/pages/BudgetForm";
 import SettingsLayout from "./features/settings/SettingsLayout";
 import PaymentSettings from "./features/payments/pages/PaymentSettings";
+import NotificationsPage from "./features/notifications/pages/NotificationsPage";
+import PortalHome from "./features/clientPortal/pages/PortalHome";
+import PortalProject from "./features/clientPortal/pages/PortalProject";
+import AcceptInvite from "./features/clientPortal/pages/AcceptInvite";
+import NewRequest from "./features/clientPortal/pages/NewRequest";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -75,9 +84,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/portal/accept-invite" element={<AcceptInvite />} />
+ 
           <Route
             element={
               <ProtectedRoute>
@@ -85,8 +96,11 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard/ai-workflow" element={<AIWorkflow />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/ai-history" element={<AIHistory />} />
+            <Route path="/dashboard/ai-workflow" element={<Navigate to="/dashboard/ai-history" replace />} />
+            <Route path="/dashboard/ai-workflow/new" element={<AIWorkflow />} />
+            <Route path="/dashboard/ai-workflow/:id" element={<AIWorkflow />} />
             <Route path="/projects" element={<ProjectsDashboard />} />
             <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
             <Route path="/clients" element={<ClientsLayout />}>
@@ -118,13 +132,29 @@ function App() {
               <Route path=":expenseId" element={<ExpenseDetail />} />
               <Route path=":expenseId/edit" element={<ExpenseForm />} />
             </Route>
+            <Route path="/notifications" element={<Navigate to="/settings/notifications" replace />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="/settings/payments" replace />} />
               <Route path="payments" element={<PaymentSettings />} />
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* Client Portal */}
+          <Route
+            path="/portal"
+            element={
+              <PortalRoute>
+                <ClientPortalLayout />
+              </PortalRoute>
+            }
+          >
+            <Route index element={<PortalHome />} />
+            <Route path="projects/:id" element={<PortalProject />} />
+            <Route path="request" element={<NewRequest />} />
+          </Route>
         </Routes>
       </BrowserRouter>
 

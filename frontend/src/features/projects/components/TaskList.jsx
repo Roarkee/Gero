@@ -44,12 +44,13 @@ export default function TaskList({ list, projectId, onTaskClick }) {
 
   const handleCreateTask = async () => {
     if (!title.trim()) { setIsAdding(false); return; }
+    if (createTask.isPending) return;
     try {
       await createTask.mutateAsync({
         title,
         task_list: list.id,
         priority,
-        duedate: dueDate || null,
+        due_date: dueDate ? `${dueDate}T00:00:00` : null,
         labels: selectedLabels,
         project: projectId, // Ensure it's linked
         position: list.tasks?.length || 0,
@@ -73,7 +74,7 @@ export default function TaskList({ list, projectId, onTaskClick }) {
   };
 
   const onKeyDown = (e) => {
-    if (e.key === "Enter") { e.preventDefault(); handleCreateTask(); }
+    if (e.key === "Enter") { e.preventDefault(); if (!createTask.isPending) handleCreateTask(); }
     if (e.key === "Escape") setIsAdding(false);
   };
 
@@ -190,9 +191,10 @@ export default function TaskList({ list, projectId, onTaskClick }) {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={handleCreateTask}
-                  className="bg-primary-600 text-white text-xs px-3 py-1.5 rounded-md hover:bg-primary-700 font-medium transition-colors"
+                  disabled={createTask.isPending}
+                  className="bg-primary-600 text-white text-xs px-3 py-1.5 rounded-md hover:bg-primary-700 font-medium transition-colors disabled:opacity-50"
                 >
-                  Add
+                  {createTask.isPending ? "Adding..." : "Add"}
                 </button>
                 <button
                   onClick={() => setIsAdding(false)}

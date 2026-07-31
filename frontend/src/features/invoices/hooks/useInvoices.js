@@ -52,14 +52,58 @@ export const useInvoice = (id) => {
   const generateFromTime = useMutation({
     mutationFn: () => invoicesApi.generateFromTime(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoice", id] });
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(id)] });
       queryClient.invalidateQueries({ queryKey: ["invoiceItems"] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  const sendInvoice = useMutation({
+    mutationFn: () => invoicesApi.sendInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(id)] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  const cancelInvoice = useMutation({
+    mutationFn: () => invoicesApi.cancelInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(id)] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  const duplicateInvoice = useMutation({
+    mutationFn: () => invoicesApi.duplicateInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  const markViewed = useMutation({
+    mutationFn: () => invoicesApi.markViewed(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(id)] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  const resendInvoice = useMutation({
+    mutationFn: () => invoicesApi.resendInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(id)] });
     },
   });
 
   return {
     invoiceQuery,
     generateFromTime,
+    sendInvoice,
+    cancelInvoice,
+    duplicateInvoice,
+    markViewed,
+    resendInvoice,
   };
 };
 
@@ -71,5 +115,21 @@ export const useInvoiceDashboard = () => {
 
   return {
     dashboardQuery,
+  };
+};
+
+export const useInvoicePayment = () => {
+  const queryClient = useQueryClient();
+
+  const createPayment = useMutation({
+    mutationFn: invoicesApi.createInvoicePayment,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["invoice", String(variables.invoice)] });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+  });
+
+  return {
+    createPayment,
   };
 };

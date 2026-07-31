@@ -9,7 +9,7 @@ from ai.schemas.proj_spec_schema import ProjectSpecification
 from ai.schemas.scope_schema import ScopeAnalysis
 from ai.schemas.pricing_schema import PricingAnalysis
 from ai.prompts.pricing_prompt import PRICING_PROMPT
-from ai.services.llm.llm_factory import LLMFactory
+from ai.services.llm import get_llm_service
 from ai.services.errors import ExtractionResult, PipelineError, ErrorType, Stage
 from ai.services.recovery import attempt_recovery
 from pydantic import ValidationError
@@ -20,7 +20,7 @@ class PricingAgent:
     """Agent responsible for determining professional project pricing."""
 
     def __init__(self):
-        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
+        self.llm = get_llm_service()
         self.prompt = PRICING_PROMPT
 
     def analyze(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, request_id: str = "unknown") -> ExtractionResult:
@@ -48,22 +48,25 @@ class PricingAgent:
                 request_id=request_id,
             )
 
-            # Try to validate directly
-            try:
-                pricing = PricingAnalysis.model_validate_json(raw_response)
-                logger.info("%s Pricing generated successfully.", ctx)
-                return ExtractionResult.ok(pricing)
-            except ValidationError as ve:
-                logger.warning("%s Validation failed, attempting recovery. Error: %s", ctx, ve)
-                
-            # Attempt recovery if direct validation failed
-            recovery_result = attempt_recovery(raw_response, target_model=PricingAnalysis)
-            if recovery_result.success:
-                logger.info("%s Pricing recovered successfully.", ctx)
-                return recovery_result
+            from ai.services.pipeline import ValidationPipeline
             
-            logger.error("%s Pricing recovery exhausted.", ctx)
-            return recovery_result
+            result = ValidationPipeline.run(
+                llm_service=self.llm,
+                schema_cls=PricingAnalysis,
+                prompt=instructions,
+                raw_response=raw_response,
+                agent_name="PricingAgent",
+                request_id=request_id,
+                model=settings.AI_MODELS["pricing"]["model"],
+                temperature=settings.AI_MODELS["pricing"]["temperature"]
+            )
+            
+            if result.success:
+                logger.info("%s Pricing generated successfully.", ctx)
+            else:
+                logger.error("%s Pricing recovery exhausted.", ctx)
+                
+            return result
 
         except Exception as e:
             logger.exception("%s Unexpected error in PricingAgent: %s", ctx, e)

@@ -38,6 +38,7 @@ class HealthScoringEngine:
             reasons.append("No contact in over 30 days")
 
         # overdue followup
+        print(client.next_followup_at)
         if client.next_followup_at and client.next_followup_at < timezone.now():
             score -= 20
             reasons.append("Follow-up overdue")
@@ -82,15 +83,16 @@ class AttentionEngine:
             requires_attention = True
             reasons.append("Follow-up overdue")
 
-        if client.status == "proposal_sent" and client.updated_at < now - timedelta(days=5):
+        if client.status == "proposal_sent" and client.updated_at and client.updated_at < now - timedelta(days=5):
             requires_attention = True
             reasons.append("Proposal unanswered for 5+ days")
 
-        if client.status == "waiting_on_client" and client.updated_at < now - timedelta(days=7):
+        if client.status == "waiting_on_client" and client.updated_at and client.updated_at < now - timedelta(days=7):
             requires_attention = True
             reasons.append("Waiting on client for 7+ days")
 
-        if client.last_contacted_at and client.last_contacted_at < now - timedelta(days=30):
+        last_contact = client.last_contacted_at or client.created_at
+        if last_contact and last_contact < now - timedelta(days=30):
             requires_attention = True
             reasons.append("No contact in 30 days")
             

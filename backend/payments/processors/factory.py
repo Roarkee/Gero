@@ -1,4 +1,4 @@
-from .paystack import PaystackProcessor
+from ..services.paystack_service import PaystackProcessor
 
 class PaymentProcessorFactory:
 

@@ -31,9 +31,13 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     PROVIDERS = (
-    ('email', 'Email'),
-    ('google', 'Google'),
-)
+        ('email', 'Email'),
+        ('google', 'Google'),
+    )
+    ROLE_CHOICES = (
+        ('freelancer', 'Freelancer'),
+        ('client', 'Client'),
+    )
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
@@ -43,8 +47,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
     password = models.CharField(max_length=128)
-    provider = models.CharField(max_length=30, blank=True, choices =PROVIDERS, default='email')
+    provider = models.CharField(max_length=30, blank=True, choices=PROVIDERS, default='email')
     provider_id = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='freelancer')
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = CustomUserManager()

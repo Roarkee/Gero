@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { useTasks, useSubtasks } from "../hooks/useTasks";
 import { useTimeTracking } from "../hooks/useTimeTracking";
 import { format } from "date-fns";
-import { X, Play, Square, CheckCircle2, Circle, Clock, Tag, Calendar, AlignLeft, ListTodo } from "lucide-react";
+import { X, Play, Square, CheckCircle2, Circle, Clock, Tag, Calendar, AlignLeft, ListTodo, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import LabelSelector from "./LabelSelector";
 
-export default function TaskDetailDrawer({ task, isOpen, onClose }) {
+export default function TaskDetailDrawer({ task, isOpen, onClose, projectId }) {
   if (!isOpen || !task) return null;
 
-  const { updateTask } = useTasks();
+  const { updateTask, deleteTask } = useTasks();
   const { createSubtask, updateSubtask } = useSubtasks();
   const { activeTimerQuery, startTimer, stopTimer, timeEntriesQuery } = useTimeTracking();
 
@@ -111,9 +112,23 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
               {task.priority}
             </span>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => {
+                if (window.confirm("Are you sure you want to delete this task?")) {
+                  deleteTask.mutate(task.id);
+                  onClose();
+                }
+              }} 
+              className="p-2 text-red-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              title="Delete Task"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -213,9 +228,25 @@ export default function TaskDetailDrawer({ task, isOpen, onClose }) {
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <Tag className="w-4 h-4 mr-2" /> Labels
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                  <Tag className="w-4 h-4 mr-2" /> Labels
+                </p>
+                <LabelSelector 
+                  projectId={projectId} 
+                  selectedLabels={task.labels}
+                  onSelect={(label) => {
+                    const existingIds = (task.labels || []).map(l => l.id);
+                    if (!existingIds.includes(label.id)) {
+                      updateTask.mutate({ id: task.id, labels: [...existingIds, label.id] });
+                    }
+                  }}
+                  onRemove={(label) => {
+                    const newIds = (task.labels || []).filter(l => l.id !== label.id).map(l => l.id);
+                    updateTask.mutate({ id: task.id, labels: newIds });
+                  }}
+                />
+              </div>
               <div className="flex flex-wrap gap-1 pl-6">
                 {task.labels && task.labels.length > 0 ? (
                   task.labels.map(label => (

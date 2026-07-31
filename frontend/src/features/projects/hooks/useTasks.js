@@ -62,7 +62,35 @@ export const useTasks = () => {
 
   const updateTask = useMutation({
     mutationFn: projectsApi.updateTask,
-    onSuccess: () => {
+    onMutate: async (updatedTaskData) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProject = queryClient.getQueryData(["project"]);
+      
+      if (previousProject && previousProject.task_lists) {
+        queryClient.setQueryData(["project"], old => {
+          if (!old) return old;
+          const newTaskLists = old.task_lists.map(list => {
+            if (list.tasks.some(t => t.id === updatedTaskData.id)) {
+              return {
+                ...list,
+                tasks: list.tasks.map(t => 
+                  t.id === updatedTaskData.id ? { ...t, ...updatedTaskData } : t
+                )
+              };
+            }
+            return list;
+          });
+          return { ...old, task_lists: newTaskLists };
+        });
+      }
+      return { previousProject };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProject) {
+        queryClient.setQueryData(["project"], context.previousProject);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
       // Issue 1 fix: invalidate completion metrics whenever a task is updated
@@ -73,7 +101,30 @@ export const useTasks = () => {
 
   const deleteTask = useMutation({
     mutationFn: projectsApi.deleteTask,
-    onSuccess: () => {
+    onMutate: async (deletedTaskId) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProject = queryClient.getQueryData(["project"]);
+      
+      if (previousProject && previousProject.task_lists) {
+        queryClient.setQueryData(["project"], old => {
+          if (!old) return old;
+          const newTaskLists = old.task_lists.map(list => {
+            return {
+              ...list,
+              tasks: list.tasks.filter(t => t.id !== deletedTaskId)
+            };
+          });
+          return { ...old, task_lists: newTaskLists };
+        });
+      }
+      return { previousProject };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProject) {
+        queryClient.setQueryData(["project"], context.previousProject);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
       // Issue 1 fix: invalidate completion metrics after task deletion
@@ -95,7 +146,39 @@ export const useSubtasks = () => {
 
   const createSubtask = useMutation({
     mutationFn: projectsApi.createSubtask,
-    onSuccess: () => {
+    onMutate: async (newSubtaskData) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProject = queryClient.getQueryData(["project"]);
+      
+      if (previousProject && previousProject.task_lists) {
+        queryClient.setQueryData(["project"], old => {
+          if (!old) return old;
+          const optimisticSubtask = { id: `temp-${Date.now()}`, ...newSubtaskData, completed: false };
+          const newTaskLists = old.task_lists.map(list => {
+             return {
+               ...list,
+               tasks: list.tasks.map(t => {
+                 if (t.id === newSubtaskData.task) {
+                   return {
+                     ...t,
+                     subtasks: [...(t.subtasks || []), optimisticSubtask]
+                   };
+                 }
+                 return t;
+               })
+             };
+          });
+          return { ...old, task_lists: newTaskLists };
+        });
+      }
+      return { previousProject };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProject) {
+        queryClient.setQueryData(["project"], context.previousProject);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
       // Issue 1 fix: subtask changes also affect completion metrics
@@ -106,7 +189,40 @@ export const useSubtasks = () => {
 
   const updateSubtask = useMutation({
     mutationFn: projectsApi.updateSubtask,
-    onSuccess: () => {
+    onMutate: async (updatedSubtaskData) => {
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      const previousProject = queryClient.getQueryData(["project"]);
+      
+      if (previousProject && previousProject.task_lists) {
+        queryClient.setQueryData(["project"], old => {
+          if (!old) return old;
+          const newTaskLists = old.task_lists.map(list => {
+             return {
+               ...list,
+               tasks: list.tasks.map(t => {
+                 if (t.subtasks && t.subtasks.some(st => st.id === updatedSubtaskData.id)) {
+                   return {
+                     ...t,
+                     subtasks: t.subtasks.map(st => 
+                       st.id === updatedSubtaskData.id ? { ...st, ...updatedSubtaskData } : st
+                     )
+                   };
+                 }
+                 return t;
+               })
+             };
+          });
+          return { ...old, task_lists: newTaskLists };
+        });
+      }
+      return { previousProject };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousProject) {
+        queryClient.setQueryData(["project"], context.previousProject);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project"] });
       // Issue 1 fix: subtask completion changes completion metrics

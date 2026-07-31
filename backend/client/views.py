@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
+
 from .models import Client, ClientActivity
 from .serializers import (
     ClientListSerializer, 
@@ -27,7 +28,6 @@ class ClientViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Client.objects.filter(user=self.request.user).order_by('name')
-        return Client.objects.all()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -87,6 +87,7 @@ class ClientViewSet(viewsets.ModelViewSet):
         """Schedules a follow-up and logs the specific activity."""
         from .services import ActivityLoggingService
         from rest_framework import status
+        from django.utils.dateparse import parse_datetime
         
         client = self.get_object()
         next_followup_at = request.data.get('next_followup_at')
@@ -96,8 +97,13 @@ class ClientViewSet(viewsets.ModelViewSet):
         if not next_followup_at:
             return Response({'error': 'next_followup_at is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        dt = parse_datetime(next_followup_at)
+
+        if dt is None:
+            return Response({"error": "Invalid datetime format"},
+                status=status.HTTP_400_BAD_REQUEST)
         # Update client
-        client.next_followup_at = next_followup_at
+        client.next_followup_at = dt
         client.save(update_fields=['next_followup_at'])
 
         # Log Activity
@@ -110,3 +116,57 @@ class ClientViewSet(viewsets.ModelViewSet):
         )
 
         return Response({'status': 'success', 'next_followup_at': next_followup_at})
+
+    @action(detail=True, methods=['post'])
+    def invite_client(self, request, pk=None):
+        """Sends an invitation email to the client to join the portal."""
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.tokens import PasswordResetTokenGenerator
+        from django.utils.http import urlsafe_base64_encode
+        from django.utils.encoding import force_bytes
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        User = get_user_model()
+        client = self.get_object()
+
+        # Create user account if it doesn't exist
+        user, created = User.objects.get_or_create(
+            email=client.email,
+            defaults={
+                'first_name': client.name.split()[0] if client.name else '',
+                'last_name': ' '.join(client.name.split()[1:]) if len(client.name.split()) > 1 else '',
+                'role': 'client',
+            }
+        )
+
+        if created:
+            user.set_unusable_password()
+            user.save()
+
+        # Link client to user account
+        if not client.user_account:
+            client.user_account = user
+            client.save(update_fields=['user_account'])
+
+        # Generate a one-time token
+        token_generator = PasswordResetTokenGenerator()
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = token_generator.make_token(user)
+
+        invite_url = f"{settings.FRONTEND_URL}/portal/accept-invite?uid={uid}&token={token}"
+
+        send_mail(
+            subject="You've been invited to Gero",
+            message=(
+                f"Hi {client.name},\n\n"
+                f"You've been invited to access your client portal on Gero.\n\n"
+                f"Click the link below to set your password and get started:\n{invite_url}\n\n"
+                f"This link expires after 3 days.\n\nThe Gero Team"
+            ),
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[client.email],
+            fail_silently=False,
+        )
+
+        return Response({'detail': f'Invitation sent to {client.email}.'})

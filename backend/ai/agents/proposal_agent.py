@@ -10,7 +10,7 @@ from ai.schemas.scope_schema import ScopeAnalysis
 from ai.schemas.pricing_schema import PricingAnalysis
 from ai.schemas.proposal_schema import ProposalOutput
 from ai.prompts.proposal_prompt import PROPOSAL_PROMPT
-from ai.services.llm.llm_factory import LLMFactory
+from ai.services.llm import get_llm_service
 from ai.services.errors import ExtractionResult, PipelineError, ErrorType, Stage
 from ai.services.recovery import attempt_recovery
 from pydantic import ValidationError
@@ -21,7 +21,7 @@ class ProposalAgent:
     """Agent responsible for generating a professional business proposal."""
 
     def __init__(self):
-        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
+        self.llm = get_llm_service()
         self.prompt = PROPOSAL_PROMPT
 
     def generate(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, pricing_analysis: PricingAnalysis, request_id: str = "unknown") -> ExtractionResult:
@@ -50,22 +50,25 @@ class ProposalAgent:
                 request_id=request_id,
             )
 
-            # Try to validate directly
-            try:
-                proposal = ProposalOutput.model_validate_json(raw_response)
-                logger.info("%s Proposal generated successfully.", ctx)
-                return ExtractionResult.ok(proposal)
-            except ValidationError as ve:
-                logger.warning("%s Validation failed, attempting recovery. Error: %s", ctx, ve)
-                
-            # Attempt recovery if direct validation failed
-            recovery_result = attempt_recovery(raw_response, target_model=ProposalOutput)
-            if recovery_result.success:
-                logger.info("%s Proposal recovered successfully.", ctx)
-                return recovery_result
+            from ai.services.pipeline import ValidationPipeline
             
-            logger.error("%s Proposal recovery exhausted.", ctx)
-            return recovery_result
+            result = ValidationPipeline.run(
+                llm_service=self.llm,
+                schema_cls=ProposalOutput,
+                prompt=instructions,
+                raw_response=raw_response,
+                agent_name="ProposalAgent",
+                request_id=request_id,
+                model=settings.AI_MODELS["proposal"]["model"],
+                temperature=settings.AI_MODELS["proposal"]["temperature"]
+            )
+            
+            if result.success:
+                logger.info("%s Proposal generated successfully.", ctx)
+            else:
+                logger.error("%s Proposal recovery exhausted.", ctx)
+                
+            return result
 
         except Exception as e:
             logger.exception("%s Unexpected error in ProposalAgent: %s", ctx, e)

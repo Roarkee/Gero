@@ -251,7 +251,7 @@ export default function Board() {
 
       {/* Board Canvas */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar">
-        <div className="inline-flex gap-4 p-6 min-h-full">
+        <div className="flex flex-nowrap items-start gap-4 p-6 min-h-full min-w-max h-full">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
@@ -291,10 +291,10 @@ export default function Board() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleCreateList}
-                    disabled={!newListName.trim()}
+                    disabled={!newListName.trim() || createTaskList.isPending}
                     className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex-1"
                   >
-                    Add List
+                    {createTaskList.isPending ? "Adding..." : "Add List"}
                   </button>
                   <button
                     onClick={() => setIsCreatingList(false)}

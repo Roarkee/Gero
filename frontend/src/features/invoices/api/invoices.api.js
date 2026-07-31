@@ -29,6 +29,27 @@ export const invoicesApi = {
     });
     return response.data;
   },
+  sendInvoice: async (id) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_SEND(id));
+    return response.data;
+  },
+  cancelInvoice: async (id) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_CANCEL(id));
+    return response.data;
+  },
+  duplicateInvoice: async (id) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_DUPLICATE(id));
+    return response.data;
+  },
+  markViewed: async (id) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_MARK_VIEWED(id));
+    return response.data;
+  },
+
+  resendInvoice: async (id) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_RESEND(id));
+    return response.data;
+  },
 
   // Actions
   generateFromTime: async (id) => {
@@ -57,6 +78,12 @@ export const invoicesApi = {
   },
   deleteInvoiceItem: async (id) => {
     const response = await api.delete(API_ENDPOINTS.INVOICE_ITEM_DETAIL(id));
+    return response.data;
+  },
+
+  // Payments
+  createInvoicePayment: async (data) => {
+    const response = await api.post(API_ENDPOINTS.INVOICE_PAYMENTS, data);
     return response.data;
   },
 

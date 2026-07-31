@@ -13,10 +13,12 @@ export default function ClientsLayout() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50 min-h-screen">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    // h-full fills the overflow:hidden main. flex-col stacks nav + content.
+    <div className="h-full flex flex-col bg-gray-50/50">
+      {/* Nav bar — flex-shrink-0 so it never collapses */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-200 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8 overflow-x-auto hide-scrollbar" aria-label="Tabs">
+          <nav className="flex space-x-8 overflow-x-auto" aria-label="Tabs">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -51,8 +53,9 @@ export default function ClientsLayout() {
           </nav>
         </div>
       </div>
-      
-      <div className="flex-1 overflow-auto">
+
+      {/* Content area — flex-1 min-h-0 so it takes remaining height and scrolls */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <Outlet />
       </div>
     </div>

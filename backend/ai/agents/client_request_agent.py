@@ -26,7 +26,7 @@ from django.conf import settings
 from ..prompts.proj_spec_prompt import EXTRACTION_PROMPT
 from ..schemas.proj_spec_schema import ProjectSpecification
 from ..services.errors import ErrorType, ExtractionResult, PipelineError, Stage
-from ..services.llm.llm_factory import LLMFactory
+from ..services.llm import get_llm_service
 from ..services.recovery import attempt_recovery
 from ..services.sanitization import sanitize_input
 
@@ -44,7 +44,7 @@ class ClientRequestAgent:
     prompt = EXTRACTION_PROMPT
 
     def __init__(self) -> None:
-        self.llm = LLMFactory.get_provider(settings.AI_PROVIDER)
+        self.llm = get_llm_service()
 
     def extract(self, client_message: str, request_id: str = "") -> ExtractionResult:
         """
@@ -130,47 +130,30 @@ class ClientRequestAgent:
 
         logger.info("%s LLM response received | output_chars=%d", ctx, len(raw))
 
-        # ── Step 3: Direct validation ─────────────────────────────────────────
-        try:
-            spec = ProjectSpecification.model_validate_json(raw)
+        # ── Step 3: Centralized Validation Pipeline ───────────────────────────
+        from ..services.pipeline import ValidationPipeline
+
+        result = ValidationPipeline.run(
+            llm_service=self.llm,
+            schema_cls=ProjectSpecification,
+            prompt=self.prompt,
+            raw_response=raw,
+            agent_name="ClientRequestAgent",
+            request_id=request_id,
+            model=settings.AI_MODELS["extraction"]["model"],
+            temperature=settings.AI_MODELS["extraction"]["temperature"]
+        )
+
+        if result.success:
+            spec = result.data
             logger.info(
-                "%s Extraction complete (direct) | project_type=%s urgency=%s confidence=%s",
+                "%s Extraction complete | project_type=%s urgency=%s confidence=%s",
                 ctx,
                 spec.project_type,
                 spec.urgency,
                 spec.metadata.confidence_score if spec.metadata else "n/a",
             )
-            return ExtractionResult.ok(spec)
-
-        except ValidationError as exc:
-            logger.warning(
-                "%s Direct validation failed (%d errors), attempting recovery",
-                ctx,
-                len(exc.errors()),
-            )
-        except Exception as exc:
-            logger.warning(
-                "%s JSON decode failed (%s), attempting recovery",
-                ctx,
-                type(exc).__name__,
-            )
-
-        # ── Step 4: Recovery pipeline (Stages 1-2, no LLM re-call) ───────────
-        logger.info("%s Running local JSON repair pipeline", ctx)
-        result = attempt_recovery(raw, request_id=request_id)
-
-        if result.success:
-            spec = result.data
-            logger.info(
-                "%s Extraction complete (via recovery) | project_type=%s urgency=%s",
-                ctx,
-                spec.project_type,
-                spec.urgency,
-            )
         else:
-            logger.warning(
-                "%s Recovery exhausted — returning structured failure",
-                ctx,
-            )
+            logger.warning("%s Extraction failed — returning structured failure", ctx)
 
         return result
