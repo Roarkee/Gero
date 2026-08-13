@@ -50,12 +50,12 @@ function SortableClientCard({ client }) {
 
 function Column({ column, clients }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
-  const columnBg = isOver ? "bg-emerald-50" : "bg-gray-50/50";
+  const columnBg = isOver ? "bg-primary-900/30 border-primary-500/50 shadow-neon" : "glass-card border-white/10";
   return (
-    <div ref={setNodeRef} className={columnBg + " flex flex-col rounded-xl border border-gray-200 w-72 shrink-0"}>
-      <div className="p-3 border-b border-gray-200 flex justify-between items-center rounded-t-xl">
-        <h3 className="font-medium text-sm text-gray-700">{column.title}</h3>
-        <span className="bg-white text-gray-500 text-xs py-0.5 px-2 rounded-full border border-gray-200 font-medium">
+    <div ref={setNodeRef} className={columnBg + " flex flex-col rounded-xl border w-72 shrink-0 transition-all duration-300"}>
+      <div className="p-3 border-b border-white/10 flex justify-between items-center rounded-t-xl bg-white/5">
+        <h3 className="font-heading font-semibold text-sm text-gray-200">{column.title}</h3>
+        <span className="bg-primary-900/50 text-primary-300 text-xs py-0.5 px-2 rounded-full border border-primary-500/30 font-medium shadow-[0_0_10px_rgba(0,240,255,0.1)]">
           {clients.length}
         </span>
       </div>
@@ -139,8 +139,8 @@ export default function PipelineBoard() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pipeline Board</h1>
-        <p className="text-sm text-gray-500 mt-1">Drag and drop clients to update their status.</p>
+        <h1 className="text-2xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-500 drop-shadow-[0_0_10px_rgba(0,240,255,0.3)]">Pipeline Board</h1>
+        <p className="text-sm text-gray-400 mt-1">Drag and drop clients to update their status.</p>
       </div>
 
       {/* 160px = ClientsLayout nav bar (~57px) + PipelineBoard header (~96px) + breathing room */}

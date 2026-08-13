@@ -101,10 +101,10 @@ export default function AIWorkflow() {
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-5xl space-y-8 p-6 pb-12">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-heading font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-500 drop-shadow-[0_0_10px_rgba(0,240,255,0.3)]">
             Client Project Workflow
           </h1>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-gray-400">
             Automate extraction, scoping, pricing, and proposal generation.
           </p>
         </div>

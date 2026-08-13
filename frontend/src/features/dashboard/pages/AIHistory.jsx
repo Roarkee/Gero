@@ -52,16 +52,16 @@ export default function AIHistory() {
       <div className="mx-auto max-w-5xl space-y-8 p-6 pb-12">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            <h1 className="text-3xl font-heading font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-500 drop-shadow-[0_0_10px_rgba(0,240,255,0.3)]">
               AI Workflow History
             </h1>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-400">
               View past requests, resume in-progress workflows, or start a new project.
             </p>
           </div>
           <Button 
             onClick={() => navigate("/dashboard/ai-workflow/new")}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center"
+            className="btn-neon bg-primary-600 hover:bg-primary-500 text-white shadow-neon-purple flex items-center border border-primary-400/30"
           >
             <Plus className="mr-2 h-4 w-4" />
             New Request
@@ -99,7 +99,7 @@ export default function AIHistory() {
             {requests.map((req) => (
               <Card 
                 key={req.id} 
-                className="hover:border-emerald-500/50 hover:shadow-md transition-all cursor-pointer group"
+                className="glass-card hover:border-primary-500/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.2)] transition-all cursor-pointer group"
                 onClick={() => navigate(`/dashboard/ai-workflow/${req.id}`)}
               >
                 <CardContent className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -118,7 +118,7 @@ export default function AIHistory() {
                       </span>
                     </div>
                   </div>
-                  <Button variant="ghost" className="shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/30 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                  <Button variant="ghost" className="shrink-0 group-hover:bg-primary-500/10 group-hover:text-primary-400 border border-transparent group-hover:border-primary-500/30">
                     Resume Workflow
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   html {
-    font-size: 13px; /* Scales down entire UI by ~18.75% to address excessively large fonts */
+    font-size: 13px;
   }
   
   * {
@@ -14,12 +14,23 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    /* Default is dark mode now */
+    @apply bg-gray-900 text-gray-50 antialiased;
     font-family: "Inter", sans-serif;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Space Grotesk", sans-serif;
+  }
 
+  /* Keeping explicit dark mode selector just in case some logic forces it */
   body.dark {
-    @apply bg-gray-950 text-gray-50;
+    @apply bg-gray-900 text-gray-50;
+  }
+  
+  /* If light mode is ever needed explicitly */
+  body.light {
+    @apply bg-gray-50 text-gray-900;
   }
 }
 
@@ -34,10 +45,45 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+    @apply bg-gray-700 rounded-full border border-gray-600;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-600;
+    @apply bg-gray-600;
+  }
+
+  /* Glassmorphism Card */
+  .glass-card {
+    @apply bg-dark-card backdrop-blur-md border border-dark-border shadow-glass;
+  }
+
+  /* Neon Text Utilities */
+  .text-neon-cyan {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+  
+  .text-neon-purple {
+    text-shadow: 0 0 10px rgba(123, 47, 255, 0.5);
+  }
+  
+  .text-neon-pink {
+    text-shadow: 0 0 10px rgba(255, 46, 151, 0.5);
+  }
+
+  /* Animated Gradient Text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500;
+  }
+
+  /* Interactive Neon Button */
+  .btn-neon {
+    @apply relative overflow-hidden transition-all duration-300 font-heading font-medium tracking-wide;
+  }
+  .btn-neon::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-500 opacity-0 transition-opacity duration-300;
+  }
+  .btn-neon:hover::before {
+    @apply opacity-20;
   }
 }

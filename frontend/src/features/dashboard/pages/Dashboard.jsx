@@ -42,30 +42,30 @@ export default function Dashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header & Quick Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-3xl font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-500 drop-shadow-[0_0_10px_rgba(0,240,255,0.3)]">Dashboard</h1>
         
         <div className="flex flex-wrap items-center gap-3">
           <Link
             to="/dashboard/ai-history"
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 border border-transparent rounded-lg text-sm font-medium text-white hover:from-indigo-700 hover:to-violet-700 transition-all duration-200 shadow-sm"
+            className="btn-neon flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 border border-primary-400/30 rounded-lg text-sm font-medium text-white hover:from-primary-500 hover:to-secondary-500 transition-all duration-300 shadow-neon-purple hover:scale-105"
           >
-            <Sparkles className="w-4 h-4" /> AI Workflow
+            <Sparkles className="w-4 h-4 animate-pulse-glow" /> AI Workflow
           </Link>
           <Link
             to="/clients"
-            className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="group flex items-center gap-1.5 px-4 py-2 bg-dark-card backdrop-blur-md border border-white/10 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-all shadow-glass"
           >
-            <Plus className="w-4 h-4" /> Client
+            <Plus className="w-4 h-4 text-gray-400 group-hover:text-primary-400" /> Client
           </Link>
           <Link
             to="/projects"
-            className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="group flex items-center gap-1.5 px-4 py-2 bg-dark-card backdrop-blur-md border border-white/10 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-all shadow-glass"
           >
-            <Plus className="w-4 h-4" /> Project
+            <Plus className="w-4 h-4 text-gray-400 group-hover:text-primary-400" /> Project
           </Link>
           <Link
             to="/invoices"
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            className="btn-neon flex items-center gap-1.5 px-4 py-2 bg-primary-900/50 border border-primary-500/30 rounded-lg text-sm font-medium text-primary-300 hover:bg-primary-900/80 hover:text-primary-200 transition-all shadow-[0_0_15px_rgba(0,240,255,0.15)]"
           >
             <Plus className="w-4 h-4" /> Invoice
           </Link>
