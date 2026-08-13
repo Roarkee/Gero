@@ -101,6 +101,8 @@ export const API_ENDPOINTS = {
   // Payments
   PAYMENT_PROVIDERS: "/api/payments/providers/",
   PAYMENT_PROVIDER_DETAIL: (id) => `/api/payments/providers/${id}/`,
+  PAYMENTS_INITIALIZE: "/api/payments/initialize/",
+  PAYMENT_VERIFY: (reference) => `/api/payments/verify/${reference}/`,
 
   // Notifications
   NOTIFICATIONS: "/api/notifications/",
@@ -112,6 +114,7 @@ export const API_ENDPOINTS = {
   INVOICE_RESEND: (id) => `/api/invoices/${id}/resend_invoice/`,
 
   // Client Portal — client-facing
+  PORTAL_DASHBOARD: "/api/portal/dashboard/",
   PORTAL_PROJECTS: "/api/portal/projects/",
   PORTAL_PROJECT_DETAIL: (id) => `/api/portal/projects/${id}/`,
   PORTAL_MESSAGES: (projectId) => `/api/portal/projects/${projectId}/messages/`,
@@ -121,6 +124,7 @@ export const API_ENDPOINTS = {
     `/api/portal/projects/${projectId}/proposals/${proposalId}/${action}/`,
   PORTAL_INVOICES: "/api/portal/invoices/",
   PORTAL_INVOICE_DETAIL: (id) => `/api/portal/invoices/${id}/`,
+  PUBLIC_INVOICE_DETAIL: (id) => `/api/invoices/public/${id}/`,
   PORTAL_REQUESTS: "/api/portal/requests/",
 
   // Client Portal — freelancer-side helpers

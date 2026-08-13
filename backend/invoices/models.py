@@ -15,13 +15,13 @@ class Invoice(models.Model):
         DRAFT = 'draft', 'Draft'
         SENT = 'sent', 'Sent'
         PAID = 'paid', 'Paid'
+        PARTLY_PAID = 'partly_paid', 'Partly_Paid'
         OVERDUE = 'overdue', 'Overdue'
-        CANCELLED = 'cancelled', 'Cancelled'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='invoices')
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='invoices')
     project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name='invoices', null=True, blank=True)
-    payment_methods = models.ManyToManyField("payments.PaymentProvider",related_name='invoices', blank=True)
+    payment_provider = models.ManyToManyField("payments.PaymentProvider",related_name='invoices', blank=True)
     sequence_number = models.PositiveIntegerField()
     invoice_number = models.CharField(max_length=50, editable=False)
     title = models.CharField(max_length=200)
@@ -30,6 +30,7 @@ class Invoice(models.Model):
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
     tax_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.DRAFT)
     issue_date = models.DateField()
     due_date = models.DateField()
@@ -75,7 +76,7 @@ class Invoice(models.Model):
             self.InvoiceStatus.SENT,
             self.InvoiceStatus.PAID,
             self.InvoiceStatus.OVERDUE,
-            self.InvoiceStatus.CANCELLED
+            self.InvoiceStatus.PARTLY_PAID
         ]
 
     def recalculate_totals(self):
@@ -115,7 +116,7 @@ class Invoice(models.Model):
                     self.InvoiceStatus.DRAFT,
                     self.InvoiceStatus.PAID,
                     self.InvoiceStatus.OVERDUE,
-                    self.InvoiceStatus.CANCELLED
+                    self.InvoiceStatus.PARTLY_PAID
                 ]
 
                 if self.status != original.status:
@@ -131,7 +132,8 @@ class Invoice(models.Model):
                     'total_amount',
                     'issue_date',
                     'invoice_number',
-                    'sequence_number'
+                    'sequence_number',
+                    'amount_paid'
                 ]
 
                 for field in protected_fields:
@@ -238,4 +240,4 @@ class InvoicePayment(models.Model):
                 if self.invoice.status != Invoice.InvoiceStatus.PAID:
                     self.invoice.status = Invoice.InvoiceStatus.PAID
                     self.invoice.paid_date = self.payment_date
-                    self.invoice.save(update_fields=['status', 'paid_date'])
+                    self.invoice.save(update_fields=['status', 'paid_date'])

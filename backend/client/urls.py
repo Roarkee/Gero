@@ -11,6 +11,7 @@ from .portal_views import (
     PushProposalToPortalView,
     FreelancerPortalMessageView,
     PortalRequestView,
+    PortalDashboardView,
 )
 
 router = DefaultRouter()
@@ -20,6 +21,7 @@ urlpatterns = [
     path('', include(router.urls)),
 
     # ── Client-facing portal ──────────────────────────────────────────────────
+    path('portal/dashboard/', PortalDashboardView.as_view(), name='portal-dashboard'),
     path('portal/projects/', PortalProjectView.as_view({'get': 'list'}), name='portal-project-list'),
     path('portal/projects/<int:pk>/', PortalProjectView.as_view({'get': 'retrieve'}), name='portal-project-detail'),
 

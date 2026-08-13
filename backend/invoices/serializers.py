@@ -26,15 +26,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
     project_name = serializers.SerializerMethodField()
     
     # Accept IDs for write operations
-    payment_method_ids = serializers.PrimaryKeyRelatedField(
-        source='payment_methods',
+    payment_provider_ids = serializers.PrimaryKeyRelatedField(
+        source='payment_providers',
         many=True,
         queryset=PaymentProvider.objects.all(),
         write_only=True,
         required=False
     )
     # Output nested objects for read operations
-    payment_methods = InvoicePaymentProviderSerializer(many=True, read_only=True)
+    payment_provider = InvoicePaymentProviderSerializer(many=True, read_only=True)
     payments_received = serializers.SerializerMethodField()
 
     class Meta:
@@ -58,7 +58,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None
     
-    def validate_payment_method_ids(self, methods):
+    def validate_payment_provider_ids(self, methods):
         user = self.context["request"].user
         for method in methods:
             if method.user != user:
@@ -85,7 +85,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
-        payment_methods = validated_data.pop('payment_methods', None)
+        payment_provider = validated_data.pop('payment_provider', None)
 
         with transaction.atomic():
             # Update scalar invoice fields directly — do NOT call super().update()
@@ -121,8 +121,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 if orphan_ids:
                     InvoiceItem.objects.filter(id__in=orphan_ids).delete()
                 
-                if payment_methods is not None:
-                    instance.payment_methods.set(payment_methods)
+                if payment_provider is not None:
+                    instance.payment_provider.set(payment_provider)
 
             # One single save at the end: recalculate_totals → full_clean → DB write
             instance.save()
@@ -133,13 +133,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
 class InvoiceListSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client.name', read_only=True)
     project_name = serializers.SerializerMethodField()
-    payment_methods = InvoicePaymentProviderSerializer(many=True, read_only=True)
+    payment_provider = InvoicePaymentProviderSerializer(many=True, read_only=True)
 
     class Meta:
         model = Invoice
         fields = ['id', 'invoice_number', 'title', 'client_name', 'project_name',
                   'total_amount', 'status', 'due_date', 'created_at',
-                  'paid_date', 'issue_date', 'payment_methods']
+                  'paid_date', 'issue_date', 'payment_provider']
 
     def get_project_name(self, obj):
         return obj.project.name if obj.project_id else None

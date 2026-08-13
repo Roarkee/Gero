@@ -11,7 +11,7 @@ from .serializers import (
     ClientWriteSerializer,
     ClientActivitySerializer
 )
-from .permissions import IsClientOwner
+from core.permissions import IsClientOwner
 from .selectors import (
     get_dashboard_intelligence,
     get_full_client_intelligence,

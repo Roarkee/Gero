@@ -154,7 +154,7 @@ class DashboardAPIView(APIView):
             project_health_list.append({
                 'id': proj.id,
                 'project_name': proj.name,
-                'client_name': proj.client.name,
+                'client_name': proj.client.name if proj.client else 'No Client',
                 'progress_percentage': progress,
                 'budget_used_percentage': budget_used,
                 'hours_logged': str(logged_hours),

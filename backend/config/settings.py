@@ -87,7 +87,7 @@ AI_MODELS = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev"]
 
 
 # Application definition

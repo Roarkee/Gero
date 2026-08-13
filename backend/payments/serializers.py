@@ -3,6 +3,8 @@ import json
 from .models import PaymentProvider
 
 class PaymentProviderSerializer(serializers.ModelSerializer):
+    provider_type = serializers.CharField(source='provider')
+
     class Meta:
         model = PaymentProvider
         fields = ['id', 'user', 'provider_type', 'display_name', 'is_active', 'is_test_mode', 'encrypted_config', 'created_at', 'updated_at']
@@ -37,7 +39,15 @@ class PaymentProviderSerializer(serializers.ModelSerializer):
                 if 'bank_name' not in config or 'account_number' not in config or 'account_name' not in config:
                     raise serializers.ValidationError({"encrypted_config": "Bank Transfer requires 'bank_name', 'account_number', and 'account_name'."})
             elif provider_type == 'paystack':
-                if 'payment_link' not in config:
-                    raise serializers.ValidationError({"encrypted_config": "Paystack requires 'payment_link'."})
+                if 'secret_key' not in config:
+                    raise serializers.ValidationError({"encrypted_config": "Paystack requires 'secret_key'."})
         
         return data
+
+
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    fields = "__all__"
+    read_only_fields = ["created_at", "processed_at", "id", "net_amount", "provider_reference"]
+
+    def validate_amount(self):
+        pass

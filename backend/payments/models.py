@@ -38,7 +38,7 @@ class PaymentProvider(models.Model):
         on_delete=models.CASCADE,
         related_name='payment_providers'
     )
-    provider_type = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
     display_name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     is_test_mode = models.BooleanField(default=True)
@@ -53,16 +53,16 @@ class PaymentProvider(models.Model):
     objects = PaymentProviderManager()
 
     class Meta:
-        unique_together = ('user', 'provider_type', 'display_name')
+        unique_together = ('user', 'provider', 'display_name')
         indexes = [
-            models.Index(fields=['user', 'provider_type']),
+            models.Index(fields=['user', 'provider']),
             models.Index(fields=['is_active']),
         ]
         verbose_name = "Payment Provider"
         verbose_name_plural = "Payment Providers"
 
     def __str__(self):
-        return f"{self.display_name} ({self.get_provider_type_display()})"
+        return f"{self.display_name} ({self.get_provider_display()})"
     
 
 #this stores the actual transactions that happen. the intent might go through many transacs
@@ -75,24 +75,27 @@ class PaymentTransaction(models.Model):
     ]
 
     ALLOWED_TRANSITIONS = {
-    'pending': ['completed', 'failed'],
+    'pending': ['completed', 'failed'],    
     'completed': ['refunded'],
-    'failed': [],
     'refunded': [],
+    'failed': []
 }
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    invoice = models.ForeignKey("invoices.Invoice", on_delete=models.PROTECT, related_name = 'payment_transactions')
-    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(3.00)])
+    invoice = models.ForeignKey("invoices.Invoice", on_delete=models.PROTECT, related_name = 'payment_transactions', null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(3.00)])
     status = models.CharField(choices=STATUS_CHOICES, default='pending', max_length=12)
-    fee = models.DecimalField(max_digits=12, decimal_places=2, default=1.5)
-    net_amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(1.00)])
+    fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(1.00)])
     provider_reference = models.CharField(max_length=150, blank=True, null=True, unique=True)
     processed_at =models.DateTimeField(null=True, blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
     gateway_response = models.JSONField(blank=True, null=True)
     currency = models.CharField(max_length=3, default='GHS')
-
+    provider = models.ForeignKey(PaymentProvider,on_delete=models.PROTECT,related_name="payment_transactions", blank=True, null=True)
+    reference = models.CharField(max_length=50,unique=True,default=generate_reference, null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta: 
         indexes = [
             models.Index(fields=["invoice"]),
@@ -148,7 +151,7 @@ class PaymentTransaction(models.Model):
 class PaymentWebhook(models.Model):
    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    provider_type = models.CharField(max_length=20)
+    provider = models.ForeignKey(PaymentProvider, related_name='payment_webhooks', on_delete=models.PROTECT)
     event_type = models.CharField(max_length=50)
     payload = models.JSONField()
     headers = models.JSONField()
@@ -159,15 +162,30 @@ class PaymentWebhook(models.Model):
     signature_verified = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
-    
+    transaction = models.ForeignKey(PaymentTransaction, on_delete=models.PROTECT, null=True, blank=True)
     class Meta:
         indexes = [
-            models.Index(fields=['provider_type', 'processed']),
+            models.Index(fields=['provider', 'processed']),
             models.Index(fields=['created_at']),
         ]
 
+
+
 #i am my own auitor here. this will log every thing that happens in the process
 class PaymentAuditLog(models.Model):
+
+    class PaymentAuditAction(models.TextChoices):
+        WEBHOOK_RECEIVED = "webhook_received"
+        WEBHOOK_SIGNATURE_FAILED = "webhook_signature_failed"
+        PAYMENT_VERIFIED = "payment_verified"
+        PAYMENT_REJECTED = "payment_rejected"
+        TRANSACTION_CREATED = "transaction_created"
+        INVOICE_UPDATED = "invoice_updated"
+        REFUND_REQUESTED = "refund_requested"
+        REFUND_PROCESSED = "refund_processed"
+        REFUND_FAILED = "refund_failed"
+        DUPLICATE_WEBHOOK = "duplicate_webhook"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     webhook = models.ForeignKey(
         'PaymentWebhook',
@@ -185,7 +203,7 @@ class PaymentAuditLog(models.Model):
         related_name='payment_audit_logs'
     )
     #what action did the server take? was a refund given? payment canceled? what?
-    action = models.CharField(max_length=100)
+    action = models.CharField(max_length=100, choices = PaymentAuditAction.choices)
     success = models.BooleanField(default=False)
     error_message = models.TextField(blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -204,3 +222,5 @@ class PaymentAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} by {self.user or 'system'} - {'OK' if self.success else 'FAILED'}"
+
+

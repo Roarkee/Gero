@@ -2,8 +2,8 @@ import React from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const formatCurrency = (value) => {
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-  return `$${value}`;
+  if (value >= 1000) return `GHS ${(value / 1000).toFixed(1)}k`;
+  return `GHS ${value}`;
 };
 
 export default function RevenueTrendChart({ trendData = [], isLoading }) {
@@ -60,7 +60,7 @@ export default function RevenueTrendChart({ trendData = [], isLoading }) {
             <Tooltip 
               contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '0.75rem', color: '#fff' }}
               itemStyle={{ color: '#fff' }}
-              formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
+              formatter={(value) => [`GHS ${value.toLocaleString()}`, 'Revenue']}
             />
             <Area 
               type="monotone" 

@@ -28,7 +28,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from .models import Client, PortalMessage, PortalProposal
-from .permissions import IsClientUser
+from core.permissions import IsClientUser
 from invoices.models import Invoice, InvoiceItem, InvoicePayment
 from projects.models import Project, TaskList, Task, Attachment
 
@@ -37,12 +37,20 @@ from projects.models import Project, TaskList, Task, Attachment
 
 def _client_safe(user):
     """Return the Client record linked to this portal user, or None if not found."""
-    client = Client.objects.filter(user_account=user).first()
+    # 1. Primary Source of Truth: Explicit user_account linking (where user is not the provider)
+    client = Client.objects.filter(user_account=user).exclude(user=user).first()
+    
+    # 2. Fallback: Auto-linking via matching email (where user is not the provider)
     if not client and getattr(user, 'email', None):
-        client = Client.objects.filter(email__iexact=user.email).first()
+        client = Client.objects.filter(email__iexact=user.email).exclude(user=user).first()
         if client and not client.user_account:
             client.user_account = user
             client.save(update_fields=['user_account'])
+            
+    # 3. Last Resort Fallback (if they are somehow explicitly linked to a client record they own)
+    if not client:
+        client = Client.objects.filter(user_account=user).first()
+        
     return client
 
 def _client(user):
@@ -300,6 +308,46 @@ class PortalFileView(APIView):
 
 
 # ─────────────────────────── proposals ────────────────────────────────────────
+
+class PortalDashboardView(APIView):
+    """
+    Returns aggregate dashboard metrics for the authenticated client.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        client = _client_safe(request.user)
+        if not client:
+            return Response({"error": "No client profile found for this user."}, status=403)
+            
+        projects = Project.objects.filter(client=client).exclude(status='COMPLETED')
+        active_projects_count = projects.count()
+        
+        invoices = Invoice.objects.filter(client=client, status='SENT')
+        outstanding_invoices_count = invoices.count()
+        total_outstanding = sum(inv.amount for inv in invoices)
+        
+        # Simple unread messages calculation (assuming you have a 'read' boolean, or just total recent messages)
+        # Using all messages as a placeholder since there is no native 'read' state in PortalMessage currently
+        unread_messages_count = PortalMessage.objects.filter(
+            project__client=client,
+            is_from_client=False
+        ).count()
+        
+        return Response({
+            "active_projects": active_projects_count,
+            "outstanding_invoices": outstanding_invoices_count,
+            "total_outstanding": total_outstanding,
+            "unread_messages": unread_messages_count,
+            "freelancer_name": client.user.get_full_name() or client.user.username,
+        })
+
+class PortalProjectListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClientUser]
+
+    def _project(self, user, project_pk):
+        return _owned_project(user, project_pk)
+
 
 class PortalProposalView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClientUser]

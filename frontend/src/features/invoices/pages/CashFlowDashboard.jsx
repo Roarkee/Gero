@@ -5,8 +5,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format } from "date-fns";
 
 const formatCurrency = (value) => {
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-  return `$${value}`;
+  if (value >= 1000) return `GHS ${(value / 1000).toFixed(1)}k`;
+  return `GHS ${value}`;
 };
 
 export default function CashFlowDashboard() {
@@ -52,7 +52,7 @@ export default function CashFlowDashboard() {
               <div className="text-right">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Total Outstanding</p>
                 <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                  ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  GHS {totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -72,7 +72,7 @@ export default function CashFlowDashboard() {
                     <Tooltip 
                       cursor={{ fill: 'transparent' }}
                       contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '0.75rem', color: '#fff' }}
-                      formatter={(value) => [`$${value.toLocaleString()}`, 'Amount']}
+                      formatter={(value) => [`GHS ${value.toLocaleString()}`, 'Amount']}
                     />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                       {barData.map((entry, index) => (
@@ -109,7 +109,7 @@ export default function CashFlowDashboard() {
                         {inv.client_name || `Client #${inv.client}`}
                       </p>
                       <span className="text-sm font-bold text-gray-900 dark:text-white">
-                        ${parseFloat(inv.total_amount).toLocaleString()}
+                        GHS {parseFloat(inv.total_amount).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-xs">

@@ -35,17 +35,43 @@ export default function ClientPortalLayout() {
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1">
           <Link
-            to="/portal"
+            to="/portal/dashboard"
             onClick={() => setSidebarOpen(false)}
             className={clsx(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              isHome
+              location.pathname === "/portal/dashboard"
                 ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
                 : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             )}
           >
             <Home className="w-4 h-4 shrink-0" />
+            Dashboard
+          </Link>
+          <Link
+            to="/portal/projects"
+            onClick={() => setSidebarOpen(false)}
+            className={clsx(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              location.pathname.startsWith("/portal/projects")
+                ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            )}
+          >
+            <Briefcase className="w-4 h-4 shrink-0" />
             My Projects
+          </Link>
+          <Link
+            to="/portal/invoices"
+            onClick={() => setSidebarOpen(false)}
+            className={clsx(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              location.pathname.startsWith("/portal/invoices")
+                ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            )}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M8 10h8"/><path d="M8 14h8"/><path d="M8 18h8"/><path d="M8 6h.01"/></svg>
+            Invoices
           </Link>
           <Link
             to="/portal/request"
@@ -61,7 +87,7 @@ export default function ClientPortalLayout() {
             New Request
           </Link>
 
-          {user?.role === "freelancer" && (
+          {user?.has_freelancer_portal && (
             <Link
               to="/dashboard"
               onClick={() => setSidebarOpen(false)}
@@ -105,7 +131,7 @@ export default function ClientPortalLayout() {
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile header */}
         <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center px-4 lg:hidden shrink-0">
           <button

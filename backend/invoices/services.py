@@ -112,14 +112,14 @@ class InvoiceService:
         p.drawString(500, y, f"${invoice.total_amount}")
         
         # Payment Methods Section
-        payment_methods = invoice.payment_methods.all()
-        if payment_methods.exists():
+        payment_providers = invoice.payment_provider.all()
+        if payment_providers.exists():
             y -= 40
             p.setFont("Helvetica-Bold", 14)
             p.drawString(50, y, "Payment Options")
             
             p.setFont("Helvetica", 10)
-            for pm in payment_methods:
+            for pm in payment_providers:
                 y -= 20
                 if y < 50:  # Simple page break handling for payment options
                     p.showPage()

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, views
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Invoice, InvoiceItem, InvoicePayment
@@ -74,9 +74,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         if not invoice.client.email:
             return Response({"detail": "Client email is required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
+            from django.conf import settings
+            link = f"{settings.FRONTEND_URL}/public/{invoice.id}"
             self._send_email(invoice,
                              subject=f'Invoice {invoice.invoice_number} from Gero',
-                             body=f'Please find attached your invoice {invoice.invoice_number}.')
+                             body=f'Please find attached your invoice {invoice.invoice_number}.\n\nYou can view and pay your invoice securely online at:\n{link}')
             if invoice.status == Invoice.InvoiceStatus.DRAFT:
                 invoice.status = Invoice.InvoiceStatus.SENT
                 invoice.save(update_fields=['status'])
@@ -97,9 +99,11 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         if not invoice.client.email:
             return Response({"detail": "Client email is required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
+            from django.conf import settings
+            link = f"{settings.FRONTEND_URL}/public/{invoice.id}"
             self._send_email(invoice,
                              subject=f'Invoice {invoice.invoice_number} from Gero (Reminder)',
-                             body=f'This is a reminder for invoice {invoice.invoice_number}.')
+                             body=f'This is a reminder for invoice {invoice.invoice_number}.\n\nYou can view and pay your invoice securely online at:\n{link}')
             return Response({"detail": "Invoice resent successfully."})
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -167,3 +171,23 @@ class InvoicePaymentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save()
+
+class PublicInvoiceView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk=None):
+        from django.shortcuts import get_object_or_404
+        invoice = get_object_or_404(Invoice, pk=pk)
+        
+        # We want to return safe public data.
+        # We can just serialize it using InvoiceSerializer
+        serializer = InvoiceSerializer(invoice)
+        data = serializer.data
+        
+        # Include freelancer info safely
+        data['freelancer'] = {
+            'name': invoice.user.get_full_name() or invoice.user.email,
+            'email': invoice.user.email
+        }
+        
+        return Response(data)

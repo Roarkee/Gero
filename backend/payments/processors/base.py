@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 
 class BasePaymentProcessor(ABC):
     @abstractmethod
-    def initialize_payment(self, intent):
+    def initialize_payment(self, transacation):
         pass
 
     @abstractmethod

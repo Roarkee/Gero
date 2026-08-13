@@ -187,17 +187,19 @@ export default function DashboardLayout() {
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <Link
-                    to="/portal"
-                    title={isDesktopCollapsed ? "Client Portal" : undefined}
-                    className={clsx(
-                      "flex items-center rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/30 hover:bg-indigo-100 transition-colors",
-                      isDesktopCollapsed ? "justify-center p-2.5" : "gap-x-2.5 px-3 py-2.5"
-                    )}
-                  >
-                    <Briefcase className="h-4 w-4 shrink-0" />
-                    {!isDesktopCollapsed && <span>Client Portal &rarr;</span>}
-                  </Link>
+                  {user?.has_client_portal && (
+                    <Link
+                      to="/portal"
+                      title={isDesktopCollapsed ? "Client Portal" : undefined}
+                      className={clsx(
+                        "flex items-center rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/30 hover:bg-indigo-100 transition-colors",
+                        isDesktopCollapsed ? "justify-center p-2.5" : "gap-x-2.5 px-3 py-2.5"
+                      )}
+                    >
+                      <Briefcase className="h-4 w-4 shrink-0" />
+                      {!isDesktopCollapsed && <span>Client Portal &rarr;</span>}
+                    </Link>
+                  )}
 
                   <div
                     className={clsx(
@@ -240,7 +242,7 @@ export default function DashboardLayout() {
 
       <div
         className={clsx(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+          "flex flex-1 min-w-0 flex-col transition-all duration-300 ease-in-out",
           isDesktopCollapsed ? "lg:pl-20" : "lg:pl-72"
         )}
       >

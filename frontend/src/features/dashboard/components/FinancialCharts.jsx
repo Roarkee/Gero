@@ -36,9 +36,9 @@ export default function FinancialCharts({ financialSummary }) {
   // Format Y Axis for money
   const formatYAxis = (tickItem) => {
     if (tickItem >= 1000) {
-      return `$${tickItem / 1000}k`;
+      return `GHS ${tickItem / 1000}k`;
     }
-    return `$${tickItem}`;
+    return `GHS ${tickItem}`;
   };
 
   return (
@@ -60,7 +60,7 @@ export default function FinancialCharts({ financialSummary }) {
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
                   contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  formatter={(value) => [`$${value}`, undefined]}
+                  formatter={(value) => [`GHS ${value}`, undefined]}
                 />
                 <Legend iconType="circle" wrapperStyle={{fontSize: '12px'}} />
                 <Bar dataKey="revenue" name="Revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
@@ -97,7 +97,7 @@ export default function FinancialCharts({ financialSummary }) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value) => [`$${value}`, undefined]}
+                  formatter={(value) => [`GHS ${value}`, undefined]}
                   contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
                 />
                 <Legend 

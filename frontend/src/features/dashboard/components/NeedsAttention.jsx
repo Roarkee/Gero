@@ -35,7 +35,7 @@ export default function NeedsAttention({
                     <span className="text-gray-500 ml-2">{inv.client_name}</span>
                   </div>
                   <div className="text-right">
-                    <span className="block font-medium text-gray-900">${inv.amount_due}</span>
+                    <span className="block font-medium text-gray-900">GHS {inv.amount_due}</span>
                     <span className="text-xs text-red-500">{inv.days_overdue} days late</span>
                   </div>
                 </li>

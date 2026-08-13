@@ -39,7 +39,7 @@ const CONFIG_FIELDS = {
   bank:         [{ key: "bank_name",      label: "Bank Name",       placeholder: "e.g. GCB Bank" },
                  { key: "account_number", label: "Account Number",  placeholder: "0012345678" },
                  { key: "account_name",   label: "Account Name",    placeholder: "Full name on account" }],
-  paystack:     [{ key: "payment_link",  label: "Payment Link",    placeholder: "https://paystack.com/pay/..." }],
+  paystack:     [{ key: "secret_key",  label: "Secret Key",    placeholder: "sk_live_..." }],
   flutterwave:  [{ key: "payment_link",  label: "Payment Link",    placeholder: "https://flutterwave.com/pay/..." }],
   stripe:       [{ key: "payment_link",  label: "Payment Link",    placeholder: "https://buy.stripe.com/..." }],
   paypal:       [{ key: "paypal_email",  label: "PayPal Email",    placeholder: "you@example.com" }],

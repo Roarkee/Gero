@@ -88,7 +88,7 @@ export default function CollectionAnalytics() {
                  </div>
                  <div className="text-right">
                    <p className="font-bold text-rose-600 dark:text-rose-400">
-                     ${parseFloat(invoice.total_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                     GHS {parseFloat(invoice.total_amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                    </p>
                    <p className="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
                  </div>

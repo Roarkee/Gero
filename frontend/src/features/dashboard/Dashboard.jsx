@@ -95,7 +95,7 @@ export default function Dashboard() {
             Total Revenue
           </h3>
           <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-            ${totalRevenue.toLocaleString()}
+            GHS {totalRevenue.toLocaleString()}
           </p>
           <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
         </div>
@@ -157,7 +157,7 @@ export default function Dashboard() {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: "#9CA3AF", fontSize: 12 }}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(value) => `GHS ${value}`}
                 />
                 <Tooltip
                   contentStyle={{

@@ -45,35 +45,35 @@ export default function KpiGrid({ kpis }) {
       />
       <KpiCard
         title="Outstanding Invoices"
-        value={`$${kpis.outstanding_invoice_amount}`}
+        value={`GHS ${kpis.outstanding_invoice_amount}`}
         icon={AlertTriangle}
         color="bg-orange-500"
         subLabel="Total unpaid amount"
       />
       <KpiCard
         title="Overdue Amount"
-        value={`$${kpis.overdue_invoice_amount}`}
+        value={`GHS ${kpis.overdue_invoice_amount}`}
         icon={TrendingDown}
         color="bg-red-500"
         subLabel="Past due date"
       />
       <KpiCard
         title="Monthly Revenue"
-        value={`$${kpis.monthly_revenue}`}
+        value={`GHS ${kpis.monthly_revenue}`}
         icon={TrendingUp}
         color="bg-emerald-500"
         subLabel="Paid this month"
       />
       <KpiCard
         title="Monthly Expenses"
-        value={`$${kpis.monthly_expenses}`}
+        value={`GHS ${kpis.monthly_expenses}`}
         icon={Activity}
         color="bg-rose-500"
         subLabel="Logged this month"
       />
       <KpiCard
         title="Profit This Month"
-        value={`$${kpis.profit_this_month}`}
+        value={`GHS ${kpis.profit_this_month}`}
         icon={DollarSign}
         color="bg-indigo-500"
         subLabel="Revenue - Expenses"

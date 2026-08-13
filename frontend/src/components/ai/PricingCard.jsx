@@ -87,7 +87,7 @@ export function PricingCard({ requestId, onComplete, onBack }) {
           <div className="flex flex-col items-center p-4 border rounded-xl dark:border-gray-800">
             <Clock className="h-6 w-6 text-blue-500 mb-2" />
             <span className="text-sm text-gray-500 dark:text-gray-400">Blended Rate</span>
-            <span className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">${data.hourly_rate}/hr</span>
+            <span className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">GHS {data.hourly_rate}/hr</span>
           </div>
           <div className="flex flex-col items-center p-4 border rounded-xl dark:border-gray-800">
             <TrendingUp className="h-6 w-6 text-purple-500 mb-2" />
@@ -97,7 +97,7 @@ export function PricingCard({ requestId, onComplete, onBack }) {
           <div className="flex flex-col items-center p-4 border rounded-xl dark:border-gray-800">
             <DollarSign className="h-6 w-6 text-emerald-500 mb-2" />
             <span className="text-sm text-gray-500 dark:text-gray-400">Negotiation Floor</span>
-            <span className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">${data.negotiation_floor.toLocaleString()}</span>
+            <span className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">GHS {data.negotiation_floor.toLocaleString()}</span>
           </div>
         </div>
 

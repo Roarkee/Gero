@@ -1,6 +1,7 @@
-from ..processors.factory import PaymentProcessorFactory
-from paystack_service import PaystackProcessor
+from .paystack_service import PaystackProcessor
 from ..models import PaymentTransaction, PaymentWebhook
+from invoices.models import Invoice
+
 
 def _log_audit(user, action, success=True, ip_address=None, user_agent=None, error_message='', details=None, webhook=None):
         from ..models import PaymentAuditLog #this would help avoid circular imports which is unlikely mmom but still
@@ -17,9 +18,32 @@ def _log_audit(user, action, success=True, ip_address=None, user_agent=None, err
 
 class PaymentService:
 
-    
-    def __init__(self):
-        self.processor = PaymentProcessorFactory.get_processor("paystack")
+    def __init__(self, processor):
+        self.processor = processor
 
-    def pay(self):
-         pass
+    def initialize(self, user, invoice, amount, currency, provider):
+        
+        # Determine fee dynamically or default to 0
+        fee = 0
+        
+        transaction = PaymentTransaction(
+            invoice=invoice,
+            amount=amount,
+            status='pending',
+            fee=fee,
+            provider=provider,
+            currency=currency,
+        )
+        # save to generate reference and net_amount
+        transaction.save()
+
+        try:
+            response_data = self.processor.initialize_payment(transaction, user)
+            return response_data
+        except Exception as e:
+            # Optionally mark transaction as failed if initialization fails completely
+            transaction.status = 'failed'
+            transaction.save(update_fields=['status'])
+            raise e
+
+

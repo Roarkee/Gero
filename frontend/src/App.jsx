@@ -49,9 +49,13 @@ import SettingsLayout from "./features/settings/SettingsLayout";
 import PaymentSettings from "./features/payments/pages/PaymentSettings";
 import NotificationsPage from "./features/notifications/pages/NotificationsPage";
 import PortalHome from "./features/clientPortal/pages/PortalHome";
+import PortalDashboard from "./features/clientPortal/pages/PortalDashboard";
+import PortalInvoices from "./features/clientPortal/pages/PortalInvoices";
 import PortalProject from "./features/clientPortal/pages/PortalProject";
 import AcceptInvite from "./features/clientPortal/pages/AcceptInvite";
 import NewRequest from "./features/clientPortal/pages/NewRequest";
+import PublicInvoice from "./features/clientPortal/pages/PublicInvoice";
+import PaymentStatus from "./features/payments/pages/PaymentStatus";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -88,6 +92,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/portal/accept-invite" element={<AcceptInvite />} />
+          <Route path="/public/:id" element={<PublicInvoice />} />
+          <Route path="/payment/status" element={<PaymentStatus />} />
  
           <Route
             element={
@@ -151,8 +157,11 @@ function App() {
               </PortalRoute>
             }
           >
-            <Route index element={<PortalHome />} />
+            <Route index element={<Navigate to="/portal/dashboard" replace />} />
+            <Route path="dashboard" element={<PortalDashboard />} />
+            <Route path="projects" element={<PortalHome />} />
             <Route path="projects/:id" element={<PortalProject />} />
+            <Route path="invoices" element={<PortalInvoices />} />
             <Route path="request" element={<NewRequest />} />
           </Route>
         </Routes>

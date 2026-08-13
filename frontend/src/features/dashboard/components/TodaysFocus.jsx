@@ -42,7 +42,7 @@ export default function TodaysFocus({
             {overdueInvoices?.length || 0}
           </div>
           <p className="text-sm text-indigo-200">
-            ${kpis?.overdue_invoice_amount || "0.00"} outstanding
+            GHS {kpis?.overdue_invoice_amount || "0.00"} outstanding
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function TodaysFocus({
             <h3 className="font-medium text-indigo-50">Monthly Profit</h3>
           </div>
           <div className="text-2xl font-bold mb-1">
-            ${kpis?.profit_this_month || "0.00"}
+            GHS {kpis?.profit_this_month || "0.00"}
           </div>
           <p className="text-sm text-indigo-200">Net profit this month</p>
         </div>
