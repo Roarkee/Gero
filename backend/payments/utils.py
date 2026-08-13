@@ -25,7 +25,12 @@ def verifyhook(raw_body, paystack_hash):
         return False, None
 
     # Retrieve the raw secret string (encrypted_config is decrypted on access)
-    secret = provider.encrypted_config
+    try:
+        config = json.loads(provider.encrypted_config)
+        secret = config.get("secret_key", "")
+    except Exception:
+        secret = provider.encrypted_config
+
     if isinstance(secret, str):
         key = bytes(secret, encoding='UTF-8')
     else:

@@ -160,6 +160,7 @@ class Expense(models.Model):
     
     receipt_url = models.URLField(blank=True)  # For storing receipt images/documents
     is_recurring = models.BooleanField(default=False)
+    client_visible = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

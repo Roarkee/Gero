@@ -240,6 +240,7 @@ class Attachment(models.Model):
     file_name = models.CharField(max_length=255)
     file_size = models.PositiveIntegerField()
     mime_type = models.CharField(max_length=100,blank=True)
+    client_visible = models.BooleanField(default=False)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

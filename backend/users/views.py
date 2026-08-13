@@ -147,32 +147,39 @@ class AcceptInvite(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        uid = request.data.get('uid')
         token = request.data.get('token')
         password = request.data.get('password')
 
-        if not uid or not token or not password:
+        if not token or not password:
             return Response(
-                {'detail': 'uid, token and password are required.'},
+                {'detail': 'token and password are required.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Decode uid → user
+        from client.models import ClientInvitation
+        
         try:
-            user_pk = force_str(urlsafe_base64_decode(uid))
-            user = User.objects.get(pk=user_pk)
-        except (User.DoesNotExist, ValueError, TypeError):
+            invitation = ClientInvitation.objects.get(token=token)
+        except (ClientInvitation.DoesNotExist, ValueError):
             return Response({'detail': 'Invalid invitation link.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate the token
-        token_generator = PasswordResetTokenGenerator()
-        if not token_generator.check_token(user, token):
+        if not invitation.is_valid():
             return Response({'detail': 'This invitation link has expired or already been used.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Invitation is valid. Set password on the linked user account.
+        user = invitation.client.user_account
+        if not user:
+             return Response({'detail': 'No user account linked to this invitation.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Set password and activate
         user.set_password(password)
         user.is_active = True
+        user.is_client = True
         user.save()
+        
+        # Mark invite as accepted
+        invitation.is_accepted = True
+        invitation.save(update_fields=['is_accepted'])
 
         # Return JWT so they're logged in immediately
         refresh = RefreshToken.for_user(user)
@@ -183,7 +190,8 @@ class AcceptInvite(views.APIView):
                 'id': user.id,
                 'email': user.email,
                 'first_name': user.first_name,
-                'last_name': user.last_name,
                 'role': user.role,
+                'is_freelancer': user.is_freelancer,
+                'is_client': user.is_client,
             },
         })

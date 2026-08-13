@@ -16,7 +16,7 @@ class PaystackWebHook(views.APIView):
     def post(self, request, *args, **kwargs):
         hashbody = request.headers.get('x-paystack-signature')
         if not hashbody:
-            return Response(status=400)
+            return Response("we couldn't get anywhere",status=400)
 
         raw_body = request.body
         is_verified, tx = verifyhook(raw_body, hashbody)
@@ -71,7 +71,7 @@ class PaystackWebHook(views.APIView):
                         error_message="Amount mismatch",
                         details={"expected": expected_amount, "received": paystack_amount}
                     )
-                    return Response(status=400)
+                    return Response("we were auditing and failed", status=400)
 
                 tx.status = 'completed'
                 tx.gateway_response = payload

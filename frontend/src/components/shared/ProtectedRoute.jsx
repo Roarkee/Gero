@@ -8,8 +8,8 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Client-role users belong in the portal, not the freelancer dashboard
-  if (user?.role === "client") {
+  // Pure client-role users belong in the portal, not the freelancer dashboard
+  if (!user?.is_freelancer) {
     return <Navigate to="/portal" replace />;
   }
 

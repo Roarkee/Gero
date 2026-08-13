@@ -19,21 +19,23 @@ class IsActivityOwner(permissions.BasePermission):
 
 class IsClientUser(permissions.BasePermission):
     """
-    Allows access to authenticated users for the Client Portal endpoints.
-    Data scoping is enforced in views via _client(user).
+    Allows access to users with is_client=True for the Client Portal endpoints.
+    Data scoping is enforced in views via client__user_account=request.user.
     """
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated)
+        if not (request.user and request.user.is_authenticated):
+            return False
+        return getattr(request.user, 'is_client', False) or getattr(request.user, 'is_staff', False)
 
 
 class IsFreelancerUser(permissions.BasePermission):
     """
-    Allows access to users with role='freelancer' (default).
+    Allows access to users with is_freelancer=True.
     Blocks pure client-role users without freelancer activity from accessing the main dashboard API.
     """
 
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
             return False
-        return getattr(request.user, 'role', None) == 'freelancer' or request.user.is_staff
+        return getattr(request.user, 'is_freelancer', False) or getattr(request.user, 'is_staff', False)

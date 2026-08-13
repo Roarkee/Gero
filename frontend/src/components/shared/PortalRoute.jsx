@@ -12,5 +12,9 @@ export default function PortalRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
+  if (!user?.is_client) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 }

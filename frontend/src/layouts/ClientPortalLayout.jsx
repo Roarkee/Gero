@@ -87,7 +87,7 @@ export default function ClientPortalLayout() {
             New Request
           </Link>
 
-          {user?.has_freelancer_portal && (
+          {user?.is_freelancer && (
             <Link
               to="/dashboard"
               onClick={() => setSidebarOpen(false)}

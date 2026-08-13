@@ -92,7 +92,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/portal/accept-invite" element={<AcceptInvite />} />
-          <Route path="/public/:id" element={<PublicInvoice />} />
+          <Route path="/invoice/:id" element={<PublicInvoice />} />
           <Route path="/payment/status" element={<PaymentStatus />} />
  
           <Route

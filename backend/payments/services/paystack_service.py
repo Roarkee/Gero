@@ -26,7 +26,7 @@ class PaystackProcessor(BasePaymentProcessor):
     def initialize_payment(self, transaction,user):
         payload = {
             "email": user.email,
-            "amount": int(transaction.amount * 100), #need to convert to pesewas 
+            "amount": int(transaction.amount * __import__('decimal').Decimal('100')), #need to convert to pesewas 
             "reference": transaction.reference,
             "currency": transaction.currency,
             "channels": ["bank","card", "mobile_money"],

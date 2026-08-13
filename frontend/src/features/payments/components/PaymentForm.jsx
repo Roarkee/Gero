@@ -14,10 +14,12 @@ const PaymentForm = ({ invoice }) => {
       return res.data;
     },
     onSuccess: (data) => {
-      if (data && data.data && data.data.authorization_url) {
-        window.location.href = data.data.authorization_url;
+      console.log("Payment init response data:", data);
+      const authUrl = data?.authorization_url || data?.data?.authorization_url;
+      if (authUrl) {
+        window.location.href = authUrl;
       } else {
-        toast.error("Failed to retrieve payment link.");
+        toast.error("Failed to retrieve payment link. Please try again.");
       }
     },
     onError: (err) => {

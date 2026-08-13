@@ -87,7 +87,7 @@ AI_MODELS = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev", "10.232.201.213"]
 
 
 # Application definition
@@ -319,12 +319,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",  # Vite default port
     "http://127.0.0.1:5173",
+    env("FRONTEND_URL", default="http://localhost:5173"),  # LAN / production frontend
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://gero-eosin.vercel.app",
+    env("FRONTEND_URL", default="http://localhost:5173"),
 ]
 
 

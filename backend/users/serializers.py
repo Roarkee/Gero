@@ -12,7 +12,7 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'password', 'date_joined', 'has_client_portal', 'has_freelancer_portal']
+        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'is_client', 'is_freelancer', 'password', 'date_joined', 'has_client_portal', 'has_freelancer_portal']
         read_only_fields = ['id', 'date_joined']
 
     def get_has_client_portal(self, obj):
@@ -21,8 +21,7 @@ class UserSerializer(ModelSerializer):
                Client.objects.filter(email__iexact=obj.email).exclude(user=obj).exists()
                
     def get_has_freelancer_portal(self, obj):
-        # Only true if they are actually a freelancer
-        return obj.role == 'freelancer'
+        return obj.is_freelancer
 
     def create(self, validated_data):
         user = User.objects.create_user(#this makes sure it uses the create_user method in the usermanager to hash the password 

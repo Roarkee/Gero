@@ -133,7 +133,6 @@ class Invoice(models.Model):
                     'issue_date',
                     'invoice_number',
                     'sequence_number',
-                    'amount_paid'
                 ]
 
                 for field in protected_fields:

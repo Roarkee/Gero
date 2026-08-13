@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+import uuid
+from django.utils import timezone
 
 # Create your models here.
 class Client(models.Model):
@@ -178,3 +180,17 @@ class PortalProposal(models.Model):
 
     def __str__(self):
         return f"{self.title} — {self.project.name}"
+
+class ClientInvitation(models.Model):
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='invitations')
+    email = models.EmailField()
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_accepted = models.BooleanField(default=False)
+    
+    def is_valid(self):
+        return not self.is_accepted and self.expires_at > timezone.now()
+
+    def __str__(self):
+        return f"Invite for {self.email} - {self.client.name}"

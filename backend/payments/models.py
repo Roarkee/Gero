@@ -108,10 +108,13 @@ class PaymentTransaction(models.Model):
 
 
     def clean(self):
-        if not self.pk:
+        if self._state.adding:
             return
 
-        original = PaymentTransaction.objects.get(pk=self.pk)
+        try:
+            original = PaymentTransaction.objects.get(pk=self.pk)
+        except PaymentTransaction.DoesNotExist:
+            return
 
         if original.status != self.status:
 

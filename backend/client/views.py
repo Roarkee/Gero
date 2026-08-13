@@ -136,25 +136,40 @@ class ClientViewSet(viewsets.ModelViewSet):
             defaults={
                 'first_name': client.name.split()[0] if client.name else '',
                 'last_name': ' '.join(client.name.split()[1:]) if len(client.name.split()) > 1 else '',
-                'role': 'client',
+                'is_client': True,
+                'is_freelancer': False, # Just in case they are entirely new
             }
         )
 
         if created:
             user.set_unusable_password()
             user.save()
+        else:
+            # Existing user - ensure they get client capabilities without removing freelancer ones
+            if not user.is_client:
+                user.is_client = True
+                user.save(update_fields=['is_client'])
 
         # Link client to user account
         if not client.user_account:
             client.user_account = user
             client.save(update_fields=['user_account'])
 
-        # Generate a one-time token
-        token_generator = PasswordResetTokenGenerator()
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = token_generator.make_token(user)
+        # Generate explicit invitation record
+        from django.utils import timezone
+        import datetime
+        from client.models import ClientInvitation
+        
+        # Expire any existing pending invites for this client
+        ClientInvitation.objects.filter(client=client, is_accepted=False).update(expires_at=timezone.now())
 
-        invite_url = f"{settings.FRONTEND_URL}/portal/accept-invite?uid={uid}&token={token}"
+        invitation = ClientInvitation.objects.create(
+            client=client,
+            email=client.email,
+            expires_at=timezone.now() + datetime.timedelta(days=3)
+        )
+
+        invite_url = f"{settings.FRONTEND_URL}/portal/accept-invite?token={invitation.token}"
 
         send_mail(
             subject="You've been invited to Gero",

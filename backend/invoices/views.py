@@ -75,7 +75,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Client email is required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             from django.conf import settings
-            link = f"{settings.FRONTEND_URL}/public/{invoice.id}"
+            link = f"{settings.FRONTEND_URL}/invoice/{invoice.id}"
             self._send_email(invoice,
                              subject=f'Invoice {invoice.invoice_number} from Gero',
                              body=f'Please find attached your invoice {invoice.invoice_number}.\n\nYou can view and pay your invoice securely online at:\n{link}')
@@ -100,7 +100,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Client email is required."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             from django.conf import settings
-            link = f"{settings.FRONTEND_URL}/public/{invoice.id}"
+            link = f"{settings.FRONTEND_URL}/invoice/{invoice.id}"
             self._send_email(invoice,
                              subject=f'Invoice {invoice.invoice_number} from Gero (Reminder)',
                              body=f'This is a reminder for invoice {invoice.invoice_number}.\n\nYou can view and pay your invoice securely online at:\n{link}')

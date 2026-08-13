@@ -10,7 +10,6 @@ export default function AcceptInvite() {
   const navigate = useNavigate();
   const { login: _login } = useAuthStore();
 
-  const uid = searchParams.get("uid");
   const token = searchParams.get("token");
 
   const [password, setPassword] = useState("");
@@ -19,7 +18,7 @@ export default function AcceptInvite() {
   const [done, setDone] = useState(false);
 
   // Bad link — missing params
-  if (!uid || !token) {
+  if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
         <div className="text-center">
@@ -44,7 +43,7 @@ export default function AcceptInvite() {
 
     setLoading(true);
     try {
-      const res = await apiClient.post(API_ENDPOINTS.ACCEPT_INVITE, { uid, token, password });
+      const res = await apiClient.post(API_ENDPOINTS.ACCEPT_INVITE, { token, password });
       const { access, refresh, user } = res.data;
 
       // Store tokens and user — mirrors what authStore.login does

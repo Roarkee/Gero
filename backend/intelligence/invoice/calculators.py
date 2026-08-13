@@ -8,11 +8,9 @@ class CashFlowCalculator:
 
     @staticmethod
     def calculate_receivables(invoices):
-
         outstanding = invoices.filter(
             status__in=['sent', 'overdue']
         )
-
         overdue = invoices.filter(
             status='overdue'
         )

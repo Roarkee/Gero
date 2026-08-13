@@ -31,6 +31,7 @@ class PaymentTransactionViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 class InitializePaymentView(views.APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -65,7 +66,7 @@ class InitializePaymentView(views.APIView):
             provider = PaymentProvider.objects.filter(user=invoice.user, provider="paystack", is_active=True).first()
             
         if not provider:
-            return Response({"error": "Payment provider is not available for this invoice."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "The freelancer has not configured an available payment provider for this invoice."}, status=status.HTTP_400_BAD_REQUEST)
 
         # We need a user to pass to initialize_payment.
         # Since it's public access, we use the invoice's client user if available, or just the client email
@@ -89,3 +90,8 @@ class InitializePaymentView(views.APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+        

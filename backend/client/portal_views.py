@@ -35,36 +35,10 @@ from projects.models import Project, TaskList, Task, Attachment
 
 # ─────────────────────────── helpers ──────────────────────────────────────────
 
-def _client_safe(user):
-    """Return the Client record linked to this portal user, or None if not found."""
-    # 1. Primary Source of Truth: Explicit user_account linking (where user is not the provider)
-    client = Client.objects.filter(user_account=user).exclude(user=user).first()
-    
-    # 2. Fallback: Auto-linking via matching email (where user is not the provider)
-    if not client and getattr(user, 'email', None):
-        client = Client.objects.filter(email__iexact=user.email).exclude(user=user).first()
-        if client and not client.user_account:
-            client.user_account = user
-            client.save(update_fields=['user_account'])
-            
-    # 3. Last Resort Fallback (if they are somehow explicitly linked to a client record they own)
-    if not client:
-        client = Client.objects.filter(user_account=user).first()
-        
-    return client
-
-def _client(user):
-    """Return the Client record linked to this portal user, or raise Http404."""
-    client = _client_safe(user)
-    if not client:
-        raise Http404("No client profile found for this user.")
-    return client
-
-
 def _owned_project(user, project_pk):
-    """Return a project that belongs to this client."""
-    client = _client(user)
-    return get_object_or_404(Project, pk=project_pk, client=client)
+    """Return a project where the current user is the client."""
+    return get_object_or_404(Project, pk=project_pk, client__user_account=user)
+
 
 
 # ─────────────────────────── serializers ──────────────────────────────────────
@@ -239,11 +213,8 @@ class PortalProjectView(ViewSet):
     permission_classes = [permissions.IsAuthenticated, IsClientUser]
 
     def list(self, request):
-        client = _client_safe(request.user)
-        if not client:
-            return Response([])
         qs = Project.objects.filter(
-            client=client
+            client__user_account=request.user
         ).exclude(status='cancelled').prefetch_related('task_lists__tasks', 'invoices')
         return Response(PortalProjectListSerializer(qs, many=True).data)
 
@@ -288,7 +259,7 @@ class PortalFileView(APIView):
 
     def get(self, request, project_pk):
         project = self._project(request.user, project_pk)
-        files = Attachment.objects.filter(project=project, task__isnull=True).select_related('uploaded_by')
+        files = Attachment.objects.filter(project=project, task__isnull=True, client_visible=True).select_related('uploaded_by')
         return Response(PortalAttachmentSerializer(files, many=True).data)
 
     def post(self, request, project_pk):
@@ -316,30 +287,26 @@ class PortalDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        client = _client_safe(request.user)
-        if not client:
-            return Response({"error": "No client profile found for this user."}, status=403)
-            
-        projects = Project.objects.filter(client=client).exclude(status='COMPLETED')
+        projects = Project.objects.filter(client__user_account=request.user).exclude(status='COMPLETED')
         active_projects_count = projects.count()
         
-        invoices = Invoice.objects.filter(client=client, status='SENT')
+        invoices = Invoice.objects.filter(project__client__user_account=request.user, status='SENT')
         outstanding_invoices_count = invoices.count()
         total_outstanding = sum(inv.amount for inv in invoices)
         
-        # Simple unread messages calculation (assuming you have a 'read' boolean, or just total recent messages)
-        # Using all messages as a placeholder since there is no native 'read' state in PortalMessage currently
         unread_messages_count = PortalMessage.objects.filter(
-            project__client=client,
-            is_from_client=False
-        ).count()
+            project__client__user_account=request.user
+        ).exclude(sender=request.user).count()
+        
+        first_project = projects.first()
+        freelancer_name = first_project.user.get_full_name() or first_project.user.email if first_project else "Your Freelancer"
         
         return Response({
             "active_projects": active_projects_count,
             "outstanding_invoices": outstanding_invoices_count,
             "total_outstanding": total_outstanding,
             "unread_messages": unread_messages_count,
-            "freelancer_name": client.user.get_full_name() or client.user.username,
+            "freelancer_name": freelancer_name,
         })
 
 class PortalProjectListView(APIView):
@@ -400,15 +367,11 @@ class PortalInvoiceView(ViewSet):
     permission_classes = [permissions.IsAuthenticated, IsClientUser]
 
     def list(self, request):
-        client = _client_safe(request.user)
-        if not client:
-            return Response([])
-        qs = Invoice.objects.filter(client=client).order_by('-created_at')
+        qs = Invoice.objects.filter(project__client__user_account=request.user).order_by('-created_at')
         return Response(PortalInvoiceListSerializer(qs, many=True).data)
 
     def retrieve(self, request, pk=None):
-        client = _client(request.user)
-        invoice = get_object_or_404(Invoice, pk=pk, client=client)
+        invoice = get_object_or_404(Invoice, pk=pk, project__client__user_account=request.user)
         # auto-transition sent → viewed
         if invoice.status == Invoice.InvoiceStatus.SENT:
             invoice.status = Invoice.InvoiceStatus.VIEWED

@@ -49,7 +49,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=128)
     provider = models.CharField(max_length=30, blank=True, choices=PROVIDERS, default='email')
     provider_id = models.CharField(max_length=255, blank=True)
+    # Legacy role field (deprecated for authorization, preserved for migrations/UI defaults)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='freelancer')
+    
+    # Dual-capability fields for workspace authorization
+    is_freelancer = models.BooleanField(default=True)
+    is_client = models.BooleanField(default=False)
+    
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = CustomUserManager()
