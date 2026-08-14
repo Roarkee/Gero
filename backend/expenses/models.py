@@ -152,7 +152,7 @@ class Budget(models.Model):
 class Expense(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='expenses')
     category = models.ForeignKey(ExpenseCategory, on_delete=models.PROTECT, related_name='expenses')
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='expenses', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name='expenses')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)

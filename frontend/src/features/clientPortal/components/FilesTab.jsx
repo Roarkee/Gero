@@ -43,10 +43,23 @@ export default function FilesTab({ projectId }) {
     Array.from(fileList).forEach((f) => upload.mutate(f));
   };
 
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragging(true);
+    } else if (e.type === "dragleave") {
+      setDragging(false);
+    }
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragging(false);
-    handleFiles(e.dataTransfer.files);
+    if (e.dataTransfer.files) {
+      handleFiles(e.dataTransfer.files);
+    }
   };
 
   if (isLoading) {
@@ -57,8 +70,9 @@ export default function FilesTab({ projectId }) {
     <div className="space-y-4">
       {/* Drop zone */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
@@ -74,19 +88,21 @@ export default function FilesTab({ projectId }) {
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
-        {upload.isPending ? (
-          <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Uploading…
-          </div>
-        ) : (
-          <>
-            <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Drop files here or <span className="text-indigo-600 dark:text-indigo-400 font-medium">browse</span>
-            </p>
-          </>
-        )}
+        <div className="pointer-events-none">
+          {upload.isPending ? (
+            <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Uploading…
+            </div>
+          ) : (
+            <>
+              <Upload className="w-6 h-6 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Drop files here or <span className="text-indigo-600 dark:text-indigo-400 font-medium pointer-events-auto">browse</span>
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       {/* File list */}

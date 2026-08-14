@@ -235,8 +235,18 @@ class InvoicePayment(models.Model):
         with transaction.atomic():
             super().save(*args, **kwargs)
             total_paid = self.invoice.payments_received.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            self.invoice.amount_paid = total_paid
+            
             if total_paid >= self.invoice.total_amount:
                 if self.invoice.status != Invoice.InvoiceStatus.PAID:
                     self.invoice.status = Invoice.InvoiceStatus.PAID
                     self.invoice.paid_date = self.payment_date
-                    self.invoice.save(update_fields=['status', 'paid_date'])
+                    self.invoice.save(update_fields=['status', 'paid_date', 'amount_paid'])
+                else:
+                    self.invoice.save(update_fields=['amount_paid'])
+            else:
+                if total_paid > Decimal('0.00') and self.invoice.status != Invoice.InvoiceStatus.PARTLY_PAID:
+                    self.invoice.status = Invoice.InvoiceStatus.PARTLY_PAID
+                    self.invoice.save(update_fields=['status', 'amount_paid'])
+                else:
+                    self.invoice.save(update_fields=['amount_paid'])

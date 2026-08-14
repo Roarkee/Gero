@@ -274,6 +274,7 @@ class PortalFileView(APIView):
             file_name=uploaded.name,
             file_size=uploaded.size,
             mime_type=uploaded.content_type or '',
+            client_visible=True,
         )
         return Response(PortalAttachmentSerializer(attachment).data, status=status.HTTP_201_CREATED)
 

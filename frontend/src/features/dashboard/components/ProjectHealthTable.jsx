@@ -22,6 +22,7 @@ export default function ProjectHealthTable({ projectHealth }) {
             <tr>
               <th className="px-6 py-4">Project</th>
               <th className="px-6 py-4">Client</th>
+              <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Progress</th>
               <th className="px-6 py-4">Budget Used</th>
               <th className="px-6 py-4 text-right">Logged Hours</th>
@@ -40,6 +41,15 @@ export default function ProjectHealthTable({ projectHealth }) {
                 </td>
                 <td className="px-6 py-4 text-gray-600">
                   {project.client_name}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                    project.status === 'active' ? 'bg-indigo-100 text-indigo-800' :
+                    project.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {project.status}
+                  </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">

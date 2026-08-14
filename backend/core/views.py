@@ -10,7 +10,7 @@ from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 
 from projects.models import Project, Task, TimeEntry, ProjectActivity
-from invoices.models import Invoice
+from invoices.models import Invoice, InvoicePayment
 from expenses.models import Expense
 from client.models import Client, ClientActivity
 
@@ -25,9 +25,15 @@ class DashboardAPIView(APIView):
         # KPIs
         active_projects = Project.objects.filter(user=user, status='active').count()
         active_clients = Client.objects.filter(user=user, status='active').count()
-        outstanding_invoices = Invoice.objects.filter(user=user, status__in=['sent', 'overdue']).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
-        overdue_invoices_amt = Invoice.objects.filter(user=user, status='overdue').aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
-        monthly_revenue = Invoice.objects.filter(user=user, status='paid', paid_date__year=today.year, paid_date__month=today.month).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        
+        # Correctly calculate outstanding by subtracting amount_paid for sent, overdue, partly_paid
+        outstanding_qs = Invoice.objects.filter(user=user, status__in=['sent', 'overdue', 'partly_paid'])
+        outstanding_invoices = sum((inv.total_amount - (inv.amount_paid or Decimal('0.00'))) for inv in outstanding_qs) or Decimal('0.00')
+        
+        overdue_qs_all = Invoice.objects.filter(user=user, status='overdue')
+        overdue_invoices_amt = sum((inv.total_amount - (inv.amount_paid or Decimal('0.00'))) for inv in overdue_qs_all) or Decimal('0.00')
+        
+        monthly_revenue = InvoicePayment.objects.filter(invoice__user=user, payment_date__year=today.year, payment_date__month=today.month).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         monthly_expenses = Expense.objects.filter(user=user, date__year=today.year, date__month=today.month).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         profit_this_month = monthly_revenue - monthly_expenses
         tracked_minutes = TimeEntry.objects.filter(user=user, start_time__year=today.year, start_time__month=today.month).aggregate(total=Sum('duration_minutes'))['total'] or 0
@@ -39,7 +45,7 @@ class DashboardAPIView(APIView):
             'id': inv.id,
             'invoice_number': inv.invoice_number,
             'client_name': inv.client.name,
-            'amount_due': str(inv.total_amount),
+            'amount_due': str(inv.total_amount - (inv.amount_paid or Decimal('0.00'))),
             'days_overdue': (today - inv.due_date).days if inv.due_date else 0
         } for inv in overdue_invoices_qs]
 
@@ -104,13 +110,12 @@ class DashboardAPIView(APIView):
             })
 
         # Revenue Data
-        revenue_qs = Invoice.objects.filter(
-            user=user, 
-            status='paid', 
-            paid_date__gte=six_months_ago
+        revenue_qs = InvoicePayment.objects.filter(
+            invoice__user=user, 
+            payment_date__gte=six_months_ago
         ).annotate(
-            month=TruncMonth('paid_date')
-        ).values('month').annotate(total=Sum('total_amount'))
+            month=TruncMonth('payment_date')
+        ).values('month').annotate(total=Sum('amount'))
         
         for rev in revenue_qs:
             for m in months_data:
@@ -137,6 +142,7 @@ class DashboardAPIView(APIView):
             'sent': Decimal('0.00'),
             'overdue': Decimal('0.00'),
             'paid': Decimal('0.00'),
+            'partly_paid': Decimal('0.00'),
         }
         for item in invoice_breakdown:
             if item['status'] in breakdown_dict:

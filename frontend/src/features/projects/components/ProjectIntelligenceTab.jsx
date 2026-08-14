@@ -21,7 +21,8 @@ export default function ProjectIntelligenceTab({ project }) {
   const profitability = profitabilityQuery.data || {};
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="h-full overflow-y-auto pb-12">
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
       
       {/* Health & Risk Banner */}
       <div className={`p-6 rounded-xl border flex items-start space-x-4 ${
@@ -88,12 +89,12 @@ export default function ProjectIntelligenceTab({ project }) {
           </div>
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Team Efficiency</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{productivity.team_efficiency_score || 100}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Effective Hourly Rate</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">${productivity.effective_hourly_rate || 0}/hr</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg Completion Time</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{productivity.avg_task_completion_time || 0}h</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Logged Time</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{(productivity.time_logged_minutes / 60 || 0).toFixed(1)}h</p>
             </div>
           </div>
           
@@ -129,7 +130,7 @@ export default function ProjectIntelligenceTab({ project }) {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <span className="text-gray-600 dark:text-gray-300">Completion Velocity</span>
-              <span className="font-bold text-gray-900 dark:text-white">{delivery.completion_velocity || 0} tasks/wk</span>
+              <span className="font-bold text-gray-900 dark:text-white">{delivery.velocity || 0} tasks/wk</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <span className="text-gray-600 dark:text-gray-300">Overdue Tasks</span>
@@ -142,8 +143,8 @@ export default function ProjectIntelligenceTab({ project }) {
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <span className="text-gray-600 dark:text-gray-300">Days Remaining</span>
-              <span className="font-bold text-gray-900 dark:text-white">{delivery.projected_completion_days || 0}</span>
+              <span className="text-gray-600 dark:text-gray-300">Tasks Remaining</span>
+              <span className="font-bold text-gray-900 dark:text-white">{delivery.remaining_tasks || 0}</span>
             </div>
           </div>
         </div>
@@ -157,36 +158,37 @@ export default function ProjectIntelligenceTab({ project }) {
           <div className="mb-6">
             <div className="flex justify-between mb-2 text-sm font-medium">
               <span className="text-gray-600 dark:text-gray-400">Budget Usage</span>
-              <span className={budget.projected_over_budget ? 'text-red-600' : 'text-primary-600'}>
-                {budget.budget_used_percentage || 0}%
+              <span className={budget.is_over_budget ? 'text-red-600' : 'text-primary-600'}>
+                {budget.budget_usage_percentage || 0}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
               <div 
-                className={`h-2.5 rounded-full ${budget.projected_over_budget ? 'bg-red-600' : 'bg-primary-600'}`} 
-                style={{ width: `${Math.min(budget.budget_used_percentage || 0, 100)}%` }}
+                className={`h-2.5 rounded-full ${budget.is_over_budget ? 'bg-red-600' : 'bg-primary-600'}`} 
+                style={{ width: `${Math.min(budget.budget_usage_percentage || 0, 100)}%` }}
               ></div>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+            <div className="col-span-2 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <p className="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">${project.budget || 0}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">${budget.budget || project.budget || 0}</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Used Budget</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Used Costs</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                ${((project.budget || 0) * (budget.budget_used_percentage || 0) / 100).toFixed(2)}
+                ${budget.total_cost || 0}
               </p>
             </div>
-            <div className="col-span-2 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Utilization Rate</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{budget.utilization_rate || 0}%</p>
+            <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Remaining Budget</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">${budget.remaining_budget || 0}</p>
             </div>
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );

@@ -44,16 +44,15 @@ export default function ProjectBudgetTab({ project }) {
   };
 
   const hasBudget = project.budget !== null && project.budget !== undefined;
-  const budgetAmount = Number(project.budget ?? 0);
-  const expensesAmount = Number(profitability.expenses ?? 0);
-  const budgetUsedPct = budget.budget_used_percentage ?? (budgetAmount > 0 ? (expensesAmount / budgetAmount) * 100 : 0);
-  const budgetUsed = budgetAmount * (budgetUsedPct / 100);
-  const remainingBudget = Math.max(budgetAmount - budgetUsed, 0);
-  const isOverBudget = budget.projected_over_budget || budgetUsed > budgetAmount;
+  const budgetAmount = Number(budget.budget ?? project.budget ?? 0);
+  const totalCost = Number(budget.total_cost ?? 0);
+  const budgetUsedPct = Number(budget.budget_usage_percentage ?? 0);
+  const remainingBudget = Number(budget.remaining_budget ?? 0);
+  const isOverBudget = Boolean(budget.is_over_budget ?? false);
 
   const pieData = [
-    { name: "Used", value: budgetUsed },
-    { name: "Remaining", value: remainingBudget },
+    { name: "Used", value: totalCost },
+    { name: "Remaining", value: Math.max(remainingBudget, 0) },
   ];
   const COLORS = isOverBudget ? ["#ef4444", "#e5e7eb"] : ["#3b82f6", "#e5e7eb"];
 
@@ -210,8 +209,8 @@ export default function ProjectBudgetTab({ project }) {
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Expenses</p>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{fmt(profitability.expenses)}</h3>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Costs</p>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{fmt(totalCost)}</h3>
               </div>
               <div className="p-3 bg-orange-50 dark:bg-orange-900/50 rounded-lg">
                 <TrendingDown className="w-6 h-6 text-orange-500" />
@@ -222,7 +221,7 @@ export default function ProjectBudgetTab({ project }) {
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Remaining</p>
                 <h3 className={`text-2xl font-bold mt-1 ${isOverBudget ? "text-red-600" : "text-emerald-600 dark:text-emerald-400"}`}>
-                  {fmt(isOverBudget ? budgetUsed - budgetAmount : remainingBudget)}
+                  {fmt(isOverBudget ? Math.abs(remainingBudget) : remainingBudget)}
                   {isOverBudget && <span className="text-sm font-normal text-red-500 ml-1">over</span>}
                 </h3>
               </div>
@@ -266,7 +265,7 @@ export default function ProjectBudgetTab({ project }) {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Used Budget</span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{fmt(budgetUsed)}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{fmt(totalCost)}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
                     <div

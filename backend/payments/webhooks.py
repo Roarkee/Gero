@@ -95,6 +95,17 @@ class PaystackWebHook(views.APIView):
                     
                 invoice.save(update_fields=['amount_paid', 'status'])
                 
+                # Create InvoicePayment so that dashboard metrics (which query InvoicePayment) account for this payment
+                from invoices.models import InvoicePayment
+                from django.utils import timezone
+                InvoicePayment.objects.create(
+                    invoice=invoice,
+                    amount=tx.amount,
+                    payment_date=timezone.now().date(),
+                    method=tx.provider.provider if tx.provider else 'paystack',
+                    notes=f"Gateway Payment Ref: {tx.reference}"
+                )
+                
                 PaymentAuditLog.objects.create(
                     action=PaymentAuditLog.PaymentAuditAction.PAYMENT_VERIFIED,
                     success=True,

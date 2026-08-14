@@ -87,7 +87,7 @@ AI_MODELS = {
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev", "10.232.201.213"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev", "10.25.111.63"]
 
 
 # Application definition
@@ -272,10 +272,15 @@ USE_TZ = True
 
 # Storage
 STORAGES = {
+    "default": {
+        "BACKEND": "core.storage.SupabaseStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+DEFAULT_FILE_STORAGE = 'core.storage.SupabaseStorage'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

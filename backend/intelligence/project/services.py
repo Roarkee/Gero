@@ -79,12 +79,16 @@ class ProjectProductivityService:
             ProjectSelectors.get_paid_revenue(project_id)
         )
 
-        completion_percentage = (
-            ProductivityCalculator.calculate_completion_percentage(
-                completed_tasks=completed_tasks,
-                total_tasks=total_tasks
+        project = Project.objects.get(id=project_id)
+        if project.completed:
+            completion_percentage = Decimal('100.00')
+        else:
+            completion_percentage = (
+                ProductivityCalculator.calculate_completion_percentage(
+                    completed_tasks=completed_tasks,
+                    total_tasks=total_tasks
+                )
             )
-        )
 
         effective_hourly_rate = (
             ProductivityCalculator.calculate_effective_hourly_rate(

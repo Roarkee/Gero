@@ -15,6 +15,7 @@ import {
 const COLORS = {
   draft: "#94a3b8",   // slate-400
   sent: "#3b82f6",    // blue-500
+  partly_paid: "#f59e0b", // amber-500
   overdue: "#ef4444", // red-500
   paid: "#10b981",    // emerald-500
 };
@@ -41,6 +42,23 @@ export default function FinancialCharts({ financialSummary }) {
     return `GHS ${tickItem}`;
   };
 
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
+          <p className="font-semibold text-gray-800 mb-2">{`${data.month_name} ${data.year}`}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+              {entry.name}: GHS {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* Bar Chart - 6 Month Trend */}
@@ -59,8 +77,7 @@ export default function FinancialCharts({ financialSummary }) {
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={formatYAxis} />
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  formatter={(value) => [`GHS ${value}`, undefined]}
+                  content={<CustomTooltip />}
                 />
                 <Legend iconType="circle" wrapperStyle={{fontSize: '12px'}} />
                 <Bar dataKey="revenue" name="Revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />

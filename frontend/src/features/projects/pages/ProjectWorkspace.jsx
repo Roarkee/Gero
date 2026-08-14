@@ -13,6 +13,8 @@ import {
   Paperclip,
   ArrowLeft,
   ChevronDown,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -35,6 +37,10 @@ export default function ProjectWorkspace() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const { deleteProject } = useProjects();
 
   if (isLoading) {
     return (
@@ -81,6 +87,20 @@ export default function ProjectWorkspace() {
 
   // Issue 6 fix: use real status config
   const statusConfig = getStatusConfig(project);
+
+  const handleDeleteProject = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject.mutateAsync(project.id);
+      toast.success("Project deleted successfully");
+      // React Query will handle cache invalidation and navigation via useProjects hook (or we can navigate manually if needed)
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Failed to delete project. Ensure no invoices are attached.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
@@ -138,6 +158,17 @@ export default function ProjectWorkspace() {
                 </>
               )}
             </div>
+            
+            {/* Delete Project Button */}
+            <div className="ml-auto">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                title="Delete Project"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           
           {/* Tabs Navigation */}
@@ -168,6 +199,53 @@ export default function ProjectWorkspace() {
       <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
         <ActiveComponent project={project} />
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4 text-red-600 dark:text-red-500">
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Delete Project?</h3>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
+                <p>This will permanently delete:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Project details and settings</li>
+                  <li>Tasks, task lists, and subtasks</li>
+                  <li>Project files and attachments</li>
+                  <li>Project-specific activity history</li>
+                </ul>
+                <p className="font-semibold mt-4 text-red-600 dark:text-red-400">
+                  This action cannot be undone.
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Note: Projects with finalized invoices cannot be deleted. Expense records will be detached but retained in your financial history.
+                </p>
+              </div>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete Project"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

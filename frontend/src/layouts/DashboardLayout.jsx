@@ -187,7 +187,7 @@ export default function DashboardLayout() {
                 )}
 
                 <div className="flex flex-col gap-2">
-                  {user?.is_client && (
+                  {(user?.is_client || user?.has_client_portal) && (
                     <Link
                       to="/portal"
                       title={isDesktopCollapsed ? "Client Portal" : undefined}

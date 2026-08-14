@@ -35,24 +35,28 @@ class InvoiceService:
 
     @staticmethod
     def invoice(user):
-        user = user
+        from invoices.models import InvoicePayment
+        from decimal import Decimal
+        
         today = timezone.now().date()
         
-        # Revenue stats
-        total_revenue = Invoice.objects.filter(
-            user=user, status='paid'
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        # Revenue stats (All-time revenue)
+        total_revenue = InvoicePayment.objects.filter(
+            invoice__user=user
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         
         # This month's revenue
-        month_start = today.replace(day=1)
-        monthly_revenue = Invoice.objects.filter(
-            user=user, status='paid', paid_date__gte=month_start
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        monthly_revenue = InvoicePayment.objects.filter(
+            invoice__user=user, 
+            payment_date__year=today.year, 
+            payment_date__month=today.month
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         
-        # Unpaid invoices
-        unpaid_invoices = Invoice.objects.filter(
-            user=user, status__in=['sent', 'overdue']
-        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        # Unpaid invoices (Outstanding balance across sent, overdue, partly_paid)
+        unpaid_qs = Invoice.objects.filter(
+            user=user, status__in=['sent', 'overdue', 'partly_paid']
+        )
+        unpaid_invoices = sum((inv.total_amount - (inv.amount_paid or Decimal('0.00'))) for inv in unpaid_qs) or Decimal('0.00')
         
         # Overdue invoices count
         overdue_count = Invoice.objects.filter(
@@ -60,9 +64,9 @@ class InvoiceService:
         ).count()
 
         return {
-                'total_revenue': total_revenue,
-                'monthly_revenue': monthly_revenue,
-                'unpaid_invoices': unpaid_invoices,
+                'total_revenue': str(total_revenue),
+                'monthly_revenue': str(monthly_revenue),
+                'unpaid_invoices': str(unpaid_invoices),
                 'overdue_count': overdue_count,
             }
 
