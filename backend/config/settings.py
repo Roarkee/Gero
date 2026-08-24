@@ -83,6 +83,10 @@ AI_MODELS = {
         "model": env("AI_PROJECT_GEN_MODEL", default="llama-3.3-70b-versatile"),
         "temperature": 0.2,
     },
+    "contract": {
+        "model": env("AI_CONTRACT_MODEL", default="llama-3.3-70b-versatile"),
+        "temperature": 0.2,
+    },
 }
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

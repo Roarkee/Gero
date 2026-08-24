@@ -15,7 +15,8 @@ export default function AIHistory() {
     const fetchHistory = async () => {
       try {
         const response = await apiClient.get("/api/ai/ai-requests/");
-        const data = response.data.results !== undefined ? response.data.results : response.data;
+        const responseData = response?.data || {};
+        const data = responseData.results !== undefined ? responseData.results : (Array.isArray(responseData) ? responseData : []);
         setRequests(data);
       } catch (err) {
         console.error(err);

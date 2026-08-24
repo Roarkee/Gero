@@ -156,11 +156,11 @@ class ClientRequestViewSet(ModelViewSet):
     def workflow_state(self, request, pk=None):
         ai_req = self.get_object()
         
-        # Load records
-        from ai.models import ScopeAnalysisRecord, PricingRecord, ProposalRecord
+        from ai.models import ScopeAnalysisRecord, PricingRecord, ProposalRecord, ContractRecord
         scope_record = ScopeAnalysisRecord.objects.filter(request=ai_req).last()
         pricing_record = PricingRecord.objects.filter(request=ai_req).last()
         proposal_record = ProposalRecord.objects.filter(request=ai_req).last()
+        contract_record = ContractRecord.objects.filter(request=ai_req).last()
         
         # Project Generation check
         project_gen_task = ai_req.workflow_tasks.filter(task_type="project_generation", status="completed").last()
@@ -173,10 +173,63 @@ class ClientRequestViewSet(ModelViewSet):
             "scope": scope_record.analysis if scope_record else None,
             "pricing": pricing_record.pricing if pricing_record else None,
             "proposal": proposal_record.proposal if proposal_record else None,
+            "contract": contract_record.contract if contract_record else None,
             "project_id": project_id,
         }
         
         return Response(data, status=status.HTTP_200_OK)
+    
+
+
+class ContractView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request_id = request.data.get("request_id")
+        
+        try:
+            ai_req = AIRequest.objects.get(id=request_id, user=request.user)
+        except AIRequest.DoesNotExist:
+            return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        workflow_task = AIWorkflowTask.objects.create(
+            request=ai_req,
+            task_type="contract_generation",
+            status="pending"
+        )
+        
+        from .services.contract_service import ContractService
+        service = ContractService()
+        result = service.generate_contract(request_id, workflow_task)
+        
+        if result.success:
+            return Response(result.data.model_dump(), status=status.HTTP_200_OK)
+        else:
+            return Response(result.error.to_response_dict(), status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def put(self, request):
+        """Save a user-edited contract."""
+        request_id = request.data.get("request_id")
+        contract_text = request.data.get("contract_text")
+        
+        if not contract_text:
+            return Response({"error": "contract_text is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            ai_req = AIRequest.objects.get(id=request_id, user=request.user)
+        except AIRequest.DoesNotExist:
+            return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        from ai.models import ContractRecord
+        contract_record = ContractRecord.objects.filter(request=ai_req).last()
+        
+        if not contract_record:
+            return Response({"error": "No contract found to update"}, status=status.HTTP_404_NOT_FOUND)
+            
+        contract_record.contract["contract_text"] = contract_text
+        contract_record.save(update_fields=["contract"])
+        
+        return Response({"message": "Contract updated successfully"}, status=status.HTTP_200_OK)
     
 
 
@@ -257,6 +310,30 @@ class ProposalView(APIView):
             return Response(result.data.model_dump(), status=status.HTTP_200_OK)
         else:
             return Response(result.error.to_response_dict(), status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    def put(self, request):
+        """Save a user-edited proposal."""
+        request_id = request.data.get("request_id")
+        proposal_text = request.data.get("proposal_text")
+        
+        if not proposal_text:
+            return Response({"error": "proposal_text is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            ai_req = AIRequest.objects.get(id=request_id, user=request.user)
+        except AIRequest.DoesNotExist:
+            return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        from ai.models import ProposalRecord
+        proposal_record = ProposalRecord.objects.filter(request=ai_req).last()
+        
+        if not proposal_record:
+            return Response({"error": "No proposal found to update"}, status=status.HTTP_404_NOT_FOUND)
+            
+        proposal_record.proposal["proposal_text"] = proposal_text
+        proposal_record.save(update_fields=["proposal"])
+        
+        return Response({"message": "Proposal updated successfully"}, status=status.HTTP_200_OK)
 
 
 class ProjectGenerationView(APIView):

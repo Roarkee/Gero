@@ -77,3 +77,9 @@ class ProposalRecord(models.Model):
     proposal = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+class ContractRecord(models.Model):
+    request = models.ForeignKey(AIRequest, on_delete=models.CASCADE)
+    contract = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+

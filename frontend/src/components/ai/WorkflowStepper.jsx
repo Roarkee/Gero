@@ -8,6 +8,7 @@ const steps = [
   { id: 3, name: "Scope Analysis" },
   { id: 4, name: "Pricing" },
   { id: 5, name: "Proposal" },
+  { id: 6, name: "Contract" },
 ];
 
 export function WorkflowStepper({ currentStep }) {

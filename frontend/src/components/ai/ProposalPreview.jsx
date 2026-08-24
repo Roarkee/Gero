@@ -9,6 +9,7 @@ export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editableText, setEditableText] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchedRef = useRef(false);
 
@@ -38,6 +39,41 @@ export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId]);
+
+  const handleNext = async () => {
+    if (!onNext) return;
+    
+    setIsSaving(true);
+    try {
+      await apiClient.put("/api/ai/proposal/", { 
+        request_id: requestId,
+        proposal_text: editableText
+      });
+      // Optionally update local data state if onComplete relies on it, 
+      // but onNext just moves to the next step
+      const updatedData = { ...data, proposal_text: editableText };
+      setData(updatedData);
+      if (onComplete) {
+        onComplete(updatedData);
+      }
+      onNext();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Failed to save proposal edits.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([editableText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `proposal_${requestId}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (isLoading) {
     return (
@@ -147,13 +183,14 @@ export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
       <CardFooter className="flex justify-between border-t dark:border-gray-800 pt-6">
         <Button variant="outline" onClick={onBack}>Back to Pricing</Button>
         <div className="flex space-x-4">
-          <Button variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-600 dark:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950">
+          <Button variant="outline" onClick={handleExport} className="text-emerald-600 dark:text-emerald-400 border-emerald-600 dark:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950">
             <Download className="mr-2 h-4 w-4" />
             Export Proposal
           </Button>
           {onNext && (
-            <Button onClick={onNext} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Generate Project
+            <Button onClick={handleNext} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Generate Contract
             </Button>
           )}
         </div>

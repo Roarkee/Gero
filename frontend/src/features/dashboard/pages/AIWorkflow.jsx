@@ -8,6 +8,7 @@ import { ExtractionPreview } from "../../../components/ai/ExtractionPreview";
 import { ScopeAnalysisCard } from "../../../components/ai/ScopeAnalysisCard";
 import { PricingCard } from "../../../components/ai/PricingCard";
 import { ProposalPreview } from "../../../components/ai/ProposalPreview";
+import { ContractPreview } from "../../../components/ai/ContractPreview";
 import { ProjectGenerationPreview } from "../../../components/ai/ProjectGenerationPreview";
 
 export default function AIWorkflow() {
@@ -22,6 +23,7 @@ export default function AIWorkflow() {
     scope: null,
     pricing: null,
     proposal: null,
+    contract: null,
   });
 
   useEffect(() => {
@@ -38,10 +40,13 @@ export default function AIWorkflow() {
             scope: data.scope,
             pricing: data.pricing,
             proposal: data.proposal,
+            contract: data.contract,
           });
           
           // Determine current step
           if (data.project_id) {
+            setCurrentStep(7);
+          } else if (data.contract) {
             setCurrentStep(6);
           } else if (data.proposal) {
             setCurrentStep(5);
@@ -66,7 +71,7 @@ export default function AIWorkflow() {
     }
   }, [id, navigate]);
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 6));
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 7));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handleExtractionComplete = (id, data) => {
@@ -87,6 +92,10 @@ export default function AIWorkflow() {
 
   const handleProposalComplete = (data) => {
     setAiData((prev) => ({ ...prev, proposal: data }));
+  };
+
+  const handleContractComplete = (data) => {
+    setAiData((prev) => ({ ...prev, contract: data }));
   };
 
   if (isLoading) {
@@ -145,6 +154,14 @@ export default function AIWorkflow() {
             />
           )}
           {currentStep === 6 && (
+            <ContractPreview
+              requestId={requestId}
+              onComplete={handleContractComplete}
+              onBack={prevStep}
+              onNext={nextStep}
+            />
+          )}
+          {currentStep === 7 && (
             <ProjectGenerationPreview
               requestId={requestId}
               onBack={prevStep}

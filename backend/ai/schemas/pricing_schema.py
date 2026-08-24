@@ -8,6 +8,7 @@ class PaymentSchedule(BaseModel):
     final_payment: str
 
 class PricingAnalysis(BaseModel):
+    currency: str = Field(description="The currency code (e.g., USD, EUR, GHS) extracted from the project specification budget.")
     hourly_rate: float = Field(ge=0)
     estimated_hours: float = Field(ge=0)
     base_cost: float = Field(ge=0)
