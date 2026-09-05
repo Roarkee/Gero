@@ -5,13 +5,13 @@ import apiClient from "../../api/client";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-export function ProjectGenerationPreview({ requestId, onBack }) {
-  const [projectId, setProjectId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function ProjectGenerationPreview({ requestId, initialProjectId, onBack }) {
+  const [projectId, setProjectId] = useState(initialProjectId || null);
+  const [isLoading, setIsLoading] = useState(!initialProjectId);
   const [error, setError] = useState(null);
   
   const navigate = useNavigate();
-  const fetchedRef = useRef(false);
+  const fetchedRef = useRef(!!initialProjectId);
 
   const generateProject = async () => {
     setIsLoading(true);
@@ -30,12 +30,18 @@ export function ProjectGenerationPreview({ requestId, onBack }) {
   };
 
   useEffect(() => {
+    if (initialProjectId) {
+      setProjectId(initialProjectId);
+      setIsLoading(false);
+      fetchedRef.current = true;
+      return;
+    }
     if (requestId && !fetchedRef.current) {
       fetchedRef.current = true;
       generateProject();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId]);
+  }, [requestId, initialProjectId]);
 
   if (isLoading) {
     return (

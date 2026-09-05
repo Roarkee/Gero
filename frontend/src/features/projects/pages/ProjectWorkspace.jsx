@@ -15,12 +15,14 @@ import {
   ChevronDown,
   Trash2,
   AlertTriangle,
+  MessageSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import ProjectOverviewTab from "../components/ProjectOverviewTab";
 import ProjectBoardTab from "../components/ProjectBoardTab";
 import ProjectTasksTab from "../components/ProjectTasksTab";
+import ProjectMessagesTab from "../components/ProjectMessagesTab";
 import ProjectTimeTrackingTab from "../components/ProjectTimeTrackingTab";
 import ProjectBudgetTab from "../components/ProjectBudgetTab";
 import ProjectIntelligenceTab from "../components/ProjectIntelligenceTab";
@@ -58,6 +60,7 @@ export default function ProjectWorkspace() {
     { id: "overview", label: "Overview", icon: LayoutDashboard, component: ProjectOverviewTab },
     { id: "board", label: "Board", icon: Trello, component: ProjectBoardTab },
     { id: "tasks", label: "Tasks", icon: ListTodo, component: ProjectTasksTab },
+    { id: "messages", label: "Messages", icon: MessageSquare, component: ProjectMessagesTab },
     { id: "time", label: "Time Tracking", icon: Clock, component: ProjectTimeTrackingTab },
     { id: "budget", label: "Budget", icon: DollarSign, component: ProjectBudgetTab },
     { id: "intelligence", label: "Intelligence", icon: BarChart2, component: ProjectIntelligenceTab },

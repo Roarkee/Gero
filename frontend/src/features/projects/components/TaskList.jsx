@@ -141,6 +141,7 @@ export default function TaskList({ list, projectId, onTaskClick }) {
         {/* Tasks Container */}
         <div
           ref={setNodeRef}
+          data-list-scroll="true"
           className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2 space-y-2 min-h-[10px]"
         >
           <SortableContext

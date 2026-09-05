@@ -140,7 +140,26 @@ export default function ClientDetail() {
                 Edit Profile
               </button>
               
-              {!client.has_portal_access ? (
+              {client.portal_invite_status === "accepted" ? (
+                <div className="w-full flex items-center justify-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-medium rounded-lg text-emerald-700 bg-emerald-50 mt-3">
+                  <Check className="w-4 h-4 mr-2" />
+                  Portal Access Active
+                </div>
+              ) : client.portal_invite_status === "pending" || client.portal_invite_status === "expired" ? (
+                <button 
+                  onClick={() => {
+                    inviteClientMutation.mutate(id, {
+                      onSuccess: (res) => toast.success(res.detail || "Invitation resent successfully!"),
+                      onError: () => toast.error("Failed to resend invitation.")
+                    });
+                  }}
+                  disabled={inviteClientMutation.isPending}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 mt-3 disabled:opacity-50"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  {inviteClientMutation.isPending ? "Sending..." : "Resend Invitation"}
+                </button>
+              ) : (
                 <button 
                   onClick={() => {
                     inviteClientMutation.mutate(id, {
@@ -154,11 +173,6 @@ export default function ClientDetail() {
                   <UserPlus className="w-4 h-4 mr-2" />
                   {inviteClientMutation.isPending ? "Sending..." : "Invite to Portal"}
                 </button>
-              ) : (
-                <div className="w-full flex items-center justify-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-medium rounded-lg text-emerald-700 bg-emerald-50 mt-3">
-                  <Check className="w-4 h-4 mr-2" />
-                  Portal Access Active
-                </div>
               )}
             </div>
           </div>

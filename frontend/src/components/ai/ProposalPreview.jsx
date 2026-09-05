@@ -4,14 +4,14 @@ import { Loader2, AlertCircle, FileText, Download } from "lucide-react";
 import apiClient from "../../api/client";
 import toast from "react-hot-toast";
 
-export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
-  const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function ProposalPreview({ requestId, initialData, onComplete, onBack, onNext }) {
+  const [data, setData] = useState(initialData || null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState(null);
-  const [editableText, setEditableText] = useState("");
+  const [editableText, setEditableText] = useState(initialData?.proposal_text || "");
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchedRef = useRef(false);
+  const fetchedRef = useRef(!!initialData);
 
   const fetchProposal = async () => {
     setIsLoading(true);
@@ -33,12 +33,19 @@ export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
   };
 
   useEffect(() => {
+    if (initialData) {
+      setData(initialData);
+      setEditableText(initialData.proposal_text);
+      setIsLoading(false);
+      fetchedRef.current = true;
+      return;
+    }
     if (requestId && !fetchedRef.current) {
       fetchedRef.current = true;
       fetchProposal();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId]);
+  }, [requestId, initialData]);
 
   const handleNext = async () => {
     if (!onNext) return;
@@ -69,9 +76,12 @@ export function ProposalPreview({ requestId, onComplete, onBack, onNext }) {
     const blob = new Blob([editableText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
+    a.style.display = "none";
     a.href = url;
     a.download = `proposal_${requestId}.txt`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 

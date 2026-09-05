@@ -90,35 +90,35 @@ export const invoicesApi = {
   // Intelligence — wired to real backend routes
   getRevenueIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_REVENUE_INTELLIGENCE);
-    return response.data;
+    return response.data ?? null;
   },
   getRevenueTopClients: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_REVENUE_TOP_CLIENTS);
-    return response.data;
+    return response.data ?? null;
   },
   getCollectionIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_COLLECTION_INTELLIGENCE);
-    return response.data;
+    return response.data ?? null;
   },
   getCollectionRate: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_COLLECTION_RATE);
-    return response.data;
+    return response.data ?? null;
   },
   getClientIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_CLIENT_INTELLIGENCE);
-    return response.data;
+    return response.data ?? null;
   },
   getClientPaymentBehavior: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_CLIENT_PAYMENT_BEHAVIOR);
-    return response.data;
+    return response.data ?? null;
   },
   getCashFlowIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_CASH_FLOW_INTELLIGENCE);
-    return response.data;
+    return response.data ?? null;
   },
   getRiskIntelligence: async () => {
     const response = await api.get(API_ENDPOINTS.INVOICE_RISK_INTELLIGENCE);
-    return response.data;
+    return response.data ?? null;
   },
 };
 

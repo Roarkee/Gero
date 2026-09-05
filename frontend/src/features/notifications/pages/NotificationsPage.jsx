@@ -100,7 +100,7 @@ export default function NotificationsPage() {
             key={tab.id}
             onClick={() => setFilter(tab.id)}
             className={clsx(
-              "px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2",
+              "shrink-0 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2",
               filter === tab.id
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-gray-200 dark:border-gray-700"
@@ -122,7 +122,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications List */}
-      <div className="flex-1 space-y-3 pb-12">
+      <div className="flex-1 space-y-3 pb-12 overflow-y-auto pr-2">
         {notificationsQuery.isLoading ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-200 dark:border-gray-700">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />

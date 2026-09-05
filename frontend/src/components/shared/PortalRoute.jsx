@@ -13,7 +13,7 @@ export default function PortalRoute({ children }) {
   }
 
   // Allow access if user is marked as client or has access to client portal
-  if (!user?.is_client && !user?.has_client_portal) {
+  if (user && !user.is_client && !user.has_client_portal) {
     return <Navigate to="/dashboard" replace />;
   }
 

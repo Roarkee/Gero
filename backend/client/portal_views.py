@@ -162,7 +162,7 @@ class PortalInvoiceItemSerializer(serializers.ModelSerializer):
 
 class PortalInvoiceSerializer(serializers.ModelSerializer):
     items = PortalInvoiceItemSerializer(many=True, read_only=True)
-    payment_methods = serializers.SerializerMethodField()
+    payment_provider = serializers.SerializerMethodField()
     payments_received = serializers.SerializerMethodField()
 
     class Meta:
@@ -171,13 +171,13 @@ class PortalInvoiceSerializer(serializers.ModelSerializer):
             'id', 'invoice_number', 'title', 'description',
             'subtotal', 'tax_rate', 'tax_amount', 'total_amount',
             'status', 'issue_date', 'due_date', 'paid_date',
-            'items', 'payment_methods', 'payments_received',
+            'items', 'payment_provider', 'payments_received',
         ]
 
-    def get_payment_methods(self, obj):
+    def get_payment_provider(self, obj):
         return [
             {'id': pm.id, 'display_name': pm.display_name, 'provider_type': pm.provider_type}
-            for pm in obj.payment_methods.all()
+            for pm in obj.payment_provider.all()
         ]
 
     def get_payments_received(self, obj):
@@ -449,7 +449,13 @@ class PortalRequestView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
-        client = _client(request.user)
+        client = Client.objects.filter(user_account=request.user).first()
+        if not client:
+            return Response(
+                {"error": "No associated client profile found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+            
         freelancer = client.user
         
         file = request.FILES.get("file")
@@ -466,6 +472,7 @@ class PortalRequestView(APIView):
         from ai.agents.client_request_agent import ClientRequestAgent
         from ai.services.errors import ErrorType
         from .services import ActivityLoggingService
+        import uuid
 
         request_id = uuid.uuid4().hex[:12]
         try:

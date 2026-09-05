@@ -30,7 +30,30 @@ class ClientRequestViewSet(ModelViewSet):
     serializer_class = AIRequestSerializer
     permission_classes = [IsAuthenticated]
 
-    http_method_names = ["get", "post", "head", "options"]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Allow frontend to manually overwrite parsed_output (extraction data)
+        if "parsed_output" in request.data:
+            instance.parsed_output = request.data["parsed_output"]
+            instance.save(update_fields=["parsed_output"])
+            
+        # Also handle regenerate with feedback
+        feedback = request.data.get("feedback")
+        if feedback:
+            agent = ClientRequestAgent()
+            result = agent.extract(instance.raw_input, feedback=feedback, request_id=instance.pk)
+            if result.success:
+                spec = result.data
+                instance.parsed_output = spec.model_dump(mode="json")
+                instance.save(update_fields=["parsed_output"])
+                return Response(instance.parsed_output, status=status.HTTP_200_OK)
+            else:
+                return Response(result.error.to_response_dict(), status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                
+        return Response(instance.parsed_output, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         return AIRequest.objects.filter(user=self.request.user).order_by("-created_at")
@@ -239,11 +262,23 @@ class ScopeAnalysisView(APIView):
 
     def post(self, request):
         request_id = request.data.get("request_id")
+        feedback = request.data.get("feedback", "")
+        manual_edits = request.data.get("manual_edits")
         
         try:
             ai_req = AIRequest.objects.get(id=request_id, user=request.user)
         except AIRequest.DoesNotExist:
             return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if manual_edits:
+            from ai.models import ScopeAnalysisRecord
+            record = ScopeAnalysisRecord.objects.filter(request=ai_req).last()
+            if not record:
+                record = ScopeAnalysisRecord.objects.create(request=ai_req, analysis=manual_edits)
+            else:
+                record.analysis = manual_edits
+                record.save(update_fields=["analysis"])
+            return Response(record.analysis, status=status.HTTP_200_OK)
 
         workflow_task = AIWorkflowTask.objects.create(
             request=ai_req,
@@ -252,7 +287,7 @@ class ScopeAnalysisView(APIView):
         )
         
         service = ScopeService()
-        result = service.analyze(request_id, workflow_task)
+        result = service.analyze(request_id, workflow_task, feedback=feedback)
         
         if result.success:
             return Response(result.data.model_dump(), status=status.HTTP_200_OK)
@@ -265,11 +300,23 @@ class PricingView(APIView):
 
     def post(self, request):
         request_id = request.data.get("request_id")
+        feedback = request.data.get("feedback", "")
+        manual_edits = request.data.get("manual_edits")
         
         try:
             ai_req = AIRequest.objects.get(id=request_id, user=request.user)
         except AIRequest.DoesNotExist:
             return Response({"error": "AIRequest not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if manual_edits:
+            from ai.models import PricingRecord
+            record = PricingRecord.objects.filter(request=ai_req).last()
+            if not record:
+                record = PricingRecord.objects.create(request=ai_req, pricing=manual_edits)
+            else:
+                record.pricing = manual_edits
+                record.save(update_fields=["pricing"])
+            return Response(record.pricing, status=status.HTTP_200_OK)
 
         workflow_task = AIWorkflowTask.objects.create(
             request=ai_req,
@@ -278,7 +325,7 @@ class PricingView(APIView):
         )
         
         service = PricingService()
-        result = service.generate_pricing(request_id, workflow_task)
+        result = service.generate_pricing(request_id, workflow_task, feedback=feedback)
         
         if result.success:
             return Response(result.data.model_dump(), status=status.HTTP_200_OK)

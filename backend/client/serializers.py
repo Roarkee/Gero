@@ -29,6 +29,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
     total_tasks = serializers.SerializerMethodField()
     recent_activities = serializers.SerializerMethodField()
     has_portal_access = serializers.SerializerMethodField()
+    portal_invite_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Client
@@ -40,12 +41,23 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             'last_activity_at', 'health_score', 'health_label', 'engagement_score', 
             'risk_score', 'attention_required', 'dormant_since', 'average_project_value', 
             'client_priority', 'client_segment', 'projects', 'total_projects', 
-            'total_tasks', 'recent_activities', 'has_portal_access'
+            'total_tasks', 'recent_activities', 'has_portal_access', 'portal_invite_status'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'status_changed_at', 'last_activity_at']
 
     def get_has_portal_access(self, obj):
         return obj.user_account_id is not None
+
+    def get_portal_invite_status(self, obj):
+        from .models import ClientInvitation
+        invite = ClientInvitation.objects.filter(client=obj).order_by('-created_at').first()
+        if not invite:
+            return "none"
+        if invite.is_accepted:
+            return "accepted"
+        if invite.is_valid():
+            return "pending"
+        return "expired"
 
     def get_total_projects(self, obj):
         return obj.projects.count()

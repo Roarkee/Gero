@@ -30,8 +30,8 @@ _WAIT_MIN: int = 2
 #: Maximum wait between retries (seconds).
 _WAIT_MAX: int = 30
 
-_DEFAULT_MODEL = "llama-3.3-70b-versatile"
-_FAST_MODEL = "llama-3.1-8b-instant"
+_DEFAULT_MODEL = "openai/gpt-oss-20b"
+_FAST_MODEL = "openai/gpt-oss-20b"
 
 
 def _log_retry(retry_state: RetryCallState) -> None:
@@ -76,8 +76,9 @@ class GroqService:
         ctx = f"[request_id={request_id}] " if request_id else ""
 
         # Map non-Groq model names (e.g. gpt-*, claude-*, gemini-*) to Groq equivalent
+        # Note: Groq's custom enterprise models sometimes use 'gpt-oss' so we shouldn't remap those
         target_model = model
-        if not target_model or any(prefix in target_model.lower() for prefix in ["gpt", "claude", "gemini"]):
+        if not target_model or (any(prefix in target_model.lower() for prefix in ["gpt", "claude", "gemini"]) and "gpt-oss" not in target_model.lower()):
             if "haiku" in target_model.lower() or "mini" in target_model.lower() or "flash" in target_model.lower():
                 target_model = getattr(settings, "GROQ_FAST_MODEL", _FAST_MODEL)
             else:
@@ -99,7 +100,8 @@ class GroqService:
             model=target_model,
             messages=messages,
             temperature=temperature,
-            timeout=60,
+            max_tokens=8000,
+            timeout=180,
         )
 
         output_text: str | None = None

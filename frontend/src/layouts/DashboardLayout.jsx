@@ -28,7 +28,7 @@ const navigation = [
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Invoices", href: "/invoices", icon: FileText },
   { name: "Expenses", href: "/expenses", icon: Receipt },
-  { name: "Notifications", href: "/settings/notifications", icon: Bell },
+  { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

@@ -48,8 +48,8 @@ ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 ANTHROPIC_DEFAULT_MODEL = "claude-sonnet-3-5"
 
 GROQ_API_KEY = env("GROQ_API_KEY", default="")
-GROQ_MODEL = env("GROQ_MODEL", default="llama-3.3-70b-versatile")
-GROQ_FAST_MODEL = env("GROQ_FAST_MODEL", default="llama-3.1-8b-instant")
+GROQ_MODEL = env("GROQ_MODEL", default="openai/gpt-oss-20b")
+GROQ_FAST_MODEL = env("GROQ_FAST_MODEL", default="openai/gpt-oss-20b")
 
 AI_PROVIDER = env("AI_PROVIDER", default="groq")
 
@@ -64,27 +64,27 @@ AI_MAX_SELF_CORRECTION_ATTEMPTS = env.int("AI_MAX_SELF_CORRECTION_ATTEMPTS", def
 
 AI_MODELS = {
     "extraction": {
-        "model": env("AI_EXTRACTION_MODEL", default="llama-3.3-70b-versatile"),
+        "model": env("AI_EXTRACTION_MODEL", default="openai/gpt-oss-20b"),
         "temperature": 0.0,
     },
     "scope": {
-        "model": env("AI_SCOPE_MODEL", default="llama-3.3-70b-versatile"),
+        "model": env("AI_SCOPE_MODEL", default="openai/gpt-oss-20b"),
         "temperature": 0.1,
     },
     "pricing": {
-        "model": env("AI_PRICING_MODEL", default="llama-3.1-8b-instant"),
+        "model": env("AI_PRICING_MODEL", default="openai/gpt-oss-20b"),
         "temperature": 0.0,
     },
     "proposal": {
-        "model": env("AI_PROPOSAL_MODEL", default="llama-3.3-70b-versatile"),
+        "model": env("AI_PROPOSAL_MODEL", default="openai/gpt-oss-120b"),
         "temperature": 0.4,
     },
     "project_generation": {
-        "model": env("AI_PROJECT_GEN_MODEL", default="llama-3.3-70b-versatile"),
+        "model": env("AI_PROJECT_GEN_MODEL", default="openai/gpt-oss-120b"),
         "temperature": 0.2,
     },
     "contract": {
-        "model": env("AI_CONTRACT_MODEL", default="llama-3.3-70b-versatile"),
+        "model": env("AI_CONTRACT_MODEL", default="openai/gpt-oss-120b"),
         "temperature": 0.2,
     },
 }

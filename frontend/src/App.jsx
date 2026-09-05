@@ -138,11 +138,11 @@ function App() {
               <Route path=":expenseId" element={<ExpenseDetail />} />
               <Route path=":expenseId/edit" element={<ExpenseForm />} />
             </Route>
-            <Route path="/notifications" element={<Navigate to="/settings/notifications" replace />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route index element={<Navigate to="/settings/payments" replace />} />
               <Route path="payments" element={<PaymentSettings />} />
-              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="notifications" element={<div className="p-8 text-gray-500">Notification preferences coming soon.</div>} />
             </Route>
           </Route>
 

@@ -10,7 +10,7 @@ class ScopeService:
     def __init__(self):
         self.agent = ScopeAgent()
 
-    def analyze(self, request_id: str, workflow_task: AIWorkflowTask) -> ExtractionResult:
+    def analyze(self, request_id: str, workflow_task: AIWorkflowTask, feedback: str = "") -> ExtractionResult:
         ctx = f"[request_id={request_id}]"
         
         try:
@@ -27,7 +27,7 @@ class ScopeService:
             except Exception:
                 raise Exception("Invalid project specification")
 
-            result = self.agent.analyze(project_spec)
+            result = self.agent.analyze(project_spec, feedback=feedback, request_id=request_id)
 
             if result.success:
                 ScopeAnalysisRecord.objects.create(

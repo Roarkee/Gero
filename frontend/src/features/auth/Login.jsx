@@ -44,7 +44,13 @@ export default function Login() {
 
     if (result.success) {
       toast.success("Welcome back to Gero!");
-      navigate("/dashboard");
+      
+      const user = useAuthStore.getState().user;
+      if (user && user.is_client && !user.is_freelancer) {
+        navigate("/portal");
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       let errorMsg = "Login failed";
       if (typeof result.error === "string") {
@@ -61,8 +67,13 @@ export default function Login() {
   const handleGoogleSuccess = async (credential) => {
     const result = await googleLogin(credential);
     if (result.success) {
-      toast.success("Logged in with Google successfully!");
-      navigate("/dashboard");
+      toast.success("Welcome back to Gero!");
+      const user = useAuthStore.getState().user;
+      if (user && user.is_client && !user.is_freelancer) {
+        navigate("/portal");
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       toast.error(result.error || "Google Sign-In failed.");
     }

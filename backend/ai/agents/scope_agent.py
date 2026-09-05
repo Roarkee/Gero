@@ -14,11 +14,16 @@ class ScopeAgent:
     def analyze(
         self,
         project_spec,
+        feedback: str = "",
         request_id: str = ""
     ):
+        active_prompt = self.prompt
+        if feedback:
+            active_prompt += f"\n\nIMPORTANT FEEDBACK FROM USER:\nThe user rejected your previous output. Please regenerate and incorporate this feedback exactly: {feedback}"
+
         raw = self.llm.generate(
             input=project_spec.model_dump_json(),
-            instructions=self.prompt,
+            instructions=active_prompt,
             model=settings.AI_MODELS["scope"]["model"],
             temperature=settings.AI_MODELS["scope"]["temperature"],
             request_id=request_id
@@ -28,7 +33,7 @@ class ScopeAgent:
         result = ValidationPipeline.run(
             llm_service=self.llm,
             schema_cls=ScopeAnalysis,
-            prompt=self.prompt,
+            prompt=active_prompt,
             raw_response=raw,
             agent_name="ScopeAgent",
             request_id=request_id,

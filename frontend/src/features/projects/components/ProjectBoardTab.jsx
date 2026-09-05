@@ -51,9 +51,17 @@ export default function ProjectBoardTab({ project }) {
     if (!el) return;
 
     const onWheel = (e) => {
-      // Let native horizontal scroll pass through (trackpad two-finger swipe)
+      // Let native horizontal scroll pass through
       if (e.deltaX !== 0) return;
-      // Shift+scroll OR just vertical scroll on the board → convert to horizontal
+
+      // Don't hijack if scrolling vertically inside a list
+      const target = e.target;
+      const isInsideTaskList = target.closest('[data-list-scroll="true"]');
+      if (isInsideTaskList) {
+        return;
+      }
+
+      // Shift+scroll OR just vertical scroll on the board -> convert to horizontal
       if (e.shiftKey || e.deltaY !== 0) {
         e.preventDefault();
         el.scrollLeft += e.deltaY || e.deltaX;

@@ -23,7 +23,7 @@ class PricingAgent:
         self.llm = get_llm_service()
         self.prompt = PRICING_PROMPT
 
-    def analyze(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, request_id: str = "unknown") -> ExtractionResult:
+    def analyze(self, project_spec: ProjectSpecification, scope_analysis: ScopeAnalysis, feedback: str = "", request_id: str = "unknown") -> ExtractionResult:
         ctx = f"[request_id={request_id}] [PricingAgent]"
         
         try:
@@ -37,6 +37,9 @@ class PricingAgent:
             # Prepare prompt with schema
             schema_json = json.dumps(PricingAnalysis.model_json_schema(), indent=2)
             instructions = self.prompt.replace("{schema}", schema_json)
+            
+            if feedback:
+                instructions += f"\n\nIMPORTANT FEEDBACK FROM USER:\nThe user rejected your previous output. Please regenerate and incorporate this feedback exactly: {feedback}"
 
             logger.info("%s Invoking LLM for pricing generation...", ctx)
 

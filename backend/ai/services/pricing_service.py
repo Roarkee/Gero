@@ -11,7 +11,7 @@ class PricingService:
     def __init__(self):
         self.agent = PricingAgent()
 
-    def generate_pricing(self, request_id: str, workflow_task: AIWorkflowTask) -> ExtractionResult:
+    def generate_pricing(self, request_id: str, workflow_task: AIWorkflowTask, feedback: str = "") -> ExtractionResult:
         ctx = f"[request_id={request_id}]"
         
         try:
@@ -19,12 +19,15 @@ class PricingService:
             workflow_task.save(update_fields=["status"])
 
             ai_req = AIRequest.objects.get(id=request_id)
-            scope_record = ScopeAnalysisRecord.objects.get(request=ai_req)
+            scope_record = ScopeAnalysisRecord.objects.filter(request=ai_req).last()
+            
+            if not scope_record:
+                raise Exception("Scope Analysis not found")
             
             project_spec = ProjectSpecification.model_validate(ai_req.parsed_output)
             scope_analysis = ScopeAnalysis.model_validate(scope_record.analysis)
             
-            result = self.agent.analyze(project_spec, scope_analysis, request_id=request_id)
+            result = self.agent.analyze(project_spec, scope_analysis, feedback=feedback, request_id=request_id)
             
             if result.success:
                 PricingRecord.objects.create(

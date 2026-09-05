@@ -46,13 +46,14 @@ class ClientRequestAgent:
     def __init__(self) -> None:
         self.llm = get_llm_service()
 
-    def extract(self, client_message: str, request_id: str = "") -> ExtractionResult:
+    def extract(self, client_message: str, feedback: str = "", request_id: str = "") -> ExtractionResult:
         """
         Extract a structured ProjectSpecification from a raw client message.
 
         Parameters
         ----------
         client_message  : Raw text from InputProcessor.
+        feedback        : Optional user feedback for regeneration.
         request_id      : Correlation ID; one is generated if not provided.
 
         Returns
@@ -95,11 +96,15 @@ class ClientRequestAgent:
             len(sanitized),
         )
 
+        active_prompt = self.prompt
+        if feedback:
+            active_prompt += f"\n\nIMPORTANT FEEDBACK FROM USER:\nThe user rejected your previous output. Please regenerate and incorporate this feedback exactly: {feedback}"
+
         # ── Step 2: Call LLM ──────────────────────────────────────────────────
         try:
             raw = self.llm.generate(
                 input=sanitized,
-                instructions=self.prompt,
+                instructions=active_prompt,
                 temperature=settings.AI_MODELS["extraction"]["temperature"],
                 model=settings.AI_MODELS["extraction"]["model"],
                 request_id=request_id,
@@ -136,7 +141,7 @@ class ClientRequestAgent:
         result = ValidationPipeline.run(
             llm_service=self.llm,
             schema_cls=ProjectSpecification,
-            prompt=self.prompt,
+            prompt=active_prompt,
             raw_response=raw,
             agent_name="ClientRequestAgent",
             request_id=request_id,

@@ -20,8 +20,8 @@ class ProposalService:
             workflow_task.save(update_fields=["status"])
 
             ai_req = AIRequest.objects.get(id=request_id)
-            scope_record = ScopeAnalysisRecord.objects.get(request=ai_req)
-            pricing_record = PricingRecord.objects.get(request=ai_req)
+            scope_record = ScopeAnalysisRecord.objects.filter(request=ai_req).last()
+            pricing_record = PricingRecord.objects.filter(request=ai_req).last()
             
             project_spec = ProjectSpecification.model_validate(ai_req.parsed_output)
             scope_analysis = ScopeAnalysis.model_validate(scope_record.analysis)

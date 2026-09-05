@@ -137,7 +137,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'invoice_number', 'title', 'client_name', 'project_name',
+        fields = ['id', 'invoice_number', 'title', 'client', 'client_name', 'project_name',
                   'total_amount', 'status', 'due_date', 'created_at',
                   'paid_date', 'issue_date', 'payment_provider']
 

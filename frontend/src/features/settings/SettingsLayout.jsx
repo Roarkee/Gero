@@ -1,11 +1,10 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { CreditCard, User, Bell } from "lucide-react";
+import { CreditCard, User } from "lucide-react";
 import { clsx } from "clsx";
 
 const settingsNav = [
-  { name: "Payment Methods", href: "/settings/payments", icon: CreditCard },
+  { name: "Payments", href: "/settings/payments", icon: CreditCard },
   { name: "Profile",         href: "/settings/profile",  icon: User, disabled: true },
-  { name: "Notifications",   href: "/settings/notifications", icon: Bell },
 ];
 
 export default function SettingsLayout() {

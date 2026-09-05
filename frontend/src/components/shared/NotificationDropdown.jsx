@@ -133,7 +133,7 @@ export default function NotificationDropdown({ align = "left" }) {
           </div>
           
           <div className="p-3 border-t border-gray-100 dark:border-gray-800 text-center bg-gray-50 dark:bg-gray-900/50">
-            <Link to="/settings/notifications" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors flex items-center justify-center gap-1">
+            <Link to="/notifications" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors flex items-center justify-center gap-1">
               View All Notifications &rarr;
             </Link>
           </div>

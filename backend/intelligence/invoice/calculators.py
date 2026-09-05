@@ -48,10 +48,13 @@ class CollectionPerformanceCalculator:
     def calculate(avg_collection_days, overdue_ratio):
         score = 100
 
-        if avg_collection_days > 30:
+        avg_days = avg_collection_days or 0
+        ratio = overdue_ratio or 0
+
+        if avg_days > 30:
             score -= 20
 
-        if overdue_ratio > 20:
+        if ratio > 20:
             score -= 30
 
         return {
@@ -69,13 +72,17 @@ class ClientRiskCalculator:
     @staticmethod
     def calculate(client):
         score = 0
-        if client["average_payment_days"] > 30:
+        avg_days = client.get("average_payment_days") or 0
+        overdue_ratio = client.get("overdue_ratio") or 0
+        late_payments = client.get("late_payments") or 0
+
+        if avg_days > 30:
             score += 30
 
-        if client["overdue_ratio"] > 25:
+        if overdue_ratio > 25:
             score += 40
 
-        if client["late_payments"] > 5:
+        if late_payments > 5:
             score += 30
 
         if score >= 70:
