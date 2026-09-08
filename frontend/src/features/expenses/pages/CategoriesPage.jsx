@@ -7,7 +7,7 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import toast from "react-hot-toast";
 
 const formatCurrency = (v) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v ?? 0);
+  new Intl.NumberFormat("en-GH", { style: "currency", currency: 'GHS' }).format(v ?? 0);
 
 export default function CategoriesPage() {
   const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useExpenseCategories();

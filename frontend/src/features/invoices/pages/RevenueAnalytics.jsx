@@ -4,9 +4,9 @@ import RevenueTrendChart from "../components/RevenueTrendChart";
 import { TrendingUp, AlertTriangle } from "lucide-react";
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GHS',
   }).format(amount || 0);
 };
 

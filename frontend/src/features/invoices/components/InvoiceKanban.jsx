@@ -20,9 +20,9 @@ import { FileText, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GHS',
   }).format(amount || 0);
 };
 

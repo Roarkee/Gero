@@ -107,6 +107,8 @@ export default function Board() {
       1,
     );
 
+    let actualDestListIndex = destListIndex;
+
     // If dropped on a task, insert at that position
     if (destListIndex !== -1) {
       newLists[destListIndex].tasks.splice(destTaskIndex, 0, movedTask);
@@ -118,27 +120,30 @@ export default function Board() {
       );
       if (targetListIndex !== -1) {
         newLists[targetListIndex].tasks.push(movedTask);
+        actualDestListIndex = targetListIndex;
       }
     }
 
     // Update state immediately (optimistic)
     setTaskLists(newLists);
 
+    if (actualDestListIndex === -1) return; // Prevent errors if drop target is invalid
+
     // Sync with backend
     try {
-      if (sourceListIndex !== destListIndex) {
+      if (sourceListIndex !== actualDestListIndex) {
         await updateTask.mutateAsync({
           id: activeTaskId,
-          data: { task_list: newLists[destListIndex].id },
+          data: { task_list: newLists[actualDestListIndex].id },
         });
       }
 
       // Update positions
-      const updatePromises = newLists[destListIndex].tasks.map((task, index) =>
+      const updatePromises = newLists[actualDestListIndex].tasks.map((task, index) =>
         updateTask.mutateAsync({ id: task.id, data: { position: index } }),
       );
 
-      if (sourceListIndex !== destListIndex) {
+      if (sourceListIndex !== actualDestListIndex) {
         newLists[sourceListIndex].tasks.forEach((task, index) => {
           updatePromises.push(
             updateTask.mutateAsync({ id: task.id, data: { position: index } }),

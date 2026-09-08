@@ -11,7 +11,7 @@ import CategoryPieChart from "../components/CategoryPieChart";
 import RecentExpensesTable from "../components/RecentExpensesTable";
 
 const formatCurrency = (v) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v ?? 0);
+  new Intl.NumberFormat("en-GH", { style: "currency", currency: 'GHS' }).format(v ?? 0);
 
 export default function ExpensesDashboard() {
   const { monthlyExpenses, categoryExpenses, monthlyTrend, totalCategories, isLoading: dashLoading } = useExpenseDashboard();

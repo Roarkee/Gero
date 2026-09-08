@@ -16,7 +16,7 @@ const statusStyles = {
 };
 
 const fmt = (v) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v || 0);
+  new Intl.NumberFormat("en-GH", { style: "currency", currency: 'GHS' }).format(v || 0);
 
 function InvoiceDetail({ invoiceId, onBack }) {
   const { data: invoice, isLoading } = useQuery({

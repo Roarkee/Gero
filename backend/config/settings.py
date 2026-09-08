@@ -106,6 +106,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',   
     'rest_framework_simplejwt.token_blacklist',
+    'debug_toolbar',
     'corsheaders',
     'channels',
     'celery',
@@ -128,6 +129,7 @@ INSTALLED_APPS = [
 FIELD_ENCRYPTION_KEY=env('FIELD_ENCRYPTION_KEY')
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -137,6 +139,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 
     'payments.middleware.PaymentAuditMiddleware', 
 ]
@@ -177,20 +180,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 ASGI_APPLICATION = 'config.asgi.application'
 
-# CHANNEL_LAYERS ={
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG':{
-#             'hosts':[env('REDIS_URL', default='redis://127.0.0.1:6379/0')]
-#         }
-#     }
-# }
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    },
+CHANNEL_LAYERS ={
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG':{
+            'hosts':[env('REDIS_URL', default='redis://127.0.0.1:6379/0')]
+        }
+    }
 }
+
 
 
 CELERY_BROKER_URL = env('REDIS_URL', default="redis://127.0.0.1:6379/0")

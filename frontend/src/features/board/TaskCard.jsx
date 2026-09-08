@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -7,6 +8,7 @@ import {
   Play,
   Square,
   Timer,
+  Check,
 } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { clsx } from "clsx";
@@ -15,6 +17,7 @@ import {
   useStopTimer,
   useActiveTimer,
 } from "../../api/queries/useTimeTracking";
+import { useUpdateTask } from "../../api/queries/useTasks";
 
 export default function TaskCard({ task, onClick }) {
   const {
@@ -47,8 +50,38 @@ export default function TaskCard({ task, onClick }) {
   const startTimer = useStartTimer();
   const stopTimer = useStopTimer();
 
+  const updateTask = useUpdateTask();
   const isRunning = activeTimer?.task === task.id;
   const isSyncing = String(task.id).startsWith("temp-");
+
+  const handleToggleCompleted = async (e) => {
+    e.stopPropagation();
+    try {
+      await updateTask.mutateAsync({ id: task.id, data: { completed: !task.completed } });
+    } catch {
+      // silently ignore - will revert via react-query
+    }
+  };
+
+  const [elapsedMinutes, setElapsedMinutes] = React.useState(0);
+
+  React.useEffect(() => {
+    let interval;
+    if (isRunning && activeTimer?.start_time) {
+      const start = new Date(activeTimer.start_time).getTime();
+      const calculate = () => {
+        const now = new Date().getTime();
+        setElapsedMinutes(Math.floor((now - start) / 60000));
+      };
+      calculate(); // Initial calculation
+      interval = setInterval(calculate, 60000);
+    } else {
+      setElapsedMinutes(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, activeTimer]);
+
+  const displayMinutes = (task.total_minutes || 0) + elapsedMinutes;
 
   const handleTimerClick = (e) => {
     e.stopPropagation(); // Prevent opening modal
@@ -105,9 +138,28 @@ export default function TaskCard({ task, onClick }) {
       </div>
 
       {/* Title */}
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2 leading-snug">
-        {task.title}
-      </h4>
+      <div className="flex items-start gap-2 mb-2">
+        <button
+          onClick={handleToggleCompleted}
+          className={clsx(
+            "mt-0.5 w-4 h-4 rounded-sm border-2 flex items-center justify-center flex-shrink-0 transition-colors",
+            task.completed
+              ? "bg-emerald-500 border-emerald-500 text-white"
+              : "border-gray-300 dark:border-gray-500 hover:border-emerald-500"
+          )}
+          title={task.completed ? "Mark as incomplete" : "Mark as complete"}
+        >
+          {task.completed && <Check className="w-3 h-3" strokeWidth={3} />}
+        </button>
+        <h4 className={clsx(
+          "text-sm font-medium leading-snug",
+          task.completed
+            ? "line-through text-gray-400 dark:text-gray-500"
+            : "text-gray-900 dark:text-white"
+        )}>
+          {task.title}
+        </h4>
+      </div>
 
       {/* Meta Info */}
       <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
@@ -149,7 +201,7 @@ export default function TaskCard({ task, onClick }) {
         )}
 
         {/* Total Time */}
-        {(task.total_minutes > 0 || isRunning) && (
+        {(displayMinutes > 0 || isRunning) && (
           <div
             className={clsx(
               "flex items-center gap-1",
@@ -158,8 +210,8 @@ export default function TaskCard({ task, onClick }) {
           >
             <Timer className="w-3.5 h-3.5" />
             <span>
-              {Math.floor((task.total_minutes || 0) / 60)}h{" "}
-              {(task.total_minutes || 0) % 60}m{isRunning && " (Active)"}
+              {Math.floor(displayMinutes / 60)}h{" "}
+              {displayMinutes % 60}m{isRunning && " (Active)"}
             </span>
           </div>
         )}

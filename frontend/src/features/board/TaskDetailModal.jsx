@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
+import LabelPopover from "./LabelPopover";
+import { useProject } from "../../api/queries/useProjects";
 import { useUpdateTask, useDeleteTask } from "../../api/queries/useTasks";
 import {
   useCreateSubtask,
@@ -19,6 +21,7 @@ import {
   Timer,
   Play,
   Square,
+  Check,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -70,9 +73,6 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
   const [description, setDescription] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isLabelMenuOpen, setIsLabelMenuOpen] = useState(false);
-  const [newLabelName, setNewLabelName] = useState("");
-  const [newLabelColor, setNewLabelColor] = useState("#3b82f6"); // Default blue
 
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
@@ -81,6 +81,29 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
   const deleteSubtask = useDeleteSubtask();
   const { data: allLabels } = useLabels();
   const createLabel = useCreateLabel();
+  const { data: project } = useProject(projectId);
+  const { data: activeTimer } = useActiveTimer();
+
+  const isRunning = activeTimer?.task === task?.id;
+  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (isRunning && activeTimer?.start_time) {
+      const start = new Date(activeTimer.start_time).getTime();
+      const calculate = () => {
+        const now = new Date().getTime();
+        setElapsedMinutes(Math.floor((now - start) / 60000));
+      };
+      calculate(); // Initial
+      interval = setInterval(calculate, 60000);
+    } else {
+      setElapsedMinutes(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, activeTimer]);
+
+  const displayMinutes = (task?.total_minutes || 0) + elapsedMinutes;
 
   // Sync state with task prop
   useEffect(() => {
@@ -93,6 +116,19 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
   if (!task) return null;
 
   const isSyncing = String(task.id).startsWith("temp-");
+
+  const handleUpdateList = async (newListId) => {
+    if (isSyncing) return;
+    const newListIdNum = Number(newListId);
+    if (newListIdNum !== task.task_list) {
+      try {
+        await updateTask.mutateAsync({ id: task.id, data: { task_list: newListIdNum } });
+        toast.success("Task moved");
+      } catch (error) {
+        toast.error("Failed to move task");
+      }
+    }
+  };
 
   const handleUpdateTitle = async () => {
     if (isSyncing) {
@@ -156,21 +192,6 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
       toast.success("Subtask deleted");
     } catch (error) {
       toast.error("Failed to delete subtask");
-    }
-  };
-
-  const handleCreateLabel = async () => {
-    if (!newLabelName.trim()) return;
-    try {
-      await createLabel.mutateAsync({
-        name: newLabelName,
-        color: newLabelColor,
-        project: projectId,
-      });
-      setNewLabelName("");
-      toast.success("Label created");
-    } catch (error) {
-      toast.error("Failed to create label");
     }
   };
 
@@ -244,12 +265,24 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                           {task.title}
                         </h2>
                       )}
-                      <p className="text-sm text-gray-500 mt-1 px-2 -ml-2">
-                        in list{" "}
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">
-                          {task.task_list_name || "Unknown List"}
-                        </span>
-                      </p>
+                      <div className="flex items-center text-sm text-gray-500 mt-1 px-2 -ml-2 gap-2">
+                        in list
+                        <select
+                          className="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-emerald-500 focus:border-emerald-500 block p-1 font-medium transition-colors"
+                          value={task.task_list || ""}
+                          onChange={(e) => handleUpdateList(e.target.value)}
+                          disabled={isSyncing || !project?.task_lists}
+                        >
+                          {!project?.task_lists && (
+                            <option value={task.task_list}>{task.task_list_name || "Unknown List"}</option>
+                          )}
+                          {project?.task_lists?.map((list) => (
+                            <option key={list.id} value={list.id}>
+                              {list.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <button
                       onClick={onClose}
@@ -361,7 +394,7 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                         <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                           Labels
                         </h4>
-                        <div className="flex flex-wrap gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           {task.labels?.map((label) => (
                             <span
                               key={label.id}
@@ -371,91 +404,23 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                               {label.name}
                             </span>
                           ))}
-                          <button
-                            onClick={() => setIsLabelMenuOpen(!isLabelMenuOpen)}
-                            className="h-6 w-6 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-500 transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+                          <LabelPopover 
+                            allLabels={allLabels?.filter(l => l.project === projectId || l.project.id === projectId) || []}
+                            selectedLabels={task.labels?.map(l => l.id) || []}
+                            onToggleLabel={toggleLabel}
+                            onCreateLabel={async (data) => {
+                              await createLabel.mutateAsync({
+                                ...data,
+                                project: projectId,
+                              });
+                            }}
+                            triggerNode={
+                              <button className="h-6 w-6 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-500 transition-colors">
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            }
+                          />
                         </div>
-
-                        {/* Label Popover (Simplified inline for MVP) */}
-                        {isLabelMenuOpen && (
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 absolute z-10 w-64 animate-in fade-in zoom-in-95 duration-200">
-                            <h5 className="text-sm font-semibold mb-2">
-                              Labels
-                            </h5>
-                            <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar mb-3">
-                              {allLabels
-                                ?.filter(
-                                  (l) =>
-                                    l.project === projectId ||
-                                    l.project.id === projectId,
-                                )
-                                .map((label) => {
-                                  const isActive = task.labels?.some(
-                                    (tl) => tl.id === label.id,
-                                  );
-                                  return (
-                                    <div
-                                      key={label.id}
-                                      onClick={() => toggleLabel(label)}
-                                      className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
-                                    >
-                                      <div
-                                        className="w-4 h-4 rounded-sm"
-                                        style={{ backgroundColor: label.color }}
-                                      />
-                                      <span className="text-sm flex-1">
-                                        {label.name}
-                                      </span>
-                                      {isActive && (
-                                        <CheckSquare className="w-4 h-4 text-indigo-500" />
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                            <div className="border-t border-gray-100 dark:border-gray-700 pt-2">
-                              <input
-                                placeholder="New label name"
-                                className="w-full text-xs p-1.5 rounded border border-gray-200 dark:border-gray-600 mb-2"
-                                value={newLabelName}
-                                onChange={(e) =>
-                                  setNewLabelName(e.target.value)
-                                }
-                              />
-                              <div className="flex gap-1 mb-2">
-                                {[
-                                  "#ef4444",
-                                  "#eab308",
-                                  "#22c55e",
-                                  "#3b82f6",
-                                  "#a855f7",
-                                ].map((color) => (
-                                  <button
-                                    key={color}
-                                    onClick={() => setNewLabelColor(color)}
-                                    className={clsx(
-                                      "w-5 h-5 rounded-full border-2",
-                                      newLabelColor === color
-                                        ? "border-gray-400"
-                                        : "border-transparent",
-                                    )}
-                                    style={{ backgroundColor: color }}
-                                  />
-                                ))}
-                              </div>
-                              <Button
-                                size="sm"
-                                className="w-full text-xs"
-                                onClick={handleCreateLabel}
-                              >
-                                Create
-                              </Button>
-                            </div>
-                          </div>
-                        )}
                       </div>
 
                       {/* Meta Info */}
@@ -491,8 +456,8 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                             <Timer className="w-4 h-4 text-gray-400" />
                             <span>
                               Total:{" "}
-                              {Math.floor((task.total_minutes || 0) / 60)}h{" "}
-                              {(task.total_minutes || 0) % 60}m
+                              {Math.floor(displayMinutes / 60)}h{" "}
+                              {displayMinutes % 60}m{isRunning && " (Active)"}
                             </span>
                           </div>
                           <div className="pt-2">
@@ -501,7 +466,27 @@ export default function TaskDetailModal({ isOpen, onClose, task, projectId }) {
                         </div>
                       </div>
 
-                      <div className="pt-6 mt-6 border-t border-gray-100 dark:border-gray-700">
+                      <div className="pt-6 mt-6 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                        <Button
+                          variant="ghost"
+                          className={clsx(
+                            "w-full justify-start",
+                            task.completed
+                              ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              : "text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                          )}
+                          onClick={async () => {
+                            try {
+                              await updateTask.mutateAsync({ id: task.id, data: { completed: !task.completed } });
+                              toast.success(task.completed ? "Task marked as incomplete" : "Task marked as complete");
+                            } catch {
+                              toast.error("Failed to update task");
+                            }
+                          }}
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          {task.completed ? "Mark as Incomplete" : "Mark as Complete"}
+                        </Button>
                         <Button
                           variant="ghost"
                           className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 justify-start"

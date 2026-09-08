@@ -124,3 +124,16 @@ export const useInviteClient = () => {
     },
   });
 };
+
+export const useDismissAttention = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clientApi.dismissAttention,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: clientKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.clientIntelligence(id) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: clientKeys.dashboardIntelligence() });
+    },
+  });
+};

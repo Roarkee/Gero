@@ -116,14 +116,14 @@ export default function ClientsDashboard() {
             </h2>
             <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-4">
               {revenue?.top_clients?.map((c, i) => (
-                <div key={c.id} className="flex justify-between items-center">
+                <div key={c.client_id || c.id || i} className="flex justify-between items-center">
                   <div className="flex items-center">
                     <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 mr-3">
                       {i + 1}
                     </div>
-                    <span className="text-sm font-medium">{c.name}</span>
+                    <span className="text-sm font-medium">{c.client__name || c.name}</span>
                   </div>
-                  <span className="text-sm font-semibold">${c.lifetime_value?.toLocaleString()}</span>
+                  <span className="text-sm font-semibold">GH₵{Number(c.total || c.lifetime_value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               ))}
             </div>

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { useExpenses, useCreateExpense, useDeleteExpense, useExpenseCategories } from "../../../api/queries/useExpenses";
 
 const fmt = (v) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v ?? 0);
+  new Intl.NumberFormat("en-GH", { style: "currency", currency: 'GHS' }).format(v ?? 0);
 
 export default function ProjectBudgetTab({ project }) {
   const { budgetQuery, profitabilityQuery } = useProjectIntelligence(project.id);
@@ -170,7 +170,7 @@ export default function ProjectBudgetTab({ project }) {
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-300">Budget Amount</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">GH₵</span>
               <input
                 type="number"
                 min="0"

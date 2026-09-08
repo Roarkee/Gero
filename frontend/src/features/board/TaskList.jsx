@@ -4,6 +4,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import TaskCard from "./TaskCard";
+import LabelPopover from "./LabelPopover";
 import { useState } from "react";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import {
@@ -11,7 +12,7 @@ import {
   useDeleteTaskList,
   useUpdateTaskList,
 } from "../../api/queries/useTasks";
-import { useLabels } from "../../api/queries/useLabels";
+import { useLabels, useCreateLabel } from "../../api/queries/useLabels";
 import toast from "react-hot-toast";
 import {
   Plus,
@@ -38,6 +39,7 @@ export default function TaskList({ list, projectId, onTaskClick }) {
   const deleteTaskList = useDeleteTaskList();
   const updateTaskList = useUpdateTaskList();
   const { data: allLabels } = useLabels();
+  const createLabelMutation = useCreateLabel();
 
   const handleRename = async () => {
     if (!listName.trim() || listName === list.name) {
@@ -207,25 +209,43 @@ export default function TaskList({ list, projectId, onTaskClick }) {
                 </div>
               </div>
 
-              {projectLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {projectLabels.map((label) => (
-                    <button
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                {selectedLabels.map(id => {
+                  const label = projectLabels.find(l => l.id === id);
+                  if (!label) return null;
+                  return (
+                    <span
                       key={label.id}
-                      onClick={() => {
-                        if (selectedLabels.includes(label.id)) {
-                          setSelectedLabels(selectedLabels.filter((id) => id !== label.id));
-                        } else {
-                          setSelectedLabels([...selectedLabels, label.id]);
-                        }
-                      }}
-                      className={`h-1.5 w-6 rounded-full transition-all ring-1 ${selectedLabels.includes(label.id) ? "ring-offset-1 ring-indigo-500 scale-110" : "ring-transparent opacity-60 hover:opacity-100"}`}
+                      className="px-2 py-0.5 rounded text-[10px] font-semibold text-white flex items-center shadow-sm"
                       style={{ backgroundColor: label.color }}
-                      title={label.name}
-                    />
-                  ))}
-                </div>
-              )}
+                    >
+                      {label.name}
+                    </span>
+                  );
+                })}
+                <LabelPopover 
+                  allLabels={projectLabels}
+                  selectedLabels={selectedLabels}
+                  onToggleLabel={(label) => {
+                    if (selectedLabels.includes(label.id)) {
+                      setSelectedLabels(selectedLabels.filter((id) => id !== label.id));
+                    } else {
+                      setSelectedLabels([...selectedLabels, label.id]);
+                    }
+                  }}
+                  onCreateLabel={async (data) => {
+                    await createLabelMutation.mutateAsync({
+                      ...data,
+                      project: projectId,
+                    });
+                  }}
+                  triggerNode={
+                    <button className="h-5 w-5 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center text-gray-500 transition-colors">
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  }
+                />
+              </div>
 
               <div className="flex gap-2 pt-1">
                 <button

@@ -57,3 +57,8 @@ export const inviteClient = async (id) => {
   const response = await apiClient.post(API_ENDPOINTS.CLIENT_INVITE(id));
   return response.data;
 };
+
+export const dismissAttention = async (id) => {
+  const response = await apiClient.post(API_ENDPOINTS.CLIENT_DISMISS_ATTENTION(id));
+  return response.data;
+};

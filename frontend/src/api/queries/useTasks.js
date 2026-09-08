@@ -86,9 +86,16 @@ export const useUpdateTask = () => {
           ...old,
           task_lists: old.task_lists.map(list => ({
             ...list,
-            tasks: list.tasks.map(task => 
-              task.id === id ? { ...task, ...data } : task
-            )
+            tasks: list.tasks.map(task => {
+              if (task.id === id) {
+                const updatedTask = { ...task, ...data };
+                if (data.labels) {
+                  updatedTask.labels = data.labels.map(labelId => old.labels?.find(l => l.id === labelId)).filter(Boolean);
+                }
+                return updatedTask;
+              }
+              return task;
+            })
           }))
         };
       });

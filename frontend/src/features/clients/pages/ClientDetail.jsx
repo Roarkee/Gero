@@ -6,7 +6,8 @@ import {
   useClientActivities,
   useUpdateClient,
   useCreateClientActivity,
-  useInviteClient
+  useInviteClient,
+  useDismissAttention
 } from "../hooks/useClients";
 import { StatusBadge } from "../components/StatusBadge";
 import { HealthIndicator } from "../components/HealthIndicator";
@@ -35,6 +36,15 @@ export default function ClientDetail() {
   const updateClientMutation = useUpdateClient();
   const createActivityMutation = useCreateClientActivity();
   const inviteClientMutation = useInviteClient();
+  const dismissAttentionMutation = useDismissAttention();
+
+  const handleDismissAttention = () => {
+    dismissAttentionMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Attention required cleared");
+      }
+    });
+  };
 
   const handleSaveNote = () => {
     updateClientMutation.mutate({ id, note: noteContent }, {
@@ -124,9 +134,18 @@ export default function ClientDetail() {
             <div className="mt-6 pt-6 border-t border-gray-100 space-y-4">
               <HealthIndicator score={client.health_score} label={client.health_label} className="w-full justify-center" />
               {client.attention_required && (
-                <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex items-start border border-red-100">
-                  <AlertCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
-                  Needs immediate attention
+                <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm flex flex-col items-start border border-red-100">
+                  <div className="flex items-center w-full">
+                    <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+                    Needs immediate attention
+                  </div>
+                  <button
+                    onClick={handleDismissAttention}
+                    disabled={dismissAttentionMutation.isPending}
+                    className="mt-2 w-full text-center px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded-md text-xs font-medium transition-colors"
+                  >
+                    {dismissAttentionMutation.isPending ? "Resolving..." : "Dismiss"}
+                  </button>
                 </div>
               )}
             </div>

@@ -118,6 +118,27 @@ class ClientViewSet(viewsets.ModelViewSet):
         return Response({'status': 'success', 'next_followup_at': next_followup_at})
 
     @action(detail=True, methods=['post'])
+    def dismiss_attention(self, request, pk=None):
+        """Resolves attention items by updating last_contacted_at and clearing next_followup_at."""
+        from django.utils import timezone
+        
+        client = self.get_object()
+        client.last_contacted_at = timezone.now()
+        client.next_followup_at = None
+        client.save(update_fields=['last_contacted_at', 'next_followup_at'])
+        
+        # Log this explicitly so there is a record
+        from .services import ActivityLoggingService
+        ActivityLoggingService.log_activity(
+            client=client,
+            user=request.user,
+            activity_type='meeting',  # using meeting or call just to act as contact
+            description="Attention manually resolved by user."
+        )
+        
+        return Response({'status': 'success', 'message': 'Attention resolved.'})
+
+    @action(detail=True, methods=['post'])
     def invite_client(self, request, pk=None):
         """Sends an invitation email to the client to join the portal."""
         from django.contrib.auth import get_user_model

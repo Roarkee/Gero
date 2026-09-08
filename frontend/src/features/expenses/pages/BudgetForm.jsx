@@ -199,7 +199,7 @@ export default function BudgetForm() {
             Budget Amount <span className="text-rose-500">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">GH₵</span>
             <input
               type="number"
               step="0.01"

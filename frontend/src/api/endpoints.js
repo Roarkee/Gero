@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   CLIENT_DETAIL_INTELLIGENCE: (id) => `/api/clients/${id}/intelligence/`,
   CLIENT_ACTIVITIES: (id) => `/api/clients/${id}/activities/`,
   CLIENT_INVITE: (id) => `/api/clients/${id}/invite_client/`,
+  CLIENT_DISMISS_ATTENTION: (id) => `/api/clients/${id}/dismiss_attention/`,
 
   // Time Tracking
   TIME_ENTRIES: "/api/time-entries/",

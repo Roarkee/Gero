@@ -151,7 +151,7 @@ class InvoiceSelector:
         return (self.queryset.filter(status = 'paid')
               .values('client_id', 'client__name')
               .annotate( total = Sum('total_amount'))
-              ).order_by('total')
+              ).order_by('-total')
 
 
     def get_aging_receivables(self):

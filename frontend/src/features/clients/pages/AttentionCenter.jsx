@@ -1,10 +1,12 @@
 import React from "react";
-import { useDashboardIntelligence } from "../hooks/useClients";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { useDashboardIntelligence, useDismissAttention } from "../hooks/useClients";
+import { AlertTriangle, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function AttentionCenter() {
   const { data, isLoading, error } = useDashboardIntelligence();
+  const dismissAttentionMutation = useDismissAttention();
 
   if (isLoading) {
     return <div className="p-8 text-gray-500 animate-pulse">Loading Attention Center...</div>;
@@ -15,6 +17,14 @@ export default function AttentionCenter() {
   }
 
   const { attention_items } = data || {};
+
+  const handleDismiss = (id) => {
+    dismissAttentionMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Attention required cleared");
+      }
+    });
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-6">
@@ -55,13 +65,23 @@ export default function AttentionCenter() {
                 </div>
               </div>
               
-              <Link 
-                to={`/clients/${item.id}`}
-                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 shrink-0"
-              >
-                Resolve
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <button
+                  onClick={() => handleDismiss(item.id)}
+                  disabled={dismissAttentionMutation.isPending}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <Check className="mr-2 w-4 h-4" />
+                  Dismiss
+                </button>
+                <Link 
+                  to={`/clients/${item.id}`}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700"
+                >
+                  View Client
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
             </div>
           ))}
         </div>

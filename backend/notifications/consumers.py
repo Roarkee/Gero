@@ -34,7 +34,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         #using channellayer.group_send method is my view or signal if i create one
 
         await self.send(text_data=json.dumps({
-            'type': event.get('type', 'notification'),
+            'type': event.get('notification_type'),
             'title': event.get('title', 'New Notification'),
             'message': event.get('message', ''),
             'extra': event.get('extra', {})

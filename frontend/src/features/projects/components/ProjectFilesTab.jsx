@@ -20,9 +20,13 @@ export default function ProjectFilesTab({ project }) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("project", project.id);
+    formData.append("file_name", file.name);
 
     try {
       await createAttachment.mutateAsync(formData);
+    } catch (err) {
+      console.error("Upload failed:", err?.response?.data || err.message);
+      alert("Upload failed: " + (err?.response?.data?.detail || err?.response?.data?.file?.[0] || err.message || "Unknown error"));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

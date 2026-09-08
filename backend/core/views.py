@@ -14,10 +14,18 @@ from invoices.models import Invoice, InvoicePayment
 from expenses.models import Expense
 from client.models import Client, ClientActivity
 
-class DashboardAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+from django.db import connection
+import time
 
-    def get(self, request):
+
+
+class DashboardAPIView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+
+
+    def get(self, request,*args,**kwargs):
+        start = time.perf_counter()
         user = request.user
         now = timezone.now()
         today = now.date()
@@ -166,6 +174,25 @@ class DashboardAPIView(APIView):
                 'hours_logged': str(logged_hours),
                 'status': proj.status
             })
+
+
+        elapsed = time.perf_counter() - start
+
+        sql_time = sum(
+            float(query["time"])
+            for query in connection.queries
+        )
+
+        print("\n========== DASHBOARD PERFORMANCE ==========")
+        print(f"Total time: {elapsed:.3f}s")
+        print(f"SQL queries: {len(connection.queries)}")
+        print(f"SQL time: {sql_time:.3f}s")
+
+        for i, query in enumerate(connection.queries, 1):
+            print(f"\n--- Query {i} ({query['time']}s) ---")
+            print(query["sql"])
+
+        print("===========================================\n")
 
         return Response({
             'kpis': {

@@ -7,7 +7,7 @@ import BudgetProgressBar from "../components/BudgetProgressBar";
 import RecentExpensesTable from "../components/RecentExpensesTable";
 
 const formatCurrency = (v) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v ?? 0);
+  new Intl.NumberFormat("en-GH", { style: "currency", currency: 'GHS' }).format(v ?? 0);
 
 const PERIOD_LABELS = {
   daily: "Daily", weekly: "Weekly", fortnightly: "Fortnightly",

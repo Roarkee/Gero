@@ -19,7 +19,7 @@ def send_notifications_task(notification_id):
     '''
     from .models import Notification
     try:
-        notification = Notification.objects.get(id=notification_id)
+        notification = Notification.objects.select_related('user').get(id=notification_id)
     except Notification.DoesNotExist:
         return
     channel_layer= get_channel_layer()
@@ -30,7 +30,7 @@ def send_notifications_task(notification_id):
             "type": "notify",
             "title": notification.title,
             "message": notification.message,
-            "noti_type": notification.type,
+            "notification_type": notification.type,
             "extra":{
                 "action_url": notification.action_url,
                 "id": notification.id

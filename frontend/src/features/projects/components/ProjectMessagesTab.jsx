@@ -5,7 +5,8 @@ import { format } from "date-fns";
 import apiClient from "../../../api/client";
 import { API_ENDPOINTS } from "../../../api/endpoints";
 
-export default function ProjectMessagesTab({ projectId }) {
+export default function ProjectMessagesTab({ project }) {
+  const projectId = project?.id;
   const queryClient = useQueryClient();
   const [body, setBody] = useState("");
   const bottomRef = useRef(null);

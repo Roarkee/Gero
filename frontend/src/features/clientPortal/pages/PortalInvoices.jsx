@@ -68,7 +68,7 @@ export default function PortalInvoices() {
                   
                   <div className="flex flex-col sm:items-end">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                      ${parseFloat(invoice.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      GH₵{parseFloat(invoice.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       Due {format(new Date(invoice.due_date), "MMM d, yyyy")}

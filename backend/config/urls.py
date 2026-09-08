@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
-
+from django.conf import settings
 def api_root(request):
     return JsonResponse({
         'message': 'Gero API is running!',
@@ -51,3 +51,8 @@ urlpatterns = [
     path('api/', include('core.urls')), # core urls
     path('api/ai/', include('ai.urls'))
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path("__debug__/", include("debug_toolbar.urls")),
+    ]

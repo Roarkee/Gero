@@ -112,7 +112,11 @@ export const projectsApi = {
     return data;
   },
   createAttachment: async (formData) => {
-    const { data } = await apiClient.post(API_ENDPOINTS.ATTACHMENTS, formData);
+    const { data } = await apiClient.post(API_ENDPOINTS.ATTACHMENTS, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return data;
   },
   deleteAttachment: async (id) => {

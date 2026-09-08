@@ -59,12 +59,12 @@ export default function PortalDashboard() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl">
-              <span className="font-bold text-lg">$</span>
+              <span className="font-bold text-lg">GH₵</span>
             </div>
             <h3 className="font-medium text-gray-900 dark:text-gray-100">Total Outstanding</h3>
           </div>
           <div className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">
-            ${(dashboardData.total_outstanding || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+            GH₵{(dashboardData.total_outstanding || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
         </div>
         

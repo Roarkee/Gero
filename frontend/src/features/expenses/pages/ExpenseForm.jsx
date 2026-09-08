@@ -168,7 +168,7 @@ export default function ExpenseForm() {
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Amount" required error={errors.amount}>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">GH₵</span>
               <input
                 type="number"
                 step="0.01"
