@@ -18,6 +18,8 @@ import {
   Bell,
 } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
+import { useNotificationWebSocket } from "../api/queries/useNotificationWebSocket";
+
 import { clsx } from "clsx";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
 
@@ -37,6 +39,9 @@ export default function DashboardLayout() {
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuthStore();
+
+  // Connect to real-time notification WebSocket
+  useNotificationWebSocket();
 
   return (
     <div className="h-screen bg-[#F8F9FC] dark:bg-[#0B0F19] overflow-hidden flex font-sans">

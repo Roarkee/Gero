@@ -11,8 +11,8 @@ export const useNotifications = () => {
       const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS);
       return response.data || [];
     },
-    // Poll every 15 seconds
-    refetchInterval: 15000,
+    // Poll every 60s as fallback (WebSocket handles real-time updates)
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
   });
 
@@ -22,8 +22,8 @@ export const useNotifications = () => {
       const response = await apiClient.get(API_ENDPOINTS.NOTIFICATIONS_UNREAD_COUNT);
       return response.data || { unread_notifications: 0 };
     },
-    // Poll every 15 seconds
-    refetchInterval: 15000,
+    // Poll every 60s as fallback (WebSocket handles real-time updates)
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
   });
 

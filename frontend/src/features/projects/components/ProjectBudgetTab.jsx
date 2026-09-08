@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useProjects } from "../hooks/useProjects";
 import { useProjectIntelligence } from "../hooks/useProjectIntelligence";
-import { DollarSign, PieChart as PieChartIcon, TrendingDown, Edit2, Trash2, Plus, X, Save } from "lucide-react";
+import { Wallet, PieChart as PieChartIcon, TrendingDown, Edit2, Trash2, Plus, X, Save } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import toast from "react-hot-toast";
 import { useExpenses, useCreateExpense, useDeleteExpense, useExpenseCategories } from "../../../api/queries/useExpenses";
@@ -95,7 +95,7 @@ export default function ProjectBudgetTab({ project }) {
         <div className="p-6 max-w-5xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-12 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center mb-4">
-              <DollarSign className="w-8 h-8 text-primary-500" />
+              <Wallet className="w-8 h-8 text-primary-500" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
               No budget set
@@ -226,7 +226,7 @@ export default function ProjectBudgetTab({ project }) {
                 </h3>
               </div>
               <div className={`p-3 rounded-lg ${isOverBudget ? "bg-red-50 dark:bg-red-900/30" : "bg-emerald-50 dark:bg-emerald-900/30"}`}>
-                <DollarSign className={`w-6 h-6 ${isOverBudget ? "text-red-500" : "text-emerald-500"}`} />
+                <Wallet className={`w-6 h-6 ${isOverBudget ? "text-red-500" : "text-emerald-500"}`} />
               </div>
             </div>
           </div>

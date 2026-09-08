@@ -125,7 +125,8 @@ class ClientViewSet(viewsets.ModelViewSet):
         client = self.get_object()
         client.last_contacted_at = timezone.now()
         client.next_followup_at = None
-        client.save(update_fields=['last_contacted_at', 'next_followup_at'])
+        client.attention_required = False
+        client.save(update_fields=['last_contacted_at', 'next_followup_at', 'attention_required'])
         
         # Log this explicitly so there is a record
         from .services import ActivityLoggingService
