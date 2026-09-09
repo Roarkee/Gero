@@ -97,6 +97,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacteri
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -170,6 +171,25 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20
 }
 
+# Redis Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env(
+            "REDIS_CACHE_URL",
+            default="redis://127.0.0.1:6379/1"
+        ),
+    }
+}
+
+CACHE_TIMEOUTS = {
+    "dashboard": 300,       # 5 minutes
+    "project": 300,         # 5 minutes
+    "budget": 300,          # 5 minutes
+    "notifications": 60,    # 1 minute
+    "client_intelligence": 3600,  # 1 hour
+}
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
@@ -204,22 +224,20 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'notifications.tasks.notify_invoice_overdue',
         'schedule': crontab(hour=0, minute=0), 
     },
-    'notify_budget_exceeded':{
-        'task': 'notifications.tasks.notify_budget_exceeded',
+  
+    'notify_budget_status':{
+        'task': 'notifications.tasks.notify_budget_status',
         'schedule': crontab(hour=0, minute=0),
     },
-    'notify_budget_warning':{
-        'task': 'notifications.tasks.notify_budget_warning',
-        'schedule': crontab(hour=0, minute=0),
-    },
-    'notify_project_deadline':{
-        'task': 'notifications.tasks.notify_project_deadline',
+    'notify_task_deadline':{
+        'task': 'notifications.tasks.notify_task_deadline',
         'schedule': crontab(hour=0, minute=0),
     },
     'update_client_intelligence': {
         'task': 'client.tasks.update_client_intelligence_daily',
         'schedule': crontab(hour=1, minute=0), # Run daily at 1 AM
-    }
+    },
+    
 }
 
 

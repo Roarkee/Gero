@@ -15,6 +15,8 @@ from expenses.models import Expense
 from client.models import Client, ClientActivity
 
 from django.db import connection
+from core.cache_keys import CacheKeys
+from core.services import CacheService
 import time
 
 
@@ -25,6 +27,10 @@ class DashboardAPIView(APIView):
 
 
     def get(self, request,*args,**kwargs):
+        cache_key = CacheKeys.dashboard_stats(request.user.id)
+        cached_data = CacheService.get(cache_key)
+        if cached_data:
+            return Response(cached_data)
         start = time.perf_counter()
         user = request.user
         now = timezone.now()
@@ -194,7 +200,7 @@ class DashboardAPIView(APIView):
 
         print("===========================================\n")
 
-        return Response({
+        data = {
             'kpis': {
                 'active_projects': active_projects,
                 'active_clients': active_clients,
@@ -215,4 +221,6 @@ class DashboardAPIView(APIView):
                 'outstanding_invoice_breakdown': {k: str(v) for k, v in breakdown_dict.items()}
             },
             'project_health': project_health_list
-        })
+        }
+        CacheService.set(cache_key, data, timeout=600)
+        return Response(data)

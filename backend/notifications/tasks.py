@@ -7,8 +7,11 @@ from projects.models import Task
 from expenses.models import Expense,Budget
 from .models import Notification
 from django.urls import reverse
+from decimal import Decimal
+from .services import create_notification
 
 
+'''will add notifications for the intelligence reports'''
 
 @shared_task
 def send_notifications_task(notification_id):
@@ -45,7 +48,7 @@ def notify_invoice_overdue():
     and pushes the notification to the user. it is scheduled to run at midnight
     every day
     '''
-    now = timezone.now()
+    now = timezone.now().date()
     overdue_invoices = Invoice.objects.filter(
         status = 'overdue',
         due_date__lt = now,
@@ -53,15 +56,15 @@ def notify_invoice_overdue():
 
     for invoice in overdue_invoices:
         overdue = (now - invoice.due_date).days
-        notification = Notification.objects.create(
+        notification = create_notification(
             user=invoice.user,
-            type='invoice_overdue',
+            event_key=f"invoice_overdue:{invoice.id}",
+            notification_type='invoice_overdue',
             title=f'Invoice{invoice.invoice_number} is overdue by {overdue} days',
             message=f'{invoice.client.name.upper()} has an outstanding balance of {invoice.total_amount} left to pay',
 
         )
 
-        send_notifications_task.delay_on_commit(notification.id)
 
 
 @shared_task
@@ -121,3 +124,71 @@ def notify_followup_overdue():
         client.save(update_fields=['next_followup_at'])
 
         
+@shared_task
+def notify_budget_status():
+    """
+    Check active budgets and notify users when:
+    - 80% of the budget has been used
+    - The budget has been exceeded
+
+    Each threshold generates only one notification
+    for a particular budget period.
+    """
+
+    today = timezone.now().date()
+
+    budgets = Budget.objects.filter(
+        start_date__lte=today,
+        end_date__gte=today,
+    ).select_related(
+        'user',
+        'category',
+    )
+
+    from .services import create_notification
+
+    for budget in budgets:
+
+        spent = budget.spent_amount
+
+        if budget.amount <= 0:
+            continue
+
+        percentage_used = (
+            spent / budget.amount
+        ) * Decimal('100')
+
+        if percentage_used >= Decimal('100'):
+
+            create_notification(
+                user=budget.user,
+                notification_type='budget_exceeded',
+                title='Budget exceeded',
+                message=(
+                    f'Your {budget.category.name} budget has '
+                    f'been exceeded. You have spent '
+                    f'{spent} out of {budget.amount}.'
+                ),
+                event_key=(
+                    f'budget_exceeded:{budget.id}'
+                ),
+                action_url=f'/expenses/budgets/{budget.id}',
+            )
+
+        elif percentage_used >= Decimal('80'):
+
+            create_notification(
+                user=budget.user,
+                notification_type='budget_warning',
+                title='Budget nearing its limit',
+                message=(
+                    f'Your {budget.category.name} budget is '
+                    f'{percentage_used:.0f}% used. '
+                    f'You have {budget.remaining_amount} '
+                    f'remaining.'
+                ),
+                event_key=(
+                    f'budget_warning:{budget.id}'
+                ),
+                action_url=f'/expenses/budgets/{budget.id}',
+            )
