@@ -36,8 +36,18 @@ def get_user(token):
         access = AccessToken(token)
         user = get_user_model().objects.get(id=access["user_id"])
         return user
-    except Exception as e:
-        logger.error(f"Error in get_user function: {e}")
+    
+    except TokenError as e:
+        logger.warning(
+            "WebSocket JWT validation failed: %s",
+            e
+        )
+        return AnonymousUser()
+
+    except get_user_model().DoesNotExist:
+        logger.warning(
+            "WebSocket JWT user does not exist"
+        )
         return AnonymousUser()
 
 
