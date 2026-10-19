@@ -89,7 +89,7 @@ AI_MODELS = {
     },
 }
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacterium-elusive-unmoral.ngrok-free.dev", "10.25.111.63"]
 
@@ -107,7 +107,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',   
     'rest_framework_simplejwt.token_blacklist',
-    # 'debug_toolbar',g
     'corsheaders',
     'channels',
     'celery',
@@ -130,7 +129,6 @@ INSTALLED_APPS = [
 FIELD_ENCRYPTION_KEY=env('FIELD_ENCRYPTION_KEY')
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -418,4 +416,10 @@ LOGGING = {
         },
     },
 }
+
+
+
+if DEBUG:
+    INSTALLED_APPS+=['debug_toolbar']
+    MIDDLEWARE.insert(0,'debug_toolbar.middleware.DebugToolbarMiddleware')
 
