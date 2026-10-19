@@ -97,7 +97,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', "gero-backend.onrender.com", "bacteri
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
+    # 'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -107,7 +107,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',   
     'rest_framework_simplejwt.token_blacklist',
-    'debug_toolbar',
+    # 'debug_toolbar',g
     'corsheaders',
     'channels',
     'celery',
