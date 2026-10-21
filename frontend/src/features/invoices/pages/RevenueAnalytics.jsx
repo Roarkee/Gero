@@ -49,31 +49,54 @@ export default function RevenueAnalytics() {
           <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Revenue Breakdown</h3>
             
-            <div className="space-y-6 flex-1">
+            <div className="space-y-5 flex-1">
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Recognized Revenue</p>
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Total Recognized Revenue</p>
+                <p className="text-2xl lg:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(revenueData?.totalRevenue)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   From {revenueData?.paidCount || 0} paid invoices
                 </p>
               </div>
               
-              <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Outstanding Revenue</p>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {formatCurrency(revenueData?.outstandingRevenue)}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Total Pipeline</p>
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                  {formatCurrency(revenueData?.pipelineRevenue)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  From {revenueData?.sentCount || 0} pending invoices
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Draft, Sent & Overdue ({revenueData?.pipelineCount || 0} invoices)
                 </p>
               </div>
 
-              <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
-                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Average Invoice Size</p>
-                 <p className="text-xl font-bold text-gray-900 dark:text-white">
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Outstanding Receivables</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                  {formatCurrency(revenueData?.outstandingRevenue)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Awaiting payment (excl. drafts) ({revenueData?.sentCount || 0} invoices)
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Overdue Amount</p>
+                <p className="text-xl font-bold text-rose-600 dark:text-rose-400">
+                  {formatCurrency(revenueData?.overdueRevenue)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Past due date ({revenueData?.overdueCount || 0} invoices)
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Average Invoice Size</p>
+                 <p className="text-lg font-bold text-gray-900 dark:text-white">
                    {formatCurrency(revenueData?.avgInvoiceSize)}
+                 </p>
+                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                   Average value per settled invoice
                  </p>
               </div>
             </div>

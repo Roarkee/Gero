@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, CardContent } from "../ui";
+import { Button, Card, CardContent } from "@/components/ui";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
-import apiClient from "../../api/client";
+import apiClient from "@/api/client";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Input } from "../ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Input } from "@/components/ui";
 import { Loader2, AlertCircle, DollarSign, Clock, TrendingUp } from "lucide-react";
-import apiClient from "../../api/client";
+import apiClient from "@/api/client";
 import toast from "react-hot-toast";
 
 export function PricingCard({ requestId, initialData, onComplete, onBack }) {

@@ -3,8 +3,8 @@ import { API_ENDPOINTS } from "../../../api/endpoints";
 
 export const invoicesApi = {
   // Invoices
-  getInvoices: async () => {
-    const response = await api.get(API_ENDPOINTS.INVOICES);
+  getInvoices: async (params = {}) => {
+    const response = await api.get(API_ENDPOINTS.INVOICES, { params });
     return response.data;
   },
   getInvoice: async (id) => {
@@ -121,4 +121,3 @@ export const invoicesApi = {
     return response.data ?? null;
   },
 };
-

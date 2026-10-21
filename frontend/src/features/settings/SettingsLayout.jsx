@@ -31,8 +31,8 @@ export default function SettingsLayout() {
                   item.disabled
                     ? "text-gray-300 dark:text-gray-600 pointer-events-none cursor-default"
                     : isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-[#3498DB]/10 dark:bg-[#3498DB]/20 text-[#3498DB] dark:text-[#3498DB]"
+                    : "text-[#7F8C8D] dark:text-gray-400 hover:bg-[#ECF0F1] dark:hover:bg-gray-800 hover:text-[#2C3E50] dark:hover:text-white"
                 )
               }
             >

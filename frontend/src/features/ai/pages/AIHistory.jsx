@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "../../../components/ui";
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from "@/components/ui";
 import { Loader2, Plus, ArrowRight, Clock, CheckCircle, AlertCircle } from "lucide-react";
-import apiClient from "../../../api/client";
+import apiClient from "@/api/client";
 import toast from "react-hot-toast";
 
 export default function AIHistory() {
@@ -132,3 +132,4 @@ export default function AIHistory() {
     </div>
   );
 }
+

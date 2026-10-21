@@ -27,11 +27,12 @@ const formatCurrency = (amount) => {
 };
 
 const COLUMNS = [
-  { id: 'draft', title: 'Draft' },
-  { id: 'sent', title: 'Sent' },
-  { id: 'overdue', title: 'Overdue' },
-  { id: 'paid', title: 'Paid' },
-  { id: 'cancelled', title: 'Cancelled' },
+  { id: 'draft', title: 'Draft', color: 'border-slate-300 dark:border-slate-700' },
+  { id: 'sent', title: 'Sent', color: 'border-blue-400 dark:border-blue-600' },
+  { id: 'partly_paid', title: 'Partly Paid', color: 'border-amber-400 dark:border-amber-600' },
+  { id: 'overdue', title: 'Overdue', color: 'border-rose-400 dark:border-rose-600' },
+  { id: 'paid', title: 'Paid', color: 'border-emerald-400 dark:border-emerald-600' },
+  { id: 'cancelled', title: 'Cancelled', color: 'border-gray-300 dark:border-gray-700' },
 ];
 
 function SortableInvoiceCard({ invoice }) {
@@ -50,6 +51,10 @@ function SortableInvoiceCard({ invoice }) {
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const clientDisplayName = invoice.client_name || (
+    typeof invoice.client === 'object' ? invoice.client?.name : (invoice.client ? `Client #${invoice.client}` : '—')
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -58,21 +63,37 @@ function SortableInvoiceCard({ invoice }) {
       {...listeners}
       className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm cursor-grab active:cursor-grabbing mb-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400">
-          <FileText className="w-4 h-4 mr-1.5" />
-          {invoice.invoice_number || `INV-${invoice.id}`}
-        </div>
-        <span className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+      <div className="flex justify-between items-start mb-1.5">
+        <Link
+          to={`/invoices/${invoice.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline truncate mr-2"
+        >
+          <FileText className="w-4 h-4 mr-1.5 shrink-0" />
+          <span className="truncate">{invoice.invoice_number || `INV-${invoice.id}`}</span>
+        </Link>
+        <Link 
+          to={`/invoices/${invoice.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+        >
           <MoreHorizontal className="w-4 h-4" />
-        </span>
+        </Link>
       </div>
-      <div className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-        {typeof invoice.client === 'object' ? invoice.client?.name : `Client #${invoice.client}`}
+
+      <div className="text-sm font-medium text-gray-900 dark:text-white mb-1 truncate">
+        {clientDisplayName}
       </div>
-      <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
+
+      {invoice.title && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 truncate">
+          {invoice.title}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between mt-auto pt-2.5 border-t border-gray-100 dark:border-gray-700">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {invoice.due_date ? format(new Date(invoice.due_date), 'MMM d') : '-'}
+          {invoice.due_date ? format(new Date(invoice.due_date), 'MMM d, yyyy') : '-'}
         </div>
         <div className="text-sm font-bold text-gray-900 dark:text-white">
           {formatCurrency(invoice.total_amount)}
@@ -91,28 +112,33 @@ function InvoiceColumn({ column, invoices }) {
   const invoiceIds = useMemo(() => invoices.map((i) => i.id), [invoices]);
 
   return (
-    <div className="flex flex-col bg-gray-50 dark:bg-gray-900/50 rounded-2xl w-80 min-w-[320px] flex-shrink-0 border border-gray-200 dark:border-gray-800">
+    <div className={`flex flex-col bg-gray-50 dark:bg-gray-900/50 rounded-2xl w-80 min-w-[320px] flex-shrink-0 border ${column.color}`}>
       <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center">
+        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center text-sm">
           {column.title}
-          <span className="ml-2 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs py-0.5 px-2 rounded-full">
+          <span className="ml-2 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs py-0.5 px-2 rounded-full font-medium">
             {invoices.length}
           </span>
         </h3>
       </div>
       
-      <div ref={setNodeRef} className="flex-1 p-3 overflow-y-auto min-h-[150px]">
+      <div ref={setNodeRef} className="flex-1 p-3 overflow-y-auto min-h-[160px]">
         <SortableContext items={invoiceIds} strategy={verticalListSortingStrategy}>
           {invoices.map((invoice) => (
             <SortableInvoiceCard key={invoice.id} invoice={invoice} />
           ))}
+          {invoices.length === 0 && (
+            <div className="h-24 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl flex items-center justify-center text-xs text-gray-400">
+              No invoices
+            </div>
+          )}
         </SortableContext>
       </div>
     </div>
   );
 }
 
-export default function InvoiceKanban({ invoices, isLoading, onUpdateStatus }) {
+export default function InvoiceKanban({ invoices = [], isLoading, onUpdateStatus }) {
   const [activeInvoice, setActiveInvoice] = React.useState(null);
 
   const sensors = useSensors(
@@ -149,7 +175,7 @@ export default function InvoiceKanban({ invoices, isLoading, onUpdateStatus }) {
     // Moving over a column directly
     const isOverColumn = over.data.current?.type === "Column";
     if (isOverColumn) {
-      if (activeInvoice.status !== overId) {
+      if (activeInvoice && activeInvoice.status !== overId) {
         onUpdateStatus(invoiceId, overId);
       }
       return;
@@ -157,7 +183,7 @@ export default function InvoiceKanban({ invoices, isLoading, onUpdateStatus }) {
 
     // Moving over another invoice
     const overInvoice = over.data.current?.invoice;
-    if (overInvoice && activeInvoice.status !== overInvoice.status) {
+    if (overInvoice && activeInvoice && activeInvoice.status !== overInvoice.status) {
       onUpdateStatus(invoiceId, overInvoice.status);
     }
   };
@@ -169,7 +195,7 @@ export default function InvoiceKanban({ invoices, isLoading, onUpdateStatus }) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 overflow-x-auto pb-4 h-[calc(100vh-280px)]">
+      <div className="flex gap-5 overflow-x-auto pb-4 h-[calc(100vh-280px)]">
         {columnsWithInvoices.map((column) => (
           <InvoiceColumn key={column.id} column={column} invoices={column.invoices} />
         ))}
@@ -177,8 +203,8 @@ export default function InvoiceKanban({ invoices, isLoading, onUpdateStatus }) {
 
       <DragOverlay>
         {activeInvoice ? (
-          <div className="opacity-80 rotate-2 scale-105 shadow-xl">
-             <SortableInvoiceCard invoice={activeInvoice} />
+          <div className="opacity-90 rotate-1 scale-105 shadow-2xl">
+            <SortableInvoiceCard invoice={activeInvoice} />
           </div>
         ) : null}
       </DragOverlay>

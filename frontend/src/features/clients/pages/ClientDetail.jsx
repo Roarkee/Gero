@@ -231,7 +231,7 @@ export default function ClientDetail() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                       <div className="text-xs text-gray-500 mb-1">Lifetime Value</div>
-                      <div className="text-lg font-bold">${Number(client.lifetime_value).toLocaleString()}</div>
+                      <div className="text-lg font-bold">GH₵ {Number(client.lifetime_value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                       <div className="text-xs text-gray-500 mb-1">Total Projects</div>

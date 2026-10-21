@@ -30,8 +30,8 @@ export default function ClientsLayout() {
                     clsx(
                       "group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors",
                       isActive
-                        ? "border-emerald-500 text-emerald-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        ? "border-[#3498DB] text-[#3498DB]"
+                        : "border-transparent text-[#7F8C8D] hover:text-[#2C3E50] hover:border-gray-300"
                     )
                   }
                 >
@@ -40,7 +40,7 @@ export default function ClientsLayout() {
                       <Icon
                         className={clsx(
                           "mr-2 h-4 w-4",
-                          isActive ? "text-emerald-500" : "text-gray-400 group-hover:text-gray-500"
+                          isActive ? "text-[#3498DB]" : "text-[#7F8C8D] group-hover:text-[#2C3E50]"
                         )}
                         aria-hidden="true"
                       />

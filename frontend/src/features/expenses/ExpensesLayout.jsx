@@ -33,8 +33,8 @@ export default function ExpensesLayout() {
                   className={({ isActive }) =>
                     `flex items-center pb-4 px-3 border-b-2 text-sm font-medium whitespace-nowrap transition-colors ${
                       isActive
-                        ? "border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
+                        ? "border-[#3498DB] text-[#3498DB] dark:border-[#3498DB] dark:text-[#3498DB]"
+                        : "border-transparent text-[#7F8C8D] hover:text-[#2C3E50] hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
                     }`
                   }
                 >

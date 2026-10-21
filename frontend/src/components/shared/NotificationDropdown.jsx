@@ -15,6 +15,7 @@ const getNotificationIcon = (type) => {
     case "budget_warning":
       return <AlertTriangle className="w-5 h-5 text-amber-500" />;
     case "payment_received":
+    case "invoice_paid":
       return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
     case "invoice_viewed":
       return <Bell className="w-5 h-5 text-blue-500" />;

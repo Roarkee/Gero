@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { StatusBadge } from "./StatusBadge";
 import { HealthIndicator } from "./HealthIndicator";
-import { Building2, Calendar, DollarSign } from "lucide-react";
+import { Building2, Calendar } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import clsx from "clsx";
 
@@ -11,15 +11,15 @@ export function ClientCard({ client, className }) {
     <Link 
       to={`/clients/${client.id}`}
       className={clsx(
-        "block bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer",
+        "block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500 transition-all cursor-pointer",
         className
       )}
     >
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900 text-sm">{client.name}</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{client.name}</h3>
           {client.company_name && (
-            <div className="flex items-center text-xs text-gray-500 mt-1">
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
               <Building2 className="w-3.5 h-3.5 mr-1" />
               {client.company_name}
             </div>
@@ -32,13 +32,13 @@ export function ClientCard({ client, className }) {
         <HealthIndicator score={client.health_score} label={client.health_label} />
         
         {client.attention_required && (
-          <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+          <span className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-600/10">
             Needs Attention
           </span>
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
         {client.next_followup_at ? (
           <div className="flex items-center">
             <Calendar className="w-3.5 h-3.5 mr-1" />
@@ -49,9 +49,8 @@ export function ClientCard({ client, className }) {
         )}
         
         {client.lifetime_value > 0 && (
-          <div className="flex items-center font-medium text-gray-700">
-            <DollarSign className="w-3.5 h-3.5" />
-            {Number(client.lifetime_value).toLocaleString()}
+          <div className="flex items-center font-medium text-gray-700 dark:text-gray-300">
+            <span>GH₵ {Number(client.lifetime_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
       </div>

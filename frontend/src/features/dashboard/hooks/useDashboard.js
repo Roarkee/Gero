@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { getDashboardData } from "../api/dashboard.api";
 
 export const useDashboard = () => {

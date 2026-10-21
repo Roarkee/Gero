@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoicesApi } from "../api/invoices.api";
 
-export const useInvoices = () => {
+export const useInvoices = (params = {}) => {
   const queryClient = useQueryClient();
 
   const invoicesQuery = useQuery({
-    queryKey: ["invoices"],
-    queryFn: invoicesApi.getInvoices,
+    queryKey: ["invoices", params],
+    queryFn: () => invoicesApi.getInvoices(params),
   });
 
   const createInvoice = useMutation({

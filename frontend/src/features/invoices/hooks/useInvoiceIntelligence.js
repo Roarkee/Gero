@@ -6,12 +6,18 @@ import { useInvoices } from "./useInvoices";
 
 const calculateRevenueIntelligence = (invoices) => {
   const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-  const outstandingInvoices = invoices.filter(inv => ['sent', 'draft', 'overdue'].includes(inv.status));
+  // Total pipeline includes draft, sent, overdue, and remaining partly_paid balances
+  const pipelineInvoices = invoices.filter(inv => ['draft', 'sent', 'overdue', 'partly_paid'].includes(inv.status));
+  // True outstanding receivables are issued and awaiting payment (sent, overdue, partly_paid - strictly excluding drafts)
+  const outstandingInvoices = invoices.filter(inv => ['sent', 'overdue', 'partly_paid'].includes(inv.status));
+  const draftInvoices = invoices.filter(inv => inv.status === 'draft');
   const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
 
   const totalRevenue = paidInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
-  const outstandingRevenue = outstandingInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
-  const overdueRevenue = overdueInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
+  const pipelineRevenue = pipelineInvoices.reduce((acc, inv) => acc + (parseFloat(inv.total_amount || 0) - parseFloat(inv.amount_paid || 0)), 0);
+  const outstandingRevenue = outstandingInvoices.reduce((acc, inv) => acc + (parseFloat(inv.total_amount || 0) - parseFloat(inv.amount_paid || 0)), 0);
+  const draftRevenue = draftInvoices.reduce((acc, inv) => acc + parseFloat(inv.total_amount || 0), 0);
+  const overdueRevenue = overdueInvoices.reduce((acc, inv) => acc + (parseFloat(inv.total_amount || 0) - parseFloat(inv.amount_paid || 0)), 0);
   const avgInvoiceSize = paidInvoices.length ? totalRevenue / paidInvoices.length : 0;
 
   const monthlyRevenue = {};
@@ -27,7 +33,20 @@ const calculateRevenueIntelligence = (invoices) => {
     revenue: monthlyRevenue[key]
   }));
 
-  return { totalRevenue, outstandingRevenue, overdueRevenue, avgInvoiceSize, paidCount: paidInvoices.length, sentCount: outstandingInvoices.length, trendData };
+  return {
+    totalRevenue,
+    pipelineRevenue,
+    outstandingRevenue,
+    draftRevenue,
+    overdueRevenue,
+    avgInvoiceSize,
+    paidCount: paidInvoices.length,
+    pipelineCount: pipelineInvoices.length,
+    sentCount: outstandingInvoices.length,
+    draftCount: draftInvoices.length,
+    overdueCount: overdueInvoices.length,
+    trendData
+  };
 };
 
 const calculateCollectionIntelligence = (invoices) => {
@@ -108,16 +127,21 @@ const normalizeRevenue = (monthlyData, topClients, invoices) => {
 
   const totalRevenue = trendData.reduce((acc, d) => acc + d.revenue, 0);
 
-  // Supplement with local invoice data for outstanding/overdue
+  // Supplement with local invoice data for pipeline/outstanding/overdue
   const local = calculateRevenueIntelligence(invoices);
 
   return {
-    totalRevenue,
+    totalRevenue: totalRevenue || local.totalRevenue,
+    pipelineRevenue: local.pipelineRevenue,
     outstandingRevenue: local.outstandingRevenue,
+    draftRevenue: local.draftRevenue,
     overdueRevenue: local.overdueRevenue,
     avgInvoiceSize: local.avgInvoiceSize,
     paidCount: local.paidCount,
+    pipelineCount: local.pipelineCount,
     sentCount: local.sentCount,
+    draftCount: local.draftCount,
+    overdueCount: local.overdueCount,
     trendData,
   };
 };
@@ -269,4 +293,3 @@ export const useInvoiceIntelligence = () => {
     isLoading: invoicesQuery.isLoading,
   };
 };
-

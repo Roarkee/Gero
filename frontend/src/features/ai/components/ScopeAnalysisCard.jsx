@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input } from "../ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input } from "@/components/ui";
 import { Loader2, AlertCircle } from "lucide-react";
-import apiClient from "../../api/client";
+import apiClient from "@/api/client";
 import toast from "react-hot-toast";
 
 export function ScopeAnalysisCard({ requestId, initialData, onComplete, onBack }) {

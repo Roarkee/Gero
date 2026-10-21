@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useProject } from "../hooks/useProjects";
 import { useProjects } from "../hooks/useProjects";
 import {
@@ -36,7 +36,13 @@ export default function ProjectWorkspace() {
   const { data: project, isLoading } = projectQuery;
   const { updateProject } = useProjects();
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
+
+  React.useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam) setActiveTab(tabParam);
+  }, [searchParams]);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

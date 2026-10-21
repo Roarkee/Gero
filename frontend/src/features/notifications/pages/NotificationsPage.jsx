@@ -26,6 +26,7 @@ const getNotificationIcon = (type) => {
     case "budget_warning":
       return <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />;
     case "payment_received":
+    case "invoice_paid":
       return <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />;
     case "invoice_viewed":
       return <Bell className="w-5 h-5 text-blue-500 shrink-0" />;
@@ -44,7 +45,7 @@ export default function NotificationsPage() {
   const filteredNotifications = notifications.filter((item) => {
     if (filter === "unread") return !item.is_read;
     if (filter === "invoices") return item.type.includes("invoice");
-    if (filter === "payments") return item.type.includes("payment");
+    if (filter === "payments") return item.type.includes("payment") || item.type.includes("paid");
     if (filter === "projects") return item.type.includes("project") || item.type.includes("task");
     return true;
   });

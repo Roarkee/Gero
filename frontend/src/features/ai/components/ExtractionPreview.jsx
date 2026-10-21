@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input } from "../ui";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge, Input } from "@/components/ui";
 import { Loader2 } from "lucide-react";
-import apiClient from "../../api/client";
+import apiClient from "@/api/client";
 import toast from "react-hot-toast";
 
 export function ExtractionPreview({ requestId, data, onContinue, onBack, onUpdate }) {

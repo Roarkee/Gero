@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import apiClient from "../../../api/client";
+import apiClient from "@/api/client";
 import { Loader2 } from "lucide-react";
-import { ClientRequestForm } from "../../../components/ai/ClientRequestForm";
-import { ExtractionPreview } from "../../../components/ai/ExtractionPreview";
-import { ScopeAnalysisCard } from "../../../components/ai/ScopeAnalysisCard";
-import { PricingCard } from "../../../components/ai/PricingCard";
-import { ProposalPreview } from "../../../components/ai/ProposalPreview";
-import { ContractPreview } from "../../../components/ai/ContractPreview";
-import { ProjectGenerationPreview } from "../../../components/ai/ProjectGenerationPreview";
+import { ClientRequestForm } from "../components/ClientRequestForm";
+import { ExtractionPreview } from "../components/ExtractionPreview";
+import { ScopeAnalysisCard } from "../components/ScopeAnalysisCard";
+import { PricingCard } from "../components/PricingCard";
+import { ProposalPreview } from "../components/ProposalPreview";
+import { ContractPreview } from "../components/ContractPreview";
+import { ProjectGenerationPreview } from "../components/ProjectGenerationPreview";
 
 export default function AIWorkflow() {
   const { id } = useParams();
@@ -289,3 +289,4 @@ export default function AIWorkflow() {
     </div>
   );
 }
+
