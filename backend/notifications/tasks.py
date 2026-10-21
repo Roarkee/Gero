@@ -10,7 +10,6 @@ from django.urls import reverse
 from decimal import Decimal
 from .services import create_notification
 
-
 '''will add notifications for the intelligence reports'''
 
 @shared_task
@@ -93,7 +92,7 @@ def notify_task_deadline():
             message=f'The deadline for project {task.name} is on {task.duedate.strftime("%Y-%m-%d")}. Please ensure all tasks are completed on time.',
             action_url=url
         )
-        send_notifications_task.delay_on_commit(notification.id)
+        send_notifications_task.delay(notification.id)
 
 @shared_task
 def notify_followup_overdue():
@@ -117,7 +116,7 @@ def notify_followup_overdue():
             message=f'You have a scheduled follow-up for client {client.name} that is now overdue.',
             action_url=url
         )
-        send_notifications_task.delay_on_commit(notification.id)
+        send_notifications_task.delay(notification.id)
         
         # Optionally, clear the followup date so we don't notify repeatedly every night
         client.next_followup_at = None

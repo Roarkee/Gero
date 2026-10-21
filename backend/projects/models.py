@@ -170,7 +170,7 @@ class TimeEntry(models.Model):
         super().save(*args, **kwargs)
 
     def clean(self):
-        if self.task.task_list.project.client.user != self.user:
+        if self.task.task_list.project.user != self.user:
             raise ValidationError("You cannot log time on another user's project")
         if self.is_running:
             overlapping = TimeEntry.objects.filter(

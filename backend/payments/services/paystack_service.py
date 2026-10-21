@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from ..processors.base import BasePaymentProcessor
 import requests
@@ -23,15 +22,15 @@ class PaystackProcessor(BasePaymentProcessor):
             "Content-Type": "application/json",
         }
     
-    def initialize_payment(self, transaction,user):
+    def initialize_payment(self, transaction, user):
+        callback_url = f"{settings.FRONTEND_URL}/payments/status"
         payload = {
             "email": user.email,
-            "amount": int(transaction.amount * __import__('decimal').Decimal('100')), #need to convert to pesewas 
+            "amount": int(transaction.amount * __import__('decimal').Decimal('100')), # convert to pesewas 
             "reference": transaction.reference,
             "currency": transaction.currency,
-            "channels": ["bank","card", "mobile_money"],
-            "callback_url": "",
-            
+            "channels": ["bank", "card", "mobile_money"],
+            "callback_url": callback_url,
         }
 
         response = requests.post(
@@ -42,12 +41,9 @@ class PaystackProcessor(BasePaymentProcessor):
         )
 
         response.raise_for_status()
-        #there'll be an access code provided in the data object that would be needed to complete the 
-        #transaction
         return response.json()
 
     def verify_payment(self, reference):
-        
         response = requests.get(
             f"{self.BASE_URL}/transaction/verify/{reference}",
             headers=self.headers,
@@ -56,6 +52,3 @@ class PaystackProcessor(BasePaymentProcessor):
         response.raise_for_status()
 
         return response.json()
-
-
-    

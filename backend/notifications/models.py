@@ -6,7 +6,8 @@ class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('invoice_overdue', 'Invoice Overdue'),
         ('invoice_due_soon', 'Invoice Due Soon'),
-        ('Invoice Paid', 'Invoice Paid'),
+        ('invoice_paid', 'Invoice Paid'),
+        ('payment_received', 'Payment Received'),
         ('budget_warning', 'Budget Warning'),
         ('budget_exceeded', 'Budget Exceeded'),
         ('project_deadline', 'Project Deadline'),

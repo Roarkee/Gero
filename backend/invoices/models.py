@@ -19,8 +19,10 @@ class Invoice(models.Model):
         OVERDUE = 'overdue', 'Overdue'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='invoices')
-    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='invoices')
-    project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name='invoices', null=True, blank=True)
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, related_name='invoices', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, related_name='invoices', null=True, blank=True)
+    client_name = models.CharField(max_length=255, blank=True)
+    project_name = models.CharField(max_length=255, blank=True)
     payment_provider = models.ManyToManyField("payments.PaymentProvider",related_name='invoices', blank=True)
     sequence_number = models.PositiveIntegerField()
     invoice_number = models.CharField(max_length=50, editable=False)
@@ -250,3 +252,13 @@ class InvoicePayment(models.Model):
                     self.invoice.save(update_fields=['status', 'amount_paid'])
                 else:
                     self.invoice.save(update_fields=['amount_paid'])
+
+            if self.invoice.client_id:
+                client = self.invoice.client
+                client_paid = Invoice.objects.filter(
+                    client=client,
+                    status__in=[Invoice.InvoiceStatus.PAID, Invoice.InvoiceStatus.PARTLY_PAID]
+                ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0.00')
+                if client_paid > (client.lifetime_value or Decimal('0.00')):
+                    client.lifetime_value = client_paid
+                    client.save(update_fields=['lifetime_value'])

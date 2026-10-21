@@ -2,7 +2,7 @@ from notifications.models import Notification
 
 
 def create_notification(user,notification_type,title, message, event_key, action_url=None):
-    from tasks import send_notifications_task
+    from notifications.tasks import send_notifications_task
     notification, created =  Notification.objects.get_or_create(
         user=user,
         event_key=event_key,
@@ -14,6 +14,7 @@ def create_notification(user,notification_type,title, message, event_key, action
         }
     )
     if created:
-        send_notifications_task.delay_on_commit(notification.id)
+        from django.db import transaction
+        transaction.on_commit(lambda: send_notifications_task.delay(notification.id))
 
     return notification

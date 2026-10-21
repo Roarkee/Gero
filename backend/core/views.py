@@ -27,6 +27,8 @@ class DashboardAPIView(APIView):
 
 
     def get(self, request,*args,**kwargs):
+        
+        print("bosdfhadkjghjksdfhjkg")
         cache_key = CacheKeys.dashboard_stats(request.user.id)
         cached_data = CacheService.get(cache_key)
         if cached_data:
@@ -223,4 +225,5 @@ class DashboardAPIView(APIView):
             'project_health': project_health_list
         }
         CacheService.set(cache_key, data, timeout=600)
+
         return Response(data)

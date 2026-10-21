@@ -2,12 +2,13 @@ from django.core.files.storage import Storage
 from django.conf import settings
 from supabase import create_client, Client
 import os
+
 from urllib.parse import urljoin
 
 class SupabaseStorage(Storage):
     def __init__(self):
-        url = os.environ.get("supabaseURL")
-        key = os.environ.get("supabaseKey")
+        url = os.environ.get("S3_SUPABASE_ACCESS_KEY")
+        key = os.environ.get("S3_SUPABASE_SECRET_KEY")
         self.bucket_name = os.environ.get("SUPABASE_BUCKET", "Gero")
         self.supabase: Client = create_client(url, key)
         

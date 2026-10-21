@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status, views
+from rest_framework import viewsets, permissions, status, views, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Invoice, InvoiceItem, InvoicePayment
@@ -9,9 +9,20 @@ from django.core.mail import EmailMessage
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['invoice_number', 'title', 'client__name', 'client_name', 'project__name', 'project_name']
+    ordering_fields = ['created_at', 'issue_date', 'due_date', 'total_amount', 'status']
 
     def get_queryset(self):
-        return Invoice.objects.filter(user=self.request.user)
+        qs = Invoice.objects.filter(user=self.request.user)
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param != 'all':
+            qs = qs.filter(status=status_param)
+        client_param = self.request.query_params.get('client')
+        if client_param and client_param != 'all':
+            qs = qs.filter(client_id=client_param)
+        return qs.order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action == 'list':

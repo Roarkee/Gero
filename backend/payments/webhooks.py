@@ -16,21 +16,25 @@ class PaystackWebHook(views.APIView):
     def post(self, request, *args, **kwargs):
         hashbody = request.headers.get('x-paystack-signature')
         if not hashbody:
-            return Response("we couldn't get anywhere",status=400)
+            return Response("Missing x-paystack-signature header", status=400)
 
         raw_body = request.body
         is_verified, tx = verifyhook(raw_body, hashbody)
 
-        if not is_verified or not tx:
+        if not is_verified:
             PaymentAuditLog.objects.create(
                 action=PaymentAuditLog.PaymentAuditAction.WEBHOOK_SIGNATURE_FAILED,
                 success=False,
                 details={"signature": hashbody}
             )
-            return Response(status=400)
+            return Response("Invalid signature", status=400)
 
         payload = json.loads(raw_body)
-        
+
+        # If valid test webhook or event without local transaction (e.g. Paystack Dashboard test event)
+        if not tx:
+            return Response({"status": "verified", "message": "Test webhook verified successfully."}, status=200)
+
         # Save webhook for audit
         webhook = PaymentWebhook.objects.create(
             provider=tx.provider,
@@ -71,11 +75,11 @@ class PaystackWebHook(views.APIView):
                         error_message="Amount mismatch",
                         details={"expected": expected_amount, "received": paystack_amount}
                     )
-                    return Response("we were auditing and failed", status=400)
+                    return Response("Amount mismatch", status=400)
 
                 tx.status = 'completed'
                 tx.gateway_response = payload
-                tx.provider_reference = payload.get("data", {}).get("id") # paystack internal id
+                tx.provider_reference = payload.get("data", {}).get("id") # Paystack internal id
                 tx.save(update_fields=['status', 'gateway_response', 'provider_reference'])
                 
                 # Lock invoice for safe balance calculation
@@ -95,7 +99,7 @@ class PaystackWebHook(views.APIView):
                     
                 invoice.save(update_fields=['amount_paid', 'status'])
                 
-                # Create InvoicePayment so that dashboard metrics (which query InvoicePayment) account for this payment
+                # Create InvoicePayment so that dashboard metrics account for this payment
                 from invoices.models import InvoicePayment
                 from django.utils import timezone
                 InvoicePayment.objects.create(

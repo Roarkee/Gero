@@ -13,7 +13,7 @@ class ProjectOwnershipMixin:
         return get_object_or_404(
             Project,
             id=project_id,
-            client__user=self.request.user
+            user=self.request.user
         )
     
 
@@ -135,7 +135,6 @@ class ProjectOverviewAPIView(
             ProjectOverviewService
             .get_project_overview(project_id)
         )
-        # print(data)
 
         return Response(data)
 

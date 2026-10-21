@@ -64,14 +64,6 @@ def log_task_activity(sender, instance, created, **kwargs):
                 description=f"Task '{instance.title}' was updated."
             )
 
-@receiver(post_delete, sender=Task)
-def log_task_delete_activity(sender, instance, **kwargs):
-    ProjectActivity.objects.create(
-        project=instance.task_list.project,
-        user=instance.task_list.project.user,
-        activity_type='task_deleted',
-        description=f"Task '{instance.title}' was deleted."
-    )
 
 @receiver(post_save, sender=TimeEntry)
 def log_time_entry_activity(sender, instance, created, **kwargs):

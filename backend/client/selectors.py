@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 from django.db.models import Count, Sum
 from django.utils import timezone
 from .models import Client, ClientActivity
@@ -39,16 +40,39 @@ def get_pipeline_intelligence(user):
     return pipeline
 
 def get_revenue_intelligence(user):
-    clients = Client.objects.filter(user=user).order_by("-lifetime_value")
-    top_clients = []
-    total_revenue = 0
-    for client in clients[:5]:
-        top_clients.append({
-            "id": client.id,
-            "name": client.name,
-            "lifetime_value": float(client.lifetime_value)
+    from invoices.models import Invoice
+
+    clients = Client.objects.filter(user=user)
+    
+    # Dynamically calculate actual collected revenue per client from invoices
+    paid_invoices = Invoice.objects.filter(
+        user=user, 
+        client__isnull=False, 
+        status__in=['paid', 'partly_paid']
+    )
+    
+    client_invoiced_paid = {}
+    for inv in paid_invoices:
+        amt = inv.amount_paid if (inv.amount_paid and inv.amount_paid > Decimal('0.00')) else (inv.total_amount if inv.status == 'paid' else Decimal('0.00'))
+        client_invoiced_paid[inv.client_id] = client_invoiced_paid.get(inv.client_id, Decimal('0.00')) + amt
+
+    total_revenue = Decimal('0.00')
+    client_revenues = []
+    
+    for c in clients:
+        inv_rev = client_invoiced_paid.get(c.id, Decimal('0.00'))
+        effective_ltv = max(inv_rev, c.lifetime_value or Decimal('0.00'))
+        total_revenue += effective_ltv
+        client_revenues.append({
+            "id": c.id,
+            "name": c.name,
+            "company_name": c.company_name or "",
+            "lifetime_value": float(effective_ltv)
         })
-    total_revenue = clients.aggregate(Sum('lifetime_value'))['lifetime_value__sum'] or 0
+
+    client_revenues.sort(key=lambda x: x["lifetime_value"], reverse=True)
+    top_clients = client_revenues[:5]
+
     return {
         "total_revenue": float(total_revenue),
         "top_clients": top_clients

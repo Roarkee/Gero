@@ -345,7 +345,7 @@ class ProjectOverviewService:
             ProjectHealthService.get_project_health(
                 project_id
             )
-        )
+        ) 
 
         return {
             "profitability": profitability,
