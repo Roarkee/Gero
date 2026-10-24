@@ -28,11 +28,11 @@ class DashboardAPIView(APIView):
 
     def get(self, request,*args,**kwargs):
         
-        print("bosdfhadkjghjksdfhjkg")
-        cache_key = CacheKeys.dashboard_stats(request.user.id)
-        cached_data = CacheService.get(cache_key)
-        if cached_data:
-            return Response(cached_data)
+
+        # cache_key = CacheKeys.dashboard_stats(request.user.id)
+        # cached_data = CacheService.get(cache_key)
+        # if cached_data:
+        #     return Response(cached_data)
         start = time.perf_counter()
         user = request.user
         now = timezone.now()
@@ -191,17 +191,6 @@ class DashboardAPIView(APIView):
             for query in connection.queries
         )
 
-        print("\n========== DASHBOARD PERFORMANCE ==========")
-        print(f"Total time: {elapsed:.3f}s")
-        print(f"SQL queries: {len(connection.queries)}")
-        print(f"SQL time: {sql_time:.3f}s")
-
-        for i, query in enumerate(connection.queries, 1):
-            print(f"\n--- Query {i} ({query['time']}s) ---")
-            print(query["sql"])
-
-        print("===========================================\n")
-
         data = {
             'kpis': {
                 'active_projects': active_projects,
@@ -224,6 +213,6 @@ class DashboardAPIView(APIView):
             },
             'project_health': project_health_list
         }
-        CacheService.set(cache_key, data, timeout=600)
+        # CacheService.set(cache_key, data, timeout=600)
 
         return Response(data)
